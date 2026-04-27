@@ -1,3 +1,5 @@
 .vscode/
 includes/db.php
 config/db.php
+.env
+vendor/
