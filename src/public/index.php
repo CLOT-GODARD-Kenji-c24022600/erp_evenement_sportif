@@ -1,21 +1,23 @@
-<?php
-// On charge l'autoloading de Composer (la magie qui évite les include partout)
-require_once __DIR__ . '/../../vendor/autoload.php';
+<?php include '../app/Views/includes/header.php'; ?>
 
-// On définit le chemin des vues
-$viewDir = __DIR__ . '/../app/Views/';
+<div class="container mt-5 mb-5">
+    
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="fw-bold text-body"><?= $t['nav_dashboard'] ?></h1>
+            <p class="text-body-secondary"><?= $t['dash_welcome'] ?></p>
+        </div>
+    </div>
 
-// On récupère la page (ex: ?page=projet), sinon 'accueil' par défaut
-$page = $_GET['page'] ?? 'accueil';
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-primary border-0 shadow-sm" role="alert">
+                <i class="bi bi-info-circle-fill me-2"></i> 
+                <strong><?= $t['dash_empty_title'] ?></strong> <?= $t['dash_empty_desc'] ?>
+            </div>
+        </div>
+    </div>
 
-// Le sandwich sémantique
-include $viewDir . 'includes/header.php';
+</div>
 
-$file = $viewDir . $page . '.php';
-if (file_exists($file)) {
-    include $file;
-} else {
-    echo "<section class='py-5 text-center'><h1>404</h1><p>Page introuvable.</p></section>";
-}
-
-include $viewDir . 'includes/footer.php';
+<?php include '../app/Views/includes/footer.php'; ?>
