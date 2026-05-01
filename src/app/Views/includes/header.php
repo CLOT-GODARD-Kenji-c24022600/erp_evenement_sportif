@@ -32,8 +32,9 @@ include 'translations.php';
                 <li class="nav-item">
                     <a class="nav-link active" href="/"><?= $t['nav_dashboard'] ?></a>
                 </li>
+                <!-- C'est ici que la ligne a été modifiée ! -->
                 <li class="nav-item">
-                    <a class="nav-link" href="#"><?= $t['nav_directory'] ?></a>
+                    <a class="nav-link" href="/annuaire.php"><?= $t['nav_directory'] ?></a>
                 </li>
                 <li class="nav-item ms-2 border-start ps-3">
                     <a class="nav-link text-warning fw-bold" href="/nouvel_event.php"><?= $t['nav_new_event'] ?></a>
