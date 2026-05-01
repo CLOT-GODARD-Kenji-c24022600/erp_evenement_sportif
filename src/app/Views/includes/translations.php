@@ -32,7 +32,29 @@ $translations = [
         'form_capacity_ph' => 'Nombre max. de participants',
         'form_cancel' => 'Annuler',
         'form_save' => 'Enregistrer',
+        
+        // --- NOUVEAUX SPORTS (FR) ---
+        'sport_football' => 'Football',
+        'sport_rugby' => 'Rugby',
         'sport_athletism' => 'Athlétisme',
+        'sport_basketball' => 'Basketball',
+        'sport_tennis' => 'Tennis',
+        'sport_swimming' => 'Natation',
+        'sport_cycling' => 'Cyclisme',
+        'sport_esport' => 'eSport',
+        'sport_other' => 'Autre',
+        
+        // Annuaire
+        'dir_title' => 'Annuaire des Ressources',
+        'dir_import_btn' => 'Importer une base (CSV)',
+        'dir_th_name' => 'Nom',
+        'dir_th_role' => 'Rôle / Type',
+        'dir_th_entity' => 'Club / Entité',
+        'dir_th_email' => 'Contact',
+        'dir_modal_title' => 'Importer des données',
+        'dir_modal_desc' => 'Sélectionnez un fichier CSV ou SQL pour mettre à jour votre annuaire.',
+        'dir_modal_file' => 'Fichier de données',
+        'dir_modal_upload' => 'Lancer l\'importation',
     ],
     'en' => [
         // Navigation (Header)
@@ -62,7 +84,29 @@ $translations = [
         'form_capacity_ph' => 'Maximum participants',
         'form_cancel' => 'Cancel',
         'form_save' => 'Save Event',
+        
+        // --- NOUVEAUX SPORTS (EN) ---
+        'sport_football' => 'Soccer / Football',
+        'sport_rugby' => 'Rugby',
         'sport_athletism' => 'Athletics',
+        'sport_basketball' => 'Basketball',
+        'sport_tennis' => 'Tennis',
+        'sport_swimming' => 'Swimming',
+        'sport_cycling' => 'Cycling',
+        'sport_esport' => 'eSports',
+        'sport_other' => 'Other',
+        
+        // Directory
+        'dir_title' => 'Resource Directory',
+        'dir_import_btn' => 'Import Database (CSV)',
+        'dir_th_name' => 'Name',
+        'dir_th_role' => 'Role / Type',
+        'dir_th_entity' => 'Club / Entity',
+        'dir_th_email' => 'Contact',
+        'dir_modal_title' => 'Import Data',
+        'dir_modal_desc' => 'Select a CSV or SQL file to update your directory.',
+        'dir_modal_file' => 'Data File',
+        'dir_modal_upload' => 'Start Import',
     ]
 ];
 
