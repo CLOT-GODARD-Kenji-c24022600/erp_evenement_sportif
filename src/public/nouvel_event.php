@@ -10,8 +10,18 @@
     <div class="card shadow-sm border-0 rounded-3">
         <div class="card-body p-5">
             
-            <h3 class="mb-5 fw-bold fs-4 text-body"><?= $t['form_page_title'] ?></h3>
+            <h3 class="mb-4 fw-bold fs-4 text-body"><?= $t['form_page_title'] ?></h3>
             
+            <!-- NOUVEAU : Affichage du message d'erreur -->
+            <?php if (isset($_SESSION['error_msg'])): ?>
+                <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <?= $_SESSION['error_msg'] ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <?php unset($_SESSION['error_msg']); ?>
+            <?php endif; ?>
+
             <form action="traitement_event.php" method="POST">
                 
                 <div class="mb-4">
@@ -59,7 +69,6 @@
                     </div>
                     <div class="col-md-6">
                         <label for="capacite" class="form-label fw-semibold text-body" style="font-size: 0.9rem;"><?= $t['form_capacity'] ?></label>
-                        <!-- Ajout du onkeypress pour bloquer la frappe des signes négatifs -->
                         <input type="number" class="form-control form-control-lg fs-6" id="capacite" name="capacite" placeholder="<?= $t['form_capacity_ph'] ?>" min="0" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
                     </div>
                 </div>
