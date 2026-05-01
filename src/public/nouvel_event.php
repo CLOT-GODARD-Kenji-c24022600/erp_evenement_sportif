@@ -23,9 +23,16 @@
                     <label for="type_sport" class="form-label fw-semibold text-body" style="font-size: 0.9rem;"><?= $t['form_sport_type'] ?></label>
                     <select class="form-select form-select-lg fs-6" id="type_sport" name="type_sport" required>
                         <option value="" selected disabled><?= $t['form_sport_select'] ?></option>
-                        <option value="football">Football</option>
-                        <option value="rugby">Rugby</option>
+                        <option value="football"><?= $t['sport_football'] ?></option>
+                        <option value="rugby"><?= $t['sport_rugby'] ?></option>
+                        <option value="basketball"><?= $t['sport_basketball'] ?></option>
+                        <option value="tennis"><?= $t['sport_tennis'] ?></option>
                         <option value="athletisme"><?= $t['sport_athletism'] ?></option>
+                        <option value="natation"><?= $t['sport_swimming'] ?></option>
+                        <option value="cyclisme"><?= $t['sport_cycling'] ?></option>
+                        <option value="esport"><?= $t['sport_esport'] ?></option>
+                        <hr>
+                        <option value="autre"><?= $t['sport_other'] ?></option>
                     </select>
                 </div>
 
@@ -52,7 +59,8 @@
                     </div>
                     <div class="col-md-6">
                         <label for="capacite" class="form-label fw-semibold text-body" style="font-size: 0.9rem;"><?= $t['form_capacity'] ?></label>
-                        <input type="number" class="form-control form-control-lg fs-6" id="capacite" name="capacite" placeholder="<?= $t['form_capacity_ph'] ?>">
+                        <!-- Ajout du onkeypress pour bloquer la frappe des signes négatifs -->
+                        <input type="number" class="form-control form-control-lg fs-6" id="capacite" name="capacite" placeholder="<?= $t['form_capacity_ph'] ?>" min="0" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
                     </div>
                 </div>
 
