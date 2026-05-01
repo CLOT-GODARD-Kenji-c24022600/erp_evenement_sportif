@@ -1,3 +1,4 @@
+<?php 
 // 1. NOTRE FAUSSE BASE DE DONNÉES (Mocks)
 $fausse_bdd = [
     ['nom' => 'Léon Marchand', 'role' => 'Athlète', 'entite' => 'Dauphins du TOEC', 'contact' => 'leon.m@example.com'],
@@ -71,7 +72,6 @@ $fausse_bdd = [
             </div>
             <div class="modal-footer border-0 bg-body-tertiary">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?= $t['form_cancel'] ?></button>
-                <!-- Bouton fictif pour l'instant -->
                 <button type="button" class="btn btn-primary" data-bs-dismiss="modal"><?= $t['dir_modal_upload'] ?></button>
             </div>
         </div>
