@@ -6,16 +6,18 @@ if (isset($_GET['lang'])) {
     $_SESSION['lang'] = $_GET['lang'];
 }
 // On inclut notre super dictionnaire centralisé
-// (Assure-toi d'avoir bien fait le changement de l'Axe 2 avec le dossier Language)
 $lang = $_SESSION['lang'] ?? 'fr';
 $langFile = __DIR__ . '/../../Language/' . $lang . '.php';
 $t = file_exists($langFile) ? require $langFile : require __DIR__ . '/../../Language/fr.php';
 
-// On récupère la page actuelle pour les boutons de langue
 $currentPage = $_GET['page'] ?? 'dashboard';
+
+// NOUVEAU : On lit le choix du thème dans le cookie (clair par défaut)
+$theme = $_COOKIE['theme'] ?? 'light';
 ?>
 <!DOCTYPE html>
-<html lang="<?= $lang ?>" data-bs-theme="light">
+<!-- NOUVEAU : On applique le thème généré par PHP directement dans le HTML -->
+<html lang="<?= $lang ?>" data-bs-theme="<?= $theme ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -28,7 +30,6 @@ $currentPage = $_GET['page'] ?? 'dashboard';
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 shadow-sm">
     <div class="container">
-        <!-- NOUVEAUX LIENS AVEC ?page=... -->
         <a class="navbar-brand fw-bold" href="/?page=dashboard">🏆 <?= $t['app_name'] ?></a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
@@ -48,10 +49,13 @@ $currentPage = $_GET['page'] ?? 'dashboard';
             </ul>
             
             <div class="d-flex align-items-center gap-2">
-                <!-- Les boutons de langue gardent la page en mémoire ! -->
                 <a href="?page=<?= $currentPage ?>&lang=fr" class="btn btn-sm <?= $lang === 'fr' ? 'btn-light' : 'btn-outline-light' ?>">FR</a>
                 <a href="?page=<?= $currentPage ?>&lang=en" class="btn btn-sm <?= $lang === 'en' ? 'btn-light' : 'btn-outline-light' ?>">EN</a>
-                <button id="darkModeToggle" class="btn btn-sm btn-dark ms-2" title="Thème">🌙</button>
+                
+                <!-- NOUVEAU : Le bouton s'affiche directement avec la bonne icône et couleur grâce à PHP -->
+                <button id="darkModeToggle" class="btn btn-sm <?= $theme === 'dark' ? 'btn-light' : 'btn-dark' ?> ms-2" title="Thème">
+                    <?= $theme === 'dark' ? '☀️' : '🌙' ?>
+                </button>
             </div>
         </div>
     </div>
@@ -61,23 +65,24 @@ $currentPage = $_GET['page'] ?? 'dashboard';
     const toggleBtn = document.getElementById('darkModeToggle');
     const htmlElement = document.documentElement;
 
-    if (localStorage.getItem('theme') === 'dark') {
-        htmlElement.setAttribute('data-bs-theme', 'dark');
-        toggleBtn.innerText = '☀️';
-        toggleBtn.classList.replace('btn-dark', 'btn-light');
-    }
-
     toggleBtn.addEventListener('click', () => {
-        if (htmlElement.getAttribute('data-bs-theme') === 'dark') {
-            htmlElement.setAttribute('data-bs-theme', 'light');
-            localStorage.setItem('theme', 'light');
-            toggleBtn.innerText = '🌙';
-            toggleBtn.classList.replace('btn-light', 'btn-dark');
-        } else {
-            htmlElement.setAttribute('data-bs-theme', 'dark');
-            localStorage.setItem('theme', 'dark');
+        // On détermine le nouveau thème
+        let newTheme = htmlElement.getAttribute('data-bs-theme') === 'light' ? 'dark' : 'light';
+
+        // 1. Mise à jour immédiate du HTML (pour l'effet instantané)
+        htmlElement.setAttribute('data-bs-theme', newTheme);
+        
+        // 2. Mise à jour du bouton
+        if (newTheme === 'dark') {
             toggleBtn.innerText = '☀️';
             toggleBtn.classList.replace('btn-dark', 'btn-light');
+        } else {
+            toggleBtn.innerText = '🌙';
+            toggleBtn.classList.replace('btn-light', 'btn-dark');
         }
+
+        // 3. Sauvegarde dans un Cookie (pour que PHP puisse le lire au prochain rechargement)
+        // max-age=31536000 veut dire qu'on le garde en mémoire pendant 1 an.
+        document.cookie = "theme=" + newTheme + "; max-age=31536000; path=/";
     });
 </script>
