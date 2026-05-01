@@ -10,7 +10,7 @@
             
             <h3 class="mb-4 fw-bold fs-4 text-body"><?= $t['form_page_title'] ?></h3>
             
-            <!-- NOUVEAU : Affichage du message d'erreur -->
+            <!-- Affichage du message d'erreur venant du PHP (Sécurité serveur) -->
             <?php if (isset($_SESSION['error_msg'])): ?>
                 <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
                     <i class="bi bi-exclamation-triangle-fill me-2"></i>
@@ -20,7 +20,8 @@
                 <?php unset($_SESSION['error_msg']); ?>
             <?php endif; ?>
 
-            <form action="traitement_event.php" method="POST">
+            <!-- NOUVEAU : Ajout de la classe "needs-validation" et de l'attribut "novalidate" -->
+            <form action="/traitement_event.php" method="POST" class="needs-validation" novalidate>
                 
                 <div class="mb-4">
                     <label for="nom_event" class="form-label fw-semibold text-body" style="font-size: 0.9rem;"><?= $t['form_event_name'] ?></label>
@@ -56,7 +57,8 @@
                     </div>
                     <div class="col-md-6">
                         <label for="date_fin" class="form-label fw-semibold text-body" style="font-size: 0.9rem;"><?= $t['form_end_date'] ?></label>
-                        <input type="date" class="form-control form-control-lg fs-6" id="date_fin" name="date_fin">
+                        <!-- NOUVEAU : On ajoute disabled par défaut pour forcer à choisir la date de début d'abord -->
+                        <input type="date" class="form-control form-control-lg fs-6" id="date_fin" name="date_fin" disabled>
                     </div>
                 </div>
 
@@ -72,7 +74,7 @@
                 </div>
 
                 <div class="d-flex justify-content-end gap-3 pt-4 border-top">
-                    <a href="/" class="btn btn-outline-secondary px-4 py-2 fw-semibold rounded-3"><?= $t['form_cancel'] ?></a>
+                    <a href="/?page=dashboard" class="btn btn-outline-secondary px-4 py-2 fw-semibold rounded-3"><?= $t['form_cancel'] ?></a>
                     <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold rounded-3" style="background-color: #1a56db; border-color: #1a56db;"><?= $t['form_save'] ?></button>
                 </div>
 
@@ -80,3 +82,43 @@
         </div>
     </div>
 </div>
+
+<!-- NOUVEAU : Script d'interactivité du formulaire -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    
+    // 1. Validation visuelle Bootstrap (Bordures rouges/vertes)
+    const form = document.querySelector('.needs-validation');
+    form.addEventListener('submit', function (event) {
+        if (!form.checkValidity()) {
+            event.preventDefault(); // Empêche l'envoi si des champs sont invalides
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated'); // Active les bordures Bootstrap
+    }, false);
+
+    // 2. Logique intelligente des dates
+    const dateDebut = document.getElementById('date_debut');
+    const dateFin = document.getElementById('date_fin');
+
+    if (dateDebut && dateFin) {
+        dateDebut.addEventListener('change', function() {
+            if (this.value) {
+                // Déverrouille la date de fin
+                dateFin.disabled = false;
+                // La date de fin minimale devient la date de début
+                dateFin.min = this.value;
+                
+                // Si une date de fin est déjà saisie et qu'elle est "avant" la nouvelle date de début, on l'efface
+                if (dateFin.value && dateFin.value < this.value) {
+                    dateFin.value = '';
+                }
+            } else {
+                // Si on efface la date de début, on rebloque la date de fin
+                dateFin.disabled = true;
+                dateFin.value = '';
+            }
+        });
+    }
+});
+</script>
