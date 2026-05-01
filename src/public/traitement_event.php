@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         // S'il y a des erreurs, on les stocke en session et on renvoie vers le formulaire
         $_SESSION['error_msg'] = implode("<br>", $erreurs);
-        header('Location: /nouvel_event.php');
+        header('Location: /?page=nouvel_event');
         exit;
     }
 

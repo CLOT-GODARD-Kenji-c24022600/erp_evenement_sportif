@@ -5,8 +5,14 @@ if (session_status() === PHP_SESSION_NONE) {
 if (isset($_GET['lang'])) {
     $_SESSION['lang'] = $_GET['lang'];
 }
-// On inclut notre super dictionnaire !
-include 'translations.php';
+// On inclut notre super dictionnaire centralisé
+// (Assure-toi d'avoir bien fait le changement de l'Axe 2 avec le dossier Language)
+$lang = $_SESSION['lang'] ?? 'fr';
+$langFile = __DIR__ . '/../../Language/' . $lang . '.php';
+$t = file_exists($langFile) ? require $langFile : require __DIR__ . '/../../Language/fr.php';
+
+// On récupère la page actuelle pour les boutons de langue
+$currentPage = $_GET['page'] ?? 'dashboard';
 ?>
 <!DOCTYPE html>
 <html lang="<?= $lang ?>" data-bs-theme="light">
@@ -18,11 +24,12 @@ include 'translations.php';
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/assets/css/style.css">
 </head>
-<body class="bg-body-tertiary">
+<body class="bg-body-tertiary d-flex flex-column min-vh-100">
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 shadow-sm">
     <div class="container">
-        <a class="navbar-brand fw-bold" href="/">🏆 <?= $t['app_name'] ?></a>
+        <!-- NOUVEAUX LIENS AVEC ?page=... -->
+        <a class="navbar-brand fw-bold" href="/?page=dashboard">🏆 <?= $t['app_name'] ?></a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -30,20 +37,20 @@ include 'translations.php';
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link active" href="/"><?= $t['nav_dashboard'] ?></a>
+                    <a class="nav-link <?= $currentPage === 'dashboard' ? 'active' : '' ?>" href="/?page=dashboard"><?= $t['nav_dashboard'] ?></a>
                 </li>
-                <!-- C'est ici que la ligne a été modifiée ! -->
                 <li class="nav-item">
-                    <a class="nav-link" href="/annuaire.php"><?= $t['nav_directory'] ?></a>
+                    <a class="nav-link <?= $currentPage === 'annuaire' ? 'active' : '' ?>" href="/?page=annuaire"><?= $t['nav_directory'] ?></a>
                 </li>
                 <li class="nav-item ms-2 border-start ps-3">
-                    <a class="nav-link text-warning fw-bold" href="/nouvel_event.php"><?= $t['nav_new_event'] ?></a>
+                    <a class="nav-link text-warning fw-bold <?= $currentPage === 'nouvel_event' ? 'active' : '' ?>" href="/?page=nouvel_event"><?= $t['nav_new_event'] ?></a>
                 </li>
             </ul>
             
             <div class="d-flex align-items-center gap-2">
-                <a href="?lang=fr" class="btn btn-sm <?= $lang === 'fr' ? 'btn-light' : 'btn-outline-light' ?>">FR</a>
-                <a href="?lang=en" class="btn btn-sm <?= $lang === 'en' ? 'btn-light' : 'btn-outline-light' ?>">EN</a>
+                <!-- Les boutons de langue gardent la page en mémoire ! -->
+                <a href="?page=<?= $currentPage ?>&lang=fr" class="btn btn-sm <?= $lang === 'fr' ? 'btn-light' : 'btn-outline-light' ?>">FR</a>
+                <a href="?page=<?= $currentPage ?>&lang=en" class="btn btn-sm <?= $lang === 'en' ? 'btn-light' : 'btn-outline-light' ?>">EN</a>
                 <button id="darkModeToggle" class="btn btn-sm btn-dark ms-2" title="Thème">🌙</button>
             </div>
         </div>

@@ -1,5 +1,3 @@
-<?php include '../app/Views/includes/header.php'; ?>
-
 <div class="container mb-5" style="max-width: 800px;">
     
     <div class="d-flex justify-content-between align-items-center mb-4 mt-4">
@@ -82,5 +80,3 @@
         </div>
     </div>
 </div>
-
-<?php include '../app/Views/includes/footer.php'; ?>

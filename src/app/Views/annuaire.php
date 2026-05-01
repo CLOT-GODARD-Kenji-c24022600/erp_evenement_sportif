@@ -1,5 +1,3 @@
-<?php include '../app/Views/includes/header.php'; 
-
 // 1. NOTRE FAUSSE BASE DE DONNÉES (Mocks)
 $fausse_bdd = [
     ['nom' => 'Léon Marchand', 'role' => 'Athlète', 'entite' => 'Dauphins du TOEC', 'contact' => 'leon.m@example.com'],
@@ -79,5 +77,3 @@ $fausse_bdd = [
         </div>
     </div>
 </div>
-
-<?php include '../app/Views/includes/footer.php'; ?>

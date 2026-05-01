@@ -1,33 +1,22 @@
-<?php include '../app/Views/includes/header.php'; ?>
+<?php
+// src/public/index.php
 
-<div class="container mt-5 mb-5">
-    
-    <!-- NOUVEAU : Affichage du message de succès -->
-    <?php if (isset($_SESSION['success_msg'])): ?>
-        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
-            <i class="bi bi-check-circle-fill me-2"></i>
-            <?= $_SESSION['success_msg'] ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        <?php unset($_SESSION['success_msg']); // On efface le message ?>
-    <?php endif; ?>
+// 1. Définition de la page par défaut
+$page = $_GET['page'] ?? 'dashboard';
 
-    <div class="row mb-4">
-        <div class="col">
-            <h1 class="fw-bold text-body"><?= $t['nav_dashboard'] ?></h1>
-            <p class="text-body-secondary"><?= $t['dash_welcome'] ?></p>
-        </div>
-    </div>
+// 2. Sécurité : Liste blanche des pages autorisées
+$pages_autorisees = ['dashboard', 'nouvel_event', 'annuaire'];
 
-    <div class="row">
-        <div class="col-12">
-            <div class="alert alert-primary border-0 shadow-sm" role="alert">
-                <i class="bi bi-info-circle-fill me-2"></i> 
-                <strong><?= $t['dash_empty_title'] ?></strong> <?= $t['dash_empty_desc'] ?>
-            </div>
-        </div>
-    </div>
+// Si l'utilisateur tape une page qui n'existe pas, on le renvoie vers le dashboard
+if (!in_array($page, $pages_autorisees)) {
+    $page = 'dashboard';
+}
 
-</div>
+// 3. On inclut le Header (une seule fois pour tout le site !)
+include '../app/Views/includes/header.php';
 
-<?php include '../app/Views/includes/footer.php'; ?>
+// 4. On inclut le contenu spécifique de la page demandée
+include "../app/Views/{$page}.php";
+
+// 5. On inclut le Footer (une seule fois pour tout le site !)
+include '../app/Views/includes/footer.php';
