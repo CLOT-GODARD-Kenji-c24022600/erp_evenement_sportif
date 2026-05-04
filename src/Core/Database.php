@@ -10,7 +10,7 @@ class Database {
     public static function getConnection(): PDO {
         if (self::$instance === null) {
             try {
-                // On récupère les infos du .env (chargées par Docker)
+                // Les variables sont lues depuis le .env via Docker
                 $host = getenv('ALWAYSDATA_DB_HOST');
                 $dbname = getenv('ALWAYSDATA_DB_NAME');
                 $user = getenv('ALWAYSDATA_DB_USER');
@@ -22,11 +22,12 @@ class Database {
                     $pass,
                     [
                         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+                        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                        PDO::ATTR_EMULATE_PREPARES => false,
                     ]
                 );
             } catch (PDOException $e) {
-                die("Erreur de connexion à Alwaysdata : " . $e->getMessage());
+                die("❌ Erreur BDD : " . $e->getMessage());
             }
         }
         return self::$instance;
