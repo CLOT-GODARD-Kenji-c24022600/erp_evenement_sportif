@@ -48,6 +48,17 @@ if (isset($_GET['page']) && $_GET['page'] === 'logout') {
     exit();
 }
 
+// --- GESTION DU CHANGEMENT DE LANGUE ---
+if (isset($_GET['page']) && $_GET['page'] === 'change_lang') {
+    if (isset($_GET['lang']) && in_array($_GET['lang'], ['fr', 'en'])) {
+        $_SESSION['lang'] = $_GET['lang'];
+    }
+    // On redirige vers la page d'où l'utilisateur venait (ou dashboard par défaut)
+    $return_page = $_GET['return'] ?? 'dashboard';
+    header("Location: index.php?page=" . urlencode($return_page));
+    exit();
+}
+
 // Pages accessibles sans être connecté
 $pages_publiques = ['login', 'inscription', 'forgot_password', 'reset_password'];
 
@@ -59,8 +70,8 @@ if (!isset($_SESSION['user_id']) && !in_array($page, $pages_publiques)) {
     $page = 'login';
 }
 
-// Liste blanche globale (Toutes tes pages sont là)
-$pages_autorisees = ['login', 'inscription', 'dashboard', 'nouvel_event', 'annuaire', 'utilisateurs', 'forgot_password', 'reset_password', 'profil', 'staff', 'recherche'];
+// Liste blanche globale (Toutes tes pages sont là + change_lang)
+$pages_autorisees = ['login', 'inscription', 'dashboard', 'nouvel_event', 'annuaire', 'utilisateurs', 'forgot_password', 'reset_password', 'profil', 'staff', 'recherche', 'change_lang'];
 
 if (!in_array($page, $pages_autorisees)) {
     $page = 'dashboard';

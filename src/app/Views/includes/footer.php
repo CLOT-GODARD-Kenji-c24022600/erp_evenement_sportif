@@ -13,11 +13,13 @@
             </div>
         </div>
     </footer>
-    </div> <?php endif; ?>
+    </div> 
+<?php endif; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
+    // 1. GESTION DE LA SIDEBAR
     const sbBtn = document.getElementById('sidebarToggle');
     if (sbBtn) {
         sbBtn.addEventListener('click', (e) => {
@@ -28,6 +30,7 @@
         });
     }
 
+    // 2. GESTION DU MODE SOMBRE (Mise à jour dynamique des icônes)
     const themeBtn = document.getElementById('darkModeToggle');
     const htmlElement = document.documentElement;
 
@@ -36,7 +39,14 @@
             let currentTheme = htmlElement.getAttribute('data-bs-theme');
             let newTheme = currentTheme === 'light' ? 'dark' : 'light';
             htmlElement.setAttribute('data-bs-theme', newTheme);
-            themeBtn.innerText = newTheme === 'dark' ? '☀️' : '🌙';
+            
+            // Mise à jour de l'icône
+            if (newTheme === 'dark') {
+                themeBtn.innerHTML = '<i class="bi bi-moon-stars-fill text-warning"></i>';
+            } else {
+                themeBtn.innerHTML = '<i class="bi bi-sun-fill text-warning"></i>';
+            }
+            
             document.cookie = "theme=" + newTheme + "; max-age=31536000; path=/";
         });
     }
