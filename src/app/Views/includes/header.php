@@ -12,11 +12,10 @@ $t = file_exists($langFile) ? require $langFile : require __DIR__ . '/../../Lang
 
 $currentPage = $_GET['page'] ?? 'dashboard';
 
-// NOUVEAU : On lit le choix du thème dans le cookie (clair par défaut)
+// On lit le choix du thème dans le cookie (clair par défaut)
 $theme = $_COOKIE['theme'] ?? 'light';
 ?>
 <!DOCTYPE html>
-<!-- NOUVEAU : On applique le thème généré par PHP directement dans le HTML -->
 <html lang="<?= $lang ?>" data-bs-theme="<?= $theme ?>">
 <head>
     <meta charset="UTF-8">
@@ -43,19 +42,33 @@ $theme = $_COOKIE['theme'] ?? 'light';
                 <li class="nav-item">
                     <a class="nav-link <?= $currentPage === 'annuaire' ? 'active' : '' ?>" href="/?page=annuaire"><?= $t['nav_directory'] ?></a>
                 </li>
+                
+                <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin'): ?>
+                <li class="nav-item">
+                    <a class="nav-link <?= $currentPage === 'utilisateurs' ? 'active' : '' ?>" href="/?page=utilisateurs">👥 Utilisateurs</a>
+                </li>
+                <?php endif; ?>
+
                 <li class="nav-item ms-2 border-start ps-3">
                     <a class="nav-link text-warning fw-bold <?= $currentPage === 'nouvel_event' ? 'active' : '' ?>" href="/?page=nouvel_event"><?= $t['nav_new_event'] ?></a>
                 </li>
             </ul>
             
-            <div class="d-flex align-items-center gap-2">
-                <a href="?page=<?= $currentPage ?>&lang=fr" class="btn btn-sm <?= $lang === 'fr' ? 'btn-light' : 'btn-outline-light' ?>">FR</a>
-                <a href="?page=<?= $currentPage ?>&lang=en" class="btn btn-sm <?= $lang === 'en' ? 'btn-light' : 'btn-outline-light' ?>">EN</a>
+            <div class="d-flex align-items-center gap-3">
+                <span class="text-light fw-semibold border-end pe-3">
+                    👤 <?= htmlspecialchars($_SESSION['user_nom'] ?? 'Utilisateur') ?>
+                </span>
+
+                <div class="d-flex gap-1">
+                    <a href="?page=<?= $currentPage ?>&lang=fr" class="btn btn-sm <?= $lang === 'fr' ? 'btn-light' : 'btn-outline-light' ?>">FR</a>
+                    <a href="?page=<?= $currentPage ?>&lang=en" class="btn btn-sm <?= $lang === 'en' ? 'btn-light' : 'btn-outline-light' ?>">EN</a>
+                </div>
                 
-                <!-- NOUVEAU : Le bouton s'affiche directement avec la bonne icône et couleur grâce à PHP -->
-                <button id="darkModeToggle" class="btn btn-sm <?= $theme === 'dark' ? 'btn-light' : 'btn-dark' ?> ms-2" title="Thème">
+                <button id="darkModeToggle" class="btn btn-sm <?= $theme === 'dark' ? 'btn-light' : 'btn-dark' ?>" title="Thème">
                     <?= $theme === 'dark' ? '☀️' : '🌙' ?>
                 </button>
+
+                <a href="?page=logout" class="btn btn-sm btn-danger fw-bold">Déconnexion</a>
             </div>
         </div>
     </div>
@@ -66,13 +79,10 @@ $theme = $_COOKIE['theme'] ?? 'light';
     const htmlElement = document.documentElement;
 
     toggleBtn.addEventListener('click', () => {
-        // On détermine le nouveau thème
         let newTheme = htmlElement.getAttribute('data-bs-theme') === 'light' ? 'dark' : 'light';
 
-        // 1. Mise à jour immédiate du HTML (pour l'effet instantané)
         htmlElement.setAttribute('data-bs-theme', newTheme);
         
-        // 2. Mise à jour du bouton
         if (newTheme === 'dark') {
             toggleBtn.innerText = '☀️';
             toggleBtn.classList.replace('btn-dark', 'btn-light');
@@ -81,8 +91,6 @@ $theme = $_COOKIE['theme'] ?? 'light';
             toggleBtn.classList.replace('btn-light', 'btn-dark');
         }
 
-        // 3. Sauvegarde dans un Cookie (pour que PHP puisse le lire au prochain rechargement)
-        // max-age=31536000 veut dire qu'on le garde en mémoire pendant 1 an.
         document.cookie = "theme=" + newTheme + "; max-age=31536000; path=/";
     });
 </script>
