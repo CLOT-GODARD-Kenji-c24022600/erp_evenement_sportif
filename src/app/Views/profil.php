@@ -18,10 +18,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email = trim($_POST['email']);
         $poste = trim($_POST['poste'] ?? '');
         $telephone = trim($_POST['telephone'] ?? '');
+        $statut_presence = $_POST['statut_presence'] ?? 'online'; // NOUVEAU : On récupère le statut
 
         if (!empty($nom) && !empty($email)) {
-            $stmt = $db->prepare("UPDATE utilisateurs SET prenom = ?, nom = ?, email = ?, poste = ?, telephone = ? WHERE id = ?");
-            if ($stmt->execute([$prenom, $nom, $email, $poste, $telephone, $user_id])) {
+            // NOUVEAU : On met à jour statut_presence dans la BDD
+            $stmt = $db->prepare("UPDATE utilisateurs SET prenom = ?, nom = ?, email = ?, poste = ?, telephone = ?, statut_presence = ? WHERE id = ?");
+            if ($stmt->execute([$prenom, $nom, $email, $poste, $telephone, $statut_presence, $user_id])) {
                 // On met à jour la session avec Prénom + Nom !
                 $_SESSION['user_nom'] = trim($prenom . ' ' . $nom);
                 $msg = "Vos informations ont été mises à jour.";
@@ -78,7 +80,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $db->prepare("UPDATE utilisateurs SET avatar = ? WHERE id = ?");
                 $stmt->execute([$newFileName, $user_id]);
                 
-                // 🚨 NOUVEAU : On met à jour la session avec la nouvelle image
                 $_SESSION['user_avatar'] = $newFileName;
                 
                 $msg = "Avatar mis à jour avec succès.";
@@ -131,10 +132,15 @@ $user = $stmt->fetch();
                         <div class="mb-3">
                             <input class="form-control form-control-sm" type="file" name="avatar" accept="image/*" required>
                         </div>
-                        <button type="submit" name="update_avatar" class="btn btn-outline-primary btn-sm w-100">
-                            <i class="bi bi-camera"></i> Changer la photo
+                        <button type="submit" name="update_avatar" class="btn btn-outline-primary btn-sm w-100 fw-bold">
+                            <i class="bi bi-camera me-1"></i> Changer la photo
                         </button>
                     </form>
+
+                    <hr class="my-4">
+                    <a href="?page=logout" class="btn btn-danger btn-sm w-100 fw-bold shadow-sm">
+                        <i class="bi bi-box-arrow-right me-1"></i> Se déconnecter
+                    </a>
                 </div>
             </div>
         </div>
@@ -172,6 +178,20 @@ $user = $stmt->fetch();
                                 <input type="text" name="telephone" class="form-control" placeholder="06..." value="<?= htmlspecialchars($user['telephone'] ?? '') ?>">
                             </div>
                         </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label small fw-bold">Statut de présence (Visible par l'équipe)</label>
+                                <select name="statut_presence" class="form-select bg-light">
+                                    <option value="online" <?= (($user['statut_presence'] ?? 'online') === 'online') ? 'selected' : '' ?>>🟢 En ligne</option>
+                                    <option value="dnd" <?= (($user['statut_presence'] ?? '') === 'dnd') ? 'selected' : '' ?>>🔴 Ne pas déranger</option>
+                                    <option value="idle" <?= (($user['statut_presence'] ?? '') === 'idle') ? 'selected' : '' ?>>🟠 Inactif</option>
+                                    <option value="offline" <?= (($user['statut_presence'] ?? '') === 'offline') ? 'selected' : '' ?>>⚫ Hors ligne (Invisible)</option>
+                                </select>
+                                <div class="form-text small">Si vous êtes inactif plus de 5 minutes, votre statut passera automatiquement en "Inactif".</div>
+                            </div>
+                        </div>
+
                         <hr class="my-4">
                         <button type="submit" name="update_info" class="btn btn-primary px-4 fw-bold">Enregistrer les modifications</button>
                     </form>

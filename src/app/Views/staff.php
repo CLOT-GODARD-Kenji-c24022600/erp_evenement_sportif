@@ -46,7 +46,33 @@ $staff_members = $stmt->fetchAll();
                                 </div>
                             <?php endif; ?>
                             
-                            <span class="position-absolute bottom-0 end-0 p-2 bg-success border border-light rounded-circle" style="margin-bottom: 5px; margin-right: 5px;" title="Actif"></span>
+                            <?php 
+                                $statusPref = $member['statut_presence'] ?? 'online';
+                                $lastActivity = strtotime($member['derniere_activite'] ?? '2000-01-01');
+                                $diff = time() - $lastActivity; // Temps en secondes
+
+                                // 1. Priorité au hors ligne manuel ou si > 15 mins (900s) d'inactivité
+                                if ($statusPref === 'offline' || $diff > 900) { 
+                                    $dotColor = 'bg-secondary';
+                                    $dotTitle = 'Hors ligne';
+                                
+                                // 2. Inactif manuel ou si > 5 mins (300s) d'inactivité
+                                } elseif ($statusPref === 'idle' || $diff > 300) { 
+                                    $dotColor = 'bg-warning';
+                                    $dotTitle = 'Inactif';
+                                
+                                // 3. Ne pas déranger (Manuel uniquement)
+                                } elseif ($statusPref === 'dnd') {
+                                    $dotColor = 'bg-danger';
+                                    $dotTitle = 'Ne pas déranger';
+                                
+                                // 4. Sinon, tout va bien, on est en ligne !
+                                } else {
+                                    $dotColor = 'bg-success';
+                                    $dotTitle = 'En ligne';
+                                }
+                            ?>
+                            <span class="position-absolute bottom-0 end-0 p-2 <?= $dotColor ?> border border-light rounded-circle" style="margin-bottom: 5px; margin-right: 5px;" title="<?= $dotTitle ?>" data-bs-toggle="tooltip"></span>
                         </div>
 
                         <h5 class="fw-bold mb-1 staff-name"><?= htmlspecialchars($fullName) ?></h5>
@@ -113,4 +139,10 @@ $staff_members = $stmt->fetchAll();
             noResultMsg.classList.add('d-none');
         }
     });
+
+    // Activer les tooltips Bootstrap pour les points de statut (si Bootstrap JS est chargé)
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
 </script>

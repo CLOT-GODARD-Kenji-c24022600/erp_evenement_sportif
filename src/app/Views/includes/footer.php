@@ -8,7 +8,6 @@
                 <div class="d-flex gap-3 align-items-center">
                     <a href="#" class="text-decoration-none text-reset">Aide</a>
                     <a href="#" class="text-decoration-none text-reset border-start ps-3">Confidentialité</a>
-                    <a href="?page=logout" class="text-danger fw-bold text-decoration-none border-start ps-3">Déconnexion</a>
                 </div>
             </div>
         </div>
