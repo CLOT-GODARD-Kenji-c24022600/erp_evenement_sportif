@@ -140,10 +140,13 @@ $theme = $_COOKIE['theme'] ?? 'light';
                 </nav>
 
                 <div class="d-none d-md-block">
-                    <div class="input-group">
-                        <span class="input-group-text bg-body-secondary border-0"><i class="bi bi-search small text-muted"></i></span>
-                        <input type="text" class="form-control form-control-sm border-0 bg-body-secondary px-3 shadow-none" style="width: 300px; border-radius: 0 8px 8px 0;" placeholder="Search projects...">
-                    </div>
+                    <form action="index.php" method="GET" class="mb-0">
+                        <input type="hidden" name="page" value="recherche">
+                        <div class="input-group">
+                            <button type="submit" class="input-group-text bg-body-secondary border-0 text-muted" style="border-radius: 8px 0 0 8px;"><i class="bi bi-search small"></i></button>
+                            <input type="text" name="q" class="form-control form-control-sm border-0 bg-body-secondary px-3 shadow-none" style="width: 300px; border-radius: 0 8px 8px 0;" placeholder="Rechercher..." value="<?= htmlspecialchars($_GET['q'] ?? '') ?>" required>
+                        </div>
+                    </form>
                 </div>
 
                 <div class="d-flex align-items-center gap-3">

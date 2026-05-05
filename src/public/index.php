@@ -60,7 +60,7 @@ if (!isset($_SESSION['user_id']) && !in_array($page, $pages_publiques)) {
 }
 
 // Liste blanche globale (Toutes tes pages sont là)
-$pages_autorisees = ['login', 'inscription', 'dashboard', 'nouvel_event', 'annuaire', 'utilisateurs', 'forgot_password', 'reset_password', 'profil', 'staff'];
+$pages_autorisees = ['login', 'inscription', 'dashboard', 'nouvel_event', 'annuaire', 'utilisateurs', 'forgot_password', 'reset_password', 'profil', 'staff', 'recherche'];
 
 if (!in_array($page, $pages_autorisees)) {
     $page = 'dashboard';
