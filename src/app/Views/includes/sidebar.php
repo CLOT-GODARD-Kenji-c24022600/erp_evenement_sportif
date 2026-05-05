@@ -1,3 +1,17 @@
+<?php
+// On récupère les infos fraîches de l'utilisateur directement depuis la BDD !
+$stmt_sb = $db->prepare("SELECT prenom, nom, avatar FROM utilisateurs WHERE id = ?");
+$stmt_sb->execute([$_SESSION['user_id']]);
+$user_sb = $stmt_sb->fetch();
+
+// On construit le nom complet (Prénom + Nom)
+$sidebar_nom = trim(($user_sb['prenom'] ?? '') . ' ' . $user_sb['nom']);
+if (empty($sidebar_nom)) {
+    $sidebar_nom = $_SESSION['user_nom']; // Sécurité si jamais c'est vide
+}
+$sidebar_avatar = $user_sb['avatar'] ?? null;
+?>
+
 <nav class="sidebar d-flex flex-column flex-shrink-0 text-white shadow" style="background-color: #1e293b; transition: all 0.3s ease;">
     
     <div class="d-flex align-items-center sidebar-header p-4 mb-2 position-relative" style="min-height: 80px;">
@@ -23,7 +37,7 @@
         <li class="mb-1">
             <a href="?page=annuaire" class="nav-link text-white d-flex align-items-center py-3 <?= ($page==='annuaire')?'active bg-primary':'opacity-75' ?>">
                 <i class="bi bi-people-fill fs-5 mx-2"></i>
-                <span class="ms-2 sb-text">Staff</span>
+                <span class="ms-2 sb-text">Ressource</span>
             </a>
         </li>
         <li class="mb-1">
@@ -32,8 +46,16 @@
                 <span class="ms-2 sb-text">Events</span>
             </a>
         </li>
-        <?php if ($_SESSION['user_role'] === 'admin'): ?>
         <li class="mb-1">
+            <a href="?page=staff" class="nav-link text-white d-flex align-items-center py-3 <?= ($page==='staff')?'active bg-primary':'opacity-75' ?>">
+                <i class="bi bi-people-fill fs-5 mx-2"></i>
+                <span class="ms-2 sb-text">Staff</span>
+            </a>
+        </li>
+        
+        <?php if ($_SESSION['user_role'] === 'admin'): ?>
+        <li class="mb-1 border-top border-secondary mt-3 pt-3">
+            <small class="text-white-50 text-uppercase px-3 sb-text" style="font-size: 0.7rem;">Administration</small>
             <a href="?page=utilisateurs" class="nav-link text-white d-flex align-items-center py-3 <?= ($page==='utilisateurs')?'active bg-primary':'opacity-75' ?>">
                 <i class="bi bi-gear-fill fs-5 mx-2"></i>
                 <span class="ms-2 sb-text">Settings</span>
@@ -43,56 +65,58 @@
     </ul>
 
     <div class="p-3 border-top border-secondary mx-2 mb-3">
-        <div class="d-flex align-items-center user-block">
-            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0" style="width: 40px; height: 40px;">
-                <?= strtoupper(substr($_SESSION['user_nom'], 0, 1)) ?>
+        <a href="?page=profil" class="d-flex align-items-center user-block text-decoration-none text-white transition-hover">
+            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0 shadow-sm overflow-hidden" style="width: 40px; height: 40px;">
+                
+                <?php if ($sidebar_avatar): ?>
+                    <img src="uploads/avatars/<?= htmlspecialchars($sidebar_avatar) ?>" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+                <?php else: ?>
+                    <?= strtoupper(substr($sidebar_nom, 0, 1)) ?>
+                <?php endif; ?>
+                
             </div>
             <div class="ms-3 sb-text">
-                <div class="fw-bold text-truncate" style="font-size: 0.85rem;"><?= htmlspecialchars($_SESSION['user_nom']) ?></div>
-                <div class="text-muted small text-capitalize"><?= $_SESSION['user_role'] ?></div>
+                <div class="fw-bold text-truncate" style="font-size: 0.85rem;"><?= htmlspecialchars($sidebar_nom) ?></div>
+                
+                <div class="text-white-50 small text-capitalize fw-semibold"><?= $_SESSION['user_role'] ?></div>
             </div>
-        </div>
+        </a>
     </div>
 </nav>
 
 <style>
-    /* --- STYLE DE BASE --- */
     .toggle-btn {
         position: absolute;
         right: 15px;
-        transition: var(--transition);
+        transition: all 0.3s ease;
     }
 
-    /* --- ÉTAT REPLIÉ (COLLAPSED) --- */
-
-    /* 1. Cacher tout le logo et le texte SportEvent */
-    body.collapsed .logo-link { 
-        display: none !important; 
+    .transition-hover:hover {
+        opacity: 0.85;
+        background-color: rgba(255,255,255,0.05);
+        border-radius: 8px;
     }
 
-    /* 2. Cacher tous les textes du menu et du profil */
+    body.collapsed .logo-link,
     body.collapsed .sb-text { 
         display: none !important; 
     }
 
-    /* 3. Centrer la flèche au milieu de la barre de 80px */
     body.collapsed .sidebar-header {
         justify-content: center !important;
         padding: 0 !important;
     }
 
     body.collapsed .toggle-btn {
-        position: static; /* Sort de l'absolu pour se centrer naturellement */
+        position: static;
         margin: 0 auto;
         font-size: 1.5rem;
     }
 
-    /* 4. Retourner la flèche */
     body.collapsed #toggleIcon { 
         transform: rotate(180deg); 
     }
 
-    /* 5. Centrer les icônes du menu et du profil */
     body.collapsed .sidebar .nav-link,
     body.collapsed .user-block { 
         justify-content: center !important; 
