@@ -16,10 +16,12 @@ $sidebar_avatar = $user_sb['avatar'] ?? null;
     
     <div class="d-flex align-items-center sidebar-header p-4 mb-2 position-relative" style="min-height: 80px;">
         <a href="?page=dashboard" class="text-white text-decoration-none d-flex align-items-center logo-link">
-            <div class="bg-primary rounded-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 35px; height: 35px;">
-                <span class="fw-bold">SE</span>
+            
+            <div class="bg-white rounded-2 d-flex align-items-center justify-content-center flex-shrink-0 overflow-hidden shadow-sm" style="width: 35px; height: 35px;">
+                <img src="assets/img/YES-Your-Event-Solution.png" alt="YES Logo" style="width: 100%; height: 100%; object-fit: contain;">
             </div>
-            <span class="fs-5 fw-bold ms-2 sb-text">SportEvent</span>
+            
+            <span class="fs-5 fw-bold ms-2 sb-text" style="letter-spacing: 1px;">YES</span>
         </a>
 
         <button id="sidebarToggle" class="btn btn-link text-white p-0 toggle-btn">

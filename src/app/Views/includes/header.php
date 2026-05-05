@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['quick_create'])) {
             $qc_msg = "Projet créé avec succès !";
             $qc_type = "success";
         } elseif ($action === 'user' && $_SESSION['user_role'] === 'admin') {
-            $mdp_hash = password_hash('Bienvenue123!', PASSWORD_DEFAULT); // Mot de passe par défaut
+            $mdp_hash = password_hash('Bienvenue123!', PASSWORD_DEFAULT);
             $stmt = $db->prepare("INSERT INTO utilisateurs (prenom, nom, email, mot_de_passe, poste, role, statut) VALUES (?, ?, ?, ?, ?, ?, 'approuve')");
             $stmt->execute([$_POST['prenom'], $_POST['nom'], $_POST['email'], $mdp_hash, $_POST['poste'], $_POST['role']]);
             $qc_msg = "Membre ajouté ! Mdp provisoire : Bienvenue123!";
@@ -52,7 +52,11 @@ if (isset($_SESSION['user_id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SportEvent ERP</title>
+    
+    <title>Your Event Solution</title>
+    
+    <link rel="icon" type="image/png" href="assets/img/YES-Your-Event-Solution.png">
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
@@ -68,7 +72,7 @@ if (isset($_SESSION['user_id'])) {
         body.collapsed .sb-text, body.collapsed .sidebar span:not(.fw-bold):not(.fs-5), body.collapsed .sidebar .text-muted, body.collapsed .sidebar .fw-bold.text-truncate, body.collapsed .sidebar .fs-5.fw-bold { display: none !important; }
         body.collapsed .sidebar .p-4.mb-2 { padding-left: 0 !important; padding-right: 0 !important; display: flex !important; justify-content: center !important; }
         body.collapsed .sidebar .p-4.mb-2 a { justify-content: center !important; width: 100% !important; margin: 0 !important; }
-        body.collapsed .sidebar .p-4.mb-2 a div.bg-primary { margin-right: 0 !important; flex-shrink: 0 !important; }
+        body.collapsed .sidebar .p-4.mb-2 a div.logo-box { margin-right: 0 !important; flex-shrink: 0 !important; }
         body.collapsed .sidebar .nav-link { justify-content: center !important; padding: 1rem 0 !important; }
         body.collapsed .sidebar .nav-link i, body.collapsed .sidebar .nav-link span:first-child { margin: 0 !important; }
         body.collapsed .sidebar .p-3.border-top { padding-left: 0 !important; padding-right: 0 !important; display: flex !important; justify-content: center !important; }
@@ -107,7 +111,7 @@ if (isset($_SESSION['user_id'])) {
                     
                     <div class="dropdown">
                         <button class="btn btn-primary btn-sm px-3 fw-bold shadow-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            + Quick Create
+                            + Ajouter
                         </button>
                         <ul class="dropdown-menu shadow border-0 mt-2">
                             <li><a class="dropdown-item py-2" href="#" data-bs-toggle="modal" data-bs-target="#modalEvent"><i class="bi bi-calendar-event me-2 text-success"></i>Événement</a></li>
