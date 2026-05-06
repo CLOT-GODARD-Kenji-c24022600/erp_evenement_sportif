@@ -60,7 +60,9 @@ try {
                             
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <h5 class="card-title fw-bold mb-0 text-body"><?= htmlspecialchars($event['nom']) ?></h5>
-                                <span class="badge bg-primary-subtle text-primary rounded-pill fw-semibold">Projet #<?= htmlspecialchars($event['projet_id']) ?></span>
+                                <span class="badge bg-primary-subtle text-primary rounded-pill fw-semibold">
+                                    <?= !empty($event['sport']) ? htmlspecialchars($event['sport']) : 'Général' ?>
+                                </span>
                             </div>
                             
                             <p class="card-text text-body-secondary small mb-4" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
@@ -71,12 +73,18 @@ try {
                                 <li class="mb-2 text-body-secondary">
                                     <i class="bi bi-calendar-event me-2 text-primary"></i>
                                     <?= date('d/m/Y', strtotime($event['date_debut'])) ?>
-                                    <?= $event['date_fin'] ? ' <i class="bi bi-arrow-right mx-1"></i> ' . date('d/m/Y', strtotime($event['date_fin'])) : '' ?>
+                                    <?= !empty($event['date_fin']) ? ' <i class="bi bi-arrow-right mx-1"></i> ' . date('d/m/Y', strtotime($event['date_fin'])) : '' ?>
                                 </li>
-                                <li class="text-body-secondary">
+                                <li class="mb-2 text-body-secondary">
                                     <i class="bi bi-geo-alt me-2 text-danger"></i>
                                     <?= htmlspecialchars($event['lieu']) ?>
                                 </li>
+                                <?php if (!empty($event['capacite'])): ?>
+                                <li class="text-body-secondary">
+                                    <i class="bi bi-people-fill me-2 text-success"></i>
+                                    Capacité : <?= htmlspecialchars($event['capacite']) ?> places
+                                </li>
+                                <?php endif; ?>
                             </ul>
                             
                         </div>
