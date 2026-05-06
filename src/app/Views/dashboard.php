@@ -89,7 +89,7 @@ try {
                             
                         </div>
                         <div class="card-footer bg-transparent border-top p-3 text-center">
-                            <a href="#" class="btn btn-sm btn-outline-secondary fw-semibold w-100 rounded-3">Gérer l'événement</a>
+                            <a href="/?page=gerer_event&id=<?= $event['id'] ?>" class="btn btn-sm btn-outline-secondary fw-semibold w-100 rounded-3">Gérer l'événement</a>
                         </div>
                     </div>
                 </div>
