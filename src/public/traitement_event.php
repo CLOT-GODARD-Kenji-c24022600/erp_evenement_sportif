@@ -1,23 +1,29 @@
 <?php
 session_start();
 
-// 1. VÉRIFICATION DE LA MÉTHODE
-// On s'assure que la page a bien été appelée par la soumission du formulaire (POST)
+// 1. IMPORT DE LA CLASSE (Namespace)
+// C'est cette ligne qui corrige l'erreur "Class Database not found"
+use Core\Database;
+
+// 2. INCLUSION DU FICHIER BDD (Chemin absolu infaillible)
+require_once __DIR__ . '/../Core/Database.php';
+
+// 3. VÉRIFICATION DE LA MÉTHODE
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    // 2. NETTOYAGE ET SÉCURISATION DES DONNÉES (Anti-XSS)
-    // On utilise htmlspecialchars() pour empêcher l'exécution de code HTML/JavaScript malveillant
+    // 4. NETTOYAGE ET SÉCURISATION DES DONNÉES (Anti-XSS)
     $nom_event   = htmlspecialchars(trim($_POST['nom_event'] ?? ''));
-    $type_sport  = htmlspecialchars(trim($_POST['type_sport'] ?? ''));
     $description = htmlspecialchars(trim($_POST['description'] ?? ''));
     $date_debut  = htmlspecialchars(trim($_POST['date_debut'] ?? ''));
-    $date_fin    = htmlspecialchars(trim($_POST['date_fin'] ?? ''));
     $lieu        = htmlspecialchars(trim($_POST['lieu'] ?? ''));
     
-    // Pour la capacité, on force le type en entier (integer)
-    $capacite    = isset($_POST['capacite']) && $_POST['capacite'] !== '' ? (int)$_POST['capacite'] : null;
+    // Si la date de fin est vide, on force à NULL pour la base de données
+    $date_fin_raw = trim($_POST['date_fin'] ?? '');
+    $date_fin     = ($date_fin_raw !== '') ? htmlspecialchars($date_fin_raw) : null;
+    
+    // NB: type_sport et capacite sont ignorés ici car ils n'existent pas dans la table `evenements`.
 
-    // 3. VALIDATION CÔTÉ SERVEUR
+    // 5. VALIDATION CÔTÉ SERVEUR
     $erreurs = [];
 
     if (empty($nom_event)) {
@@ -32,25 +38,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erreurs[] = "La date de fin ne peut pas être antérieure à la date de début.";
     }
 
-    // 4. GESTION DU RÉSULTAT
+    // 6. INSERTION DANS LA BASE DE DONNÉES
     if (count($erreurs) === 0) {
-        // --- C'est ici que tu mettras ta requête PDO plus tard ---
-        
-        // On simule un succès
-        $_SESSION['success_msg'] = "L'événement '$nom_event' a été créé avec succès !";
-        
-        // On redirige vers le tableau de bord
-        header('Location: /');
-        exit;
+        try {
+            // On instancie la connexion à la BDD
+            // Si l'erreur persistait, il faudrait remplacer "new Database()" par "new \Database()"
+            $database = new Database();
+            $db = $database->getConnection();
+
+            // ATTENTION : La colonne projet_id est "No Null" (obligatoire) dans ta BDD.
+            // On la fixe à 1 par défaut le temps de créer un système de projets.
+            $projet_id = 1; 
+
+            // On prépare la requête SQL alignée avec ta structure phpMyAdmin
+            $query = "INSERT INTO evenements (projet_id, nom, date_debut, date_fin, lieu, description) 
+                      VALUES (:projet_id, :nom, :date_debut, :date_fin, :lieu, :description)";
+            
+            $stmt = $db->prepare($query);
+
+            // On exécute la requête en liant nos variables
+            $stmt->execute([
+                ':projet_id'   => $projet_id,
+                ':nom'         => $nom_event,
+                ':date_debut'  => $date_debut,
+                ':date_fin'    => $date_fin,
+                ':lieu'        => $lieu,
+                ':description' => $description
+            ]);
+
+            // Succès ! On crée le message et on redirige vers le Dashboard
+            $_SESSION['success_msg'] = "L'événement '$nom_event' a été enregistré dans la base de données !";
+            header('Location: /?page=dashboard');
+            exit;
+
+        } catch (Exception $e) {
+            // En cas de problème de syntaxe SQL ou de connexion
+            $_SESSION['error_msg'] = "Erreur BDD : " . $e->getMessage();
+            header('Location: /?page=nouvel_event');
+            exit;
+        }
     } else {
-        // S'il y a des erreurs, on les stocke en session et on renvoie vers le formulaire
+        // S'il y a des erreurs de validation
         $_SESSION['error_msg'] = implode("<br>", $erreurs);
         header('Location: /?page=nouvel_event');
         exit;
     }
 
 } else {
-    // Si quelqu'un essaie d'accéder à ce fichier directement via l'URL (GET)
+    // Si la page est accédée directement en GET
     header('Location: /');
     exit;
 }
