@@ -1,15 +1,10 @@
 <?php
-// On importe et on inclut la connexion à la BDD
 use Core\Database;
-require_once __DIR__ . '/../../Core/Database.php';
 
-// 1. RÉCUPÉRATION DES ÉVÉNEMENTS
 $evenements = [];
 try {
-    $database = new Database();
-    $db = $database->getConnection();
+    $db = Database::getConnection();
     
-    // On sélectionne tous les événements, triés par date de début (du plus proche au plus lointain)
     $stmt = $db->query("SELECT * FROM evenements ORDER BY date_debut ASC");
     $evenements = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
