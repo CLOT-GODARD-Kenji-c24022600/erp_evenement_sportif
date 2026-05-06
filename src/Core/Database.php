@@ -3,6 +3,7 @@ namespace Core;
 
 use PDO;
 use PDOException;
+use RuntimeException;
 
 class Database {
     private static ?PDO $instance = null;
@@ -16,6 +17,10 @@ class Database {
                 $user = getenv('ALWAYSDATA_DB_USER');
                 $pass = getenv('ALWAYSDATA_DB_PASSWORD');
 
+                if (!$host || !$dbname || !$user) {
+                    throw new RuntimeException('Variables BDD manquantes dans l\'environnement.');
+                }
+
                 self::$instance = new PDO(
                     "mysql:host=$host;dbname=$dbname;charset=utf8mb4",
                     $user,
@@ -27,7 +32,7 @@ class Database {
                     ]
                 );
             } catch (PDOException $e) {
-                die("❌ Erreur BDD : " . $e->getMessage());
+                throw new RuntimeException('Erreur BDD : ' . $e->getMessage(), 0, $e);
             }
         }
         return self::$instance;
