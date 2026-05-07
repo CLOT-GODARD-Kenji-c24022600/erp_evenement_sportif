@@ -43,7 +43,7 @@ try {
     <!-- En-tete de page -->
     <header class="mb-4">
         <h1 class="fw-bold text-body mb-0">Tableau de bord</h1>
-        <p class="text-body-secondary mb-0">Bienvenue sur l'ERP de gestion des evenements sportifs.</p>
+        <p class="text-body-secondary mb-0">Bienvenue sur l'ERP de gestion des événements sportifs.</p>
     </header>
 
     <!-- Message flash Todo -->
@@ -85,19 +85,19 @@ try {
 
         <header class="d-flex justify-content-between align-items-center mb-3">
             <h2 id="events-heading" class="fw-bold fs-5 mb-0">
-                <i class="bi bi-calendar-event me-2 text-primary" aria-hidden="true"></i>Evenements
+                <i class="bi bi-calendar-event me-2 text-primary" aria-hidden="true"></i>Événements
             </h2>
             <a href="/?page=nouvel_event"
                class="btn btn-primary fw-semibold shadow-sm"
                style="background-color:#1a56db; border-color:#1a56db;">
-                <i class="bi bi-plus-lg me-2" aria-hidden="true"></i>Nouvel Evenement
+                <i class="bi bi-plus-lg me-2" aria-hidden="true"></i>Nouvel Événement
             </a>
         </header>
 
         <?php if (empty($evenements)): ?>
             <aside class="alert alert-info shadow-sm bg-primary-subtle border-0 text-primary-emphasis" role="alert">
                 <i class="bi bi-info-circle-fill me-2" aria-hidden="true"></i>
-                <strong>Espace vide :</strong> Les futures cartes des evenements apparaitront ici.
+                <strong>Espace vide :</strong> Les futures cartes des événements apparaitront ici.
             </aside>
 
         <?php else: ?>
@@ -109,9 +109,9 @@ try {
                             <header class="d-flex justify-content-between align-items-start mb-3">
                                 <h3 class="card-title fw-bold mb-0 fs-6 text-body">
                                     <?= htmlspecialchars($event['nom']) ?>
-                                </h3>
+                               </h3>
                                 <span class="badge bg-primary-subtle text-primary rounded-pill fw-semibold">
-                                    <?= !empty($event['sport']) ? htmlspecialchars($event['sport']) : 'General' ?>
+                                    <?= !empty($event['sport']) ? htmlspecialchars($event['sport']) : 'Général' ?>
                                 </span>
                             </header>
                             <p class="card-text text-body-secondary small mb-4"
@@ -140,7 +140,7 @@ try {
                                 <?php if (!empty($event['capacite'])): ?>
                                 <li class="text-body-secondary">
                                     <i class="bi bi-people-fill me-2 text-success" aria-hidden="true"></i>
-                                    Capacite : <?= htmlspecialchars($event['capacite']) ?> places
+                                    Capacité : <?= htmlspecialchars($event['capacite']) ?> places
                                 </li>
                                 <?php endif; ?>
                             </ul>
@@ -148,7 +148,7 @@ try {
                         <footer class="card-footer bg-transparent border-top p-3 text-center">
                             <a href="/?page=gerer_event&id=<?= (int)$event['id'] ?>"
                                class="btn btn-sm btn-outline-secondary fw-semibold w-100 rounded-3">
-                                Gerer l'evenement
+                                Gérer l'événement
                             </a>
                         </footer>
                     </article>

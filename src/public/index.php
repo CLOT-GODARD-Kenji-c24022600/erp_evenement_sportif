@@ -76,8 +76,8 @@ if (!isset($_SESSION['user_id']) && !in_array($page, $pages_publiques)) {
     $page = 'login';
 }
 
-// Liste blanche globale
-$pages_autorisees = ['login', 'inscription', 'dashboard', 'nouvel_event', 'annuaire', 'utilisateurs', 'forgot_password', 'reset_password', 'profil', 'staff', 'recherche', 'change_lang'];
+// Liste blanche globale (C'est ici que 'gerer_event' a été ajouté !)
+$pages_autorisees = ['login', 'inscription', 'dashboard', 'nouvel_event', 'annuaire', 'utilisateurs', 'forgot_password', 'reset_password', 'profil', 'staff', 'recherche', 'change_lang', 'gerer_event'];
 
 if (!in_array($page, $pages_autorisees)) {
     $page = 'dashboard';
