@@ -1,39 +1,81 @@
 <?php
+
+/**
+ * YES - Your Event Solution
+ *
+ * ERP évènementiel
+ *
+ * @file UserController.php
+ * @author CELESTINE Samuel
+ * @author CLOT-GODARD Kenji
+ * @version 1.0
+ * @since 2026
+ */
+
+declare(strict_types=1);
+
 namespace App\Controllers;
 
-use Core\Database;
+use App\Models\UserModel;
+use Core\Security;
+use Core\Session;
 
-class UserController {
-    
-    public static function getAll(): array {
-        $db = Database::getConnection();
-        $stmt = $db->query("SELECT * FROM utilisateurs ORDER BY id DESC");
-        return $stmt->fetchAll();
+/**
+ * Contrôleur de gestion des utilisateurs (administration).
+ *
+ * Permet à un administrateur d'approuver, rejeter, promouvoir,
+ * rétrograder ou supprimer des comptes utilisateurs.
+ */
+class UserController
+{
+    private UserModel $userModel;
+
+    /**
+     * @param UserModel $userModel Modèle utilisateur.
+     */
+    public function __construct(UserModel $userModel)
+    {
+        $this->userModel = $userModel;
     }
 
-    // Gère toutes les actions de l'admin
-    public static function gererAction(int $id, string $action) {
-        $db = Database::getConnection();
+    /**
+     * Retourne tous les utilisateurs (pour la liste admin).
+     *
+     * @return array[]
+     */
+    public function getAll(): array
+    {
+        return $this->userModel->getAll();
+    }
 
-        if ($action === 'approuver') {
-            $stmt = $db->prepare("UPDATE utilisateurs SET statut = 'approuve' WHERE id = :id");
-            $stmt->execute(['id' => $id]);
-        } 
-        elseif ($action === 'rejeter') {
-            $stmt = $db->prepare("UPDATE utilisateurs SET statut = 'rejete' WHERE id = :id");
-            $stmt->execute(['id' => $id]);
-        } 
-        elseif ($action === 'supprimer') {
-            $stmt = $db->prepare("DELETE FROM utilisateurs WHERE id = :id");
-            $stmt->execute(['id' => $id]);
+    /**
+     * Exécute une action administrative sur un utilisateur.
+     *
+     * @param int    $targetId Identifiant de l'utilisateur cible.
+     * @param string $action   Action à effectuer.
+     * @return void
+     */
+    public function handleAction(int $targetId, string $action): void
+    {
+        $currentUserId = (int) Session::get('user_id', 0);
+
+        // Sécurité : un admin ne peut pas agir sur son propre compte
+        if ($targetId === $currentUserId) {
+            return;
         }
-        elseif ($action === 'promouvoir_admin') {
-            $stmt = $db->prepare("UPDATE utilisateurs SET role = 'admin' WHERE id = :id");
-            $stmt->execute(['id' => $id]);
+
+        $validActions = ['approuver', 'rejeter', 'supprimer', 'promouvoir_admin', 'retrograder_staff'];
+
+        if (!in_array($action, $validActions, true)) {
+            return;
         }
-        elseif ($action === 'retrograder_staff') {
-            $stmt = $db->prepare("UPDATE utilisateurs SET role = 'staff' WHERE id = :id");
-            $stmt->execute(['id' => $id]);
-        }
+
+        match ($action) {
+            'approuver'        => $this->userModel->setStatut($targetId, 'approuve'),
+            'rejeter'          => $this->userModel->setStatut($targetId, 'rejete'),
+            'supprimer'        => $this->userModel->delete($targetId),
+            'promouvoir_admin' => $this->userModel->setRole($targetId, 'admin'),
+            'retrograder_staff'=> $this->userModel->setRole($targetId, 'staff'),
+        };
     }
 }

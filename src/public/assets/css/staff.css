@@ -1,0 +1,75 @@
+/**
+ * YES - Your Event Solution
+ * CSS : Page Staff et Recherche
+ *
+ * @file staff.css
+ * @author CELESTINE Samuel
+ * @author CLOT-GODARD Kenji
+ * @version 1.0
+ * @since 2026
+ */
+
+/* ─── Carte staff ───────────────────────────────────── */
+.staff-card-hover,
+.search-card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.staff-card-hover:hover,
+.search-card-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* ─── Avatar staff ──────────────────────────────────── */
+.staff-avatar,
+.search-avatar {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border: 3px solid #fff;
+  font-size: 2.5rem;
+}
+
+/* ─── Point de statut ───────────────────────────────── */
+.status-dot {
+  margin-bottom: 5px;
+  margin-right: 5px;
+}
+
+/* ─── Search bar staff ──────────────────────────────── */
+.staff-search-wrapper {
+  width: 25%;
+  min-width: 200px;
+}
+
+/* ─── Search results ────────────────────────────────── */
+.search-section-title {
+  letter-spacing: 1px;
+  font-size: 0.85rem;
+}
+
+.search-avatar {
+  width: 80px;
+  height: 80px;
+  font-size: 2rem;
+}
+
+/* ─── Profile ───────────────────────────────────────── */
+.profile-avatar {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border: 4px solid #fff;
+}
+
+.profile-avatar-placeholder {
+  width: 150px;
+  height: 150px;
+  font-size: 4rem;
+}
+
+/* ─── Event form label ──────────────────────────────── */
+.event-label {
+  font-size: 0.9rem;
+}

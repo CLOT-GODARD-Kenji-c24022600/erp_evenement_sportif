@@ -1,10 +1,29 @@
 <?php
 
+/**
+ * YES - Your Event Solution
+ *
+ * ERP évènementiel
+ *
+ * @file TodoModel.php
+ * @author CELESTINE Samuel
+ * @author CLOT-GODARD Kenji
+ * @version 1.0
+ * @since 2026
+ */
+
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Core\Database;
 use PDO;
 
+/**
+ * Modèle de gestion des tâches (Todo).
+ *
+ * Fournit les opérations CRUD et les statistiques sur la table `todos`.
+ */
 class TodoModel
 {
     private PDO $db;
@@ -14,15 +33,19 @@ class TodoModel
         $this->db = Database::getConnection();
     }
 
-    /** Recupere toutes les taches avec createur et assigne */
+    /**
+     * Retourne toutes les tâches avec les informations du créateur et de l'assigné.
+     *
+     * @return array[]
+     */
     public function getAllTodos(): array
     {
-        $stmt = $this->db->query(
+        return $this->db->query(
             "SELECT t.*,
-                    u.prenom   AS createur_prenom,
-                    u.nom      AS createur_nom,
-                    a.prenom   AS assigne_prenom,
-                    a.nom      AS assigne_nom
+                    u.prenom AS createur_prenom,
+                    u.nom    AS createur_nom,
+                    a.prenom AS assigne_prenom,
+                    a.nom    AS assigne_nom
              FROM todos t
              LEFT JOIN utilisateurs u ON t.created_by  = u.id
              LEFT JOIN utilisateurs a ON t.assigned_to = a.id
@@ -30,42 +53,55 @@ class TodoModel
                 FIELD(t.status, 'en_cours', 'en_attente', 'termine'),
                 t.priority DESC,
                 t.created_at ASC"
-        );
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        )->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /** Statistiques globales */
+    /**
+     * Retourne les statistiques globales des tâches.
+     *
+     * @return array{total: int, done: int, en_cours: int, en_attente: int}
+     */
     public function getStats(): array
     {
         $stmt = $this->db->query(
             "SELECT
-                COUNT(*)                          AS total,
-                SUM(status = 'termine')           AS done,
-                SUM(status = 'en_cours')          AS en_cours,
-                SUM(status = 'en_attente')        AS en_attente
+                COUNT(*)                   AS total,
+                SUM(status = 'termine')    AS done,
+                SUM(status = 'en_cours')   AS en_cours,
+                SUM(status = 'en_attente') AS en_attente
              FROM todos"
         );
+
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
         return [
-            'total'      => (int)($row['total']      ?? 0),
-            'done'       => (int)($row['done']       ?? 0),
-            'en_cours'   => (int)($row['en_cours']   ?? 0),
-            'en_attente' => (int)($row['en_attente'] ?? 0),
+            'total'      => (int) ($row['total']      ?? 0),
+            'done'       => (int) ($row['done']       ?? 0),
+            'en_cours'   => (int) ($row['en_cours']   ?? 0),
+            'en_attente' => (int) ($row['en_attente'] ?? 0),
         ];
     }
 
-    /** Liste des utilisateurs approuves pour le select */
+    /**
+     * Retourne les utilisateurs approuvés pour le sélecteur d'assignation.
+     *
+     * @return array[]
+     */
     public function getUtilisateurs(): array
     {
-        $stmt = $this->db->query(
+        return $this->db->query(
             "SELECT id, prenom, nom FROM utilisateurs
              WHERE statut = 'approuve'
              ORDER BY prenom ASC"
-        );
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        )->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /** Cree une nouvelle tache */
+    /**
+     * Crée une nouvelle tâche.
+     *
+     * @param array $data Données de la tâche.
+     * @return bool
+     */
     public function create(array $data): bool
     {
         $stmt = $this->db->prepare(
@@ -74,6 +110,7 @@ class TodoModel
              VALUES
                 (:title, :description, :category, :priority, :due_date, :event_id, :created_by, :assigned_to, :status, NOW())"
         );
+
         return $stmt->execute([
             'title'       => $data['title'],
             'description' => $data['description'] ?? null,
@@ -87,31 +124,50 @@ class TodoModel
         ]);
     }
 
-    /** Change le statut d'une tache */
+    /**
+     * Change le statut d'une tâche.
+     *
+     * @param int    $id     Identifiant de la tâche.
+     * @param string $status Nouveau statut.
+     * @return bool
+     */
     public function setStatus(int $id, string $status): bool
     {
         $allowed = ['en_attente', 'en_cours', 'termine'];
+
         if (!in_array($status, $allowed, true)) {
             return false;
         }
-        $stmt = $this->db->prepare(
-            "UPDATE todos SET status = ? WHERE id = ?"
-        );
-        return $stmt->execute([$status, $id]);
+
+        $stmt = $this->db->prepare('UPDATE todos SET status = :status WHERE id = :id');
+
+        return $stmt->execute(['status' => $status, 'id' => $id]);
     }
 
-    /** Supprime une tache */
+    /**
+     * Supprime une tâche.
+     *
+     * @param int $id Identifiant de la tâche.
+     * @return bool
+     */
     public function delete(int $id): bool
     {
-        $stmt = $this->db->prepare("DELETE FROM todos WHERE id = ?");
-        return $stmt->execute([$id]);
+        $stmt = $this->db->prepare('DELETE FROM todos WHERE id = :id');
+
+        return $stmt->execute(['id' => $id]);
     }
 
-    /** Modifie une tache */
+    /**
+     * Met à jour une tâche existante.
+     *
+     * @param int   $id   Identifiant de la tâche.
+     * @param array $data Nouvelles données.
+     * @return bool
+     */
     public function update(int $id, array $data): bool
     {
         $stmt = $this->db->prepare(
-            "UPDATE todos
+            'UPDATE todos
              SET title       = :title,
                  description = :description,
                  category    = :category,
@@ -120,8 +176,9 @@ class TodoModel
                  event_id    = :event_id,
                  assigned_to = :assigned_to,
                  status      = :status
-             WHERE id = :id"
+             WHERE id = :id'
         );
+
         return $stmt->execute([
             'id'          => $id,
             'title'       => $data['title'],

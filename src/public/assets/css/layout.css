@@ -1,0 +1,212 @@
+/**
+ * YES - Your Event Solution
+ * CSS global : Layout (sidebar, topbar, main-content)
+ *
+ * @file layout.css
+ * @author CELESTINE Samuel
+ * @author CLOT-GODARD Kenji
+ * @version 1.0
+ * @since 2026
+ */
+
+/* ─── Variables ─────────────────────────────────────── */
+:root {
+  --sb-width: 260px;
+  --sb-collapsed: 80px;
+  --transition: all 0.3s ease;
+  --sidebar-bg: #1e293b;
+}
+
+/* ─── Reset / Base ──────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: var(--bs-tertiary-bg);
+  transition: var(--transition);
+  margin: 0;
+  overflow-x: hidden;
+}
+
+/* ─── Dark mode overrides ───────────────────────────── */
+[data-bs-theme="dark"] {
+  --bs-body-bg: #0f172a;
+  --bs-tertiary-bg: #1e293b;
+  --bs-body-color: #f1f5f9;
+  --bs-border-color: #334155;
+}
+
+/* ─── Sidebar ───────────────────────────────────────── */
+.sidebar {
+  width: var(--sb-width);
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1040;
+  transition: var(--transition);
+  background-color: var(--sidebar-bg);
+  overflow: hidden;
+}
+
+/* Sidebar réduite */
+body.collapsed .sidebar {
+  width: var(--sb-collapsed);
+}
+
+body.collapsed .sb-text,
+body.collapsed .logo-link span {
+  display: none !important;
+}
+
+body.collapsed .sidebar-header {
+  justify-content: center !important;
+  padding: 0 !important;
+}
+
+body.collapsed .toggle-btn {
+  position: static;
+  margin: 0 auto;
+  font-size: 1.5rem;
+}
+
+body.collapsed #toggleIcon {
+  transform: rotate(180deg);
+}
+
+body.collapsed .sidebar .nav-link {
+  justify-content: center !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+body.collapsed .sidebar .nav-link i {
+  margin: 0 !important;
+}
+
+body.collapsed .user-block {
+  justify-content: center !important;
+}
+
+body.collapsed .user-block .ms-3 {
+  display: none !important;
+}
+
+/* Toggle button */
+.toggle-btn {
+  position: absolute;
+  right: 15px;
+  transition: var(--transition);
+}
+
+#toggleIcon {
+  transition: transform 0.3s;
+}
+
+/* Logo box */
+.logo-box {
+  width: 35px;
+  height: 35px;
+}
+
+/* Avatar sidebar */
+.avatar-circle {
+  width: 40px;
+  height: 40px;
+}
+
+/* Hover user block */
+.user-block:hover {
+  opacity: 0.85;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+/* ─── Main content ──────────────────────────────────── */
+.main-content {
+  margin-left: var(--sb-width);
+  transition: var(--transition);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  width: calc(100% - var(--sb-width));
+}
+
+body.collapsed .main-content {
+  margin-left: var(--sb-collapsed);
+  width: calc(100% - var(--sb-collapsed));
+}
+
+/* ─── Top bar ───────────────────────────────────────── */
+.top-bar {
+  height: 70px;
+  background: var(--bs-body-bg);
+  border-bottom: 1px solid var(--bs-border-color);
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+}
+
+/* Search bar */
+.search-btn {
+  border-radius: 8px 0 0 8px;
+}
+
+.search-input {
+  width: 300px;
+  border-radius: 0 8px 8px 0;
+}
+
+/* ─── Notifications ─────────────────────────────────── */
+.notif-dropdown {
+  width: 300px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.notif-dot {
+  width: 10px;
+  height: 10px;
+}
+
+/* ─── Quick-create alert ────────────────────────────── */
+.qc-alert {
+  margin-top: 80px !important;
+}
+
+/* ─── Footer ────────────────────────────────────────── */
+.app-footer {
+  margin-top: auto;
+}
+
+/* ─── Event card description clamp ─────────────────── */
+.event-desc {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ─── Responsive ────────────────────────────────────── */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  body.sidebar-open .sidebar {
+    transform: translateX(0);
+  }
+
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .search-input {
+    width: 180px;
+  }
+}

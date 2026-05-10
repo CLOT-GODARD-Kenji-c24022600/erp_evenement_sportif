@@ -1,0 +1,29 @@
+/**
+ * YES - Your Event Solution
+ * CSS : Dashboard et Todolist
+ *
+ * @file dashboard.css
+ * @author CELESTINE Samuel
+ * @author CLOT-GODARD Kenji
+ * @version 1.0
+ * @since 2026
+ */
+
+/* ─── Todolist ──────────────────────────────────────── */
+.todo-progress {
+  height: 10px;
+  border-radius: 8px;
+  accent-color: #1a56db;
+}
+
+.todo-stat-card {
+  min-width: 90px;
+}
+
+.todo-summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
