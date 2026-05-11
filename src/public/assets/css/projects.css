@@ -1,0 +1,50 @@
+/* ── Cards projet ────────────────────────────────── */
+.project-card {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.project-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,.10) !important;
+}
+.project-desc {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Suggestions recherche AJAX ─────────────────── */
+.search-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1060;
+  max-height: 360px;
+  overflow-y: auto;
+  border-radius: .5rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+}
+.search-suggestions .suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .6rem 1rem;
+  cursor: pointer;
+  transition: background-color .12s ease;
+  text-decoration: none;
+  color: inherit;
+}
+.search-suggestions .suggestion-item:hover,
+.search-suggestions .suggestion-item:focus {
+  background-color: var(--bs-tertiary-bg);
+  outline: none;
+}
+.search-suggestions .suggestion-category {
+  font-size: .7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  padding: .35rem 1rem;
+  border-bottom: 1px solid var(--bs-border-color);
+}

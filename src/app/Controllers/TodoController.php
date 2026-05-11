@@ -3,12 +3,10 @@
 /**
  * YES - Your Event Solution
  *
- * ERP évènementiel
- *
  * @file TodoController.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.0
+ * @version 1.1
  * @since 2026
  */
 
@@ -20,29 +18,15 @@ use App\Models\TodoModel;
 use Core\Security;
 use Core\Session;
 
-/**
- * Contrôleur de gestion des tâches (Todo).
- *
- * Dispatche les actions POST : création, modification de statut,
- * édition complète et suppression d'une tâche.
- */
 class TodoController
 {
     private TodoModel $model;
 
-    /**
-     * @param TodoModel $model Modèle tâches.
-     */
     public function __construct(TodoModel $model)
     {
         $this->model = $model;
     }
 
-    /**
-     * Traite la requête POST en cours et dispatche vers la bonne action.
-     *
-     * @return string|null Résultat au format "type:message", ou null si rien à traiter.
-     */
     public function handleRequest(): ?string
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['todo_action'])) {
@@ -61,12 +45,6 @@ class TodoController
         };
     }
 
-    /**
-     * Crée une nouvelle tâche.
-     *
-     * @param int $userId Identifiant de l'utilisateur créateur.
-     * @return string Résultat au format "type:message".
-     */
     private function create(int $userId): string
     {
         $title = Security::sanitizeString($_POST['title'] ?? '');
@@ -80,8 +58,9 @@ class TodoController
             'description' => Security::sanitizeString($_POST['description'] ?? ''),
             'category'    => $_POST['category']    ?? 'general',
             'priority'    => Security::sanitizeInt($_POST['priority']    ?? 1),
-            'due_date'    => !empty($_POST['due_date'])    ? $_POST['due_date']                       : null,
-            'event_id'    => !empty($_POST['event_id'])    ? Security::sanitizeInt($_POST['event_id']) : null,
+            'due_date'    => !empty($_POST['due_date'])    ? $_POST['due_date']                           : null,
+            'event_id'    => !empty($_POST['event_id'])    ? Security::sanitizeInt($_POST['event_id'])    : null,
+            'projet_id'   => !empty($_POST['projet_id'])   ? Security::sanitizeInt($_POST['projet_id'])   : null,
             'assigned_to' => !empty($_POST['assigned_to']) ? Security::sanitizeInt($_POST['assigned_to']) : null,
             'status'      => $_POST['status'] ?? 'en_attente',
             'created_by'  => $userId,
@@ -90,11 +69,6 @@ class TodoController
         return 'success:Tâche créée avec succès !';
     }
 
-    /**
-     * Change le statut d'une tâche.
-     *
-     * @return string Résultat au format "type:message".
-     */
     private function setStatus(): string
     {
         $id     = Security::sanitizeInt($_POST['todo_id'] ?? 0);
@@ -109,11 +83,6 @@ class TodoController
         return 'success:Statut mis à jour.';
     }
 
-    /**
-     * Supprime une tâche.
-     *
-     * @return string Résultat au format "type:message".
-     */
     private function delete(): string
     {
         $id = Security::sanitizeInt($_POST['todo_id'] ?? 0);
@@ -127,11 +96,6 @@ class TodoController
         return 'success:Tâche supprimée.';
     }
 
-    /**
-     * Modifie une tâche existante.
-     *
-     * @return string Résultat au format "type:message".
-     */
     private function edit(): string
     {
         $id    = Security::sanitizeInt($_POST['todo_id'] ?? 0);
@@ -146,8 +110,9 @@ class TodoController
             'description' => Security::sanitizeString($_POST['description'] ?? ''),
             'category'    => $_POST['category']    ?? 'general',
             'priority'    => Security::sanitizeInt($_POST['priority']    ?? 1),
-            'due_date'    => !empty($_POST['due_date'])    ? $_POST['due_date']                       : null,
-            'event_id'    => !empty($_POST['event_id'])    ? Security::sanitizeInt($_POST['event_id']) : null,
+            'due_date'    => !empty($_POST['due_date'])    ? $_POST['due_date']                           : null,
+            'event_id'    => !empty($_POST['event_id'])    ? Security::sanitizeInt($_POST['event_id'])    : null,
+            'projet_id'   => !empty($_POST['projet_id'])   ? Security::sanitizeInt($_POST['projet_id'])   : null,
             'assigned_to' => !empty($_POST['assigned_to']) ? Security::sanitizeInt($_POST['assigned_to']) : null,
             'status'      => $_POST['status'] ?? 'en_attente',
         ]);

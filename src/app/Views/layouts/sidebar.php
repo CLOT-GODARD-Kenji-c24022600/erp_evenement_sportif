@@ -8,7 +8,7 @@
  * @file sidebar.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.0
+ * @version 1.1
  * @since 2026
  *
  * Variables attendues :
@@ -20,6 +20,8 @@
  */
 
 declare(strict_types=1);
+
+$isProjectPage = in_array($page, ['projets', 'projet_detail'], true);
 ?>
 <nav class="sidebar d-flex flex-column flex-shrink-0 text-white shadow" aria-label="Navigation principale">
 
@@ -46,6 +48,15 @@ declare(strict_types=1);
                <?= $page === 'dashboard' ? 'aria-current="page"' : '' ?>>
                 <i class="bi bi-grid-1x2-fill fs-5 mx-2" aria-hidden="true"></i>
                 <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_dashboard'], ENT_QUOTES) ?></span>
+            </a>
+        </li>
+        <li class="nav-item mb-1" role="none">
+            <a href="?page=projets"
+               class="nav-link text-white d-flex align-items-center py-3 <?= $isProjectPage ? 'active bg-primary' : 'opacity-75' ?>"
+               role="menuitem"
+               <?= $isProjectPage ? 'aria-current="page"' : '' ?>>
+                <i class="bi bi-kanban-fill fs-5 mx-2" aria-hidden="true"></i>
+                <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_projects'], ENT_QUOTES) ?></span>
             </a>
         </li>
         <li class="nav-item mb-1" role="none">

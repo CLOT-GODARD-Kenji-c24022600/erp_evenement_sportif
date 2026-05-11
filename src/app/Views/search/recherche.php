@@ -3,12 +3,10 @@
 /**
  * YES - Your Event Solution
  *
- * Vue : Résultats de la recherche globale.
- *
  * @file recherche.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.0
+ * @version 1.1
  * @since 2026
  *
  * Variables attendues :
@@ -122,7 +120,8 @@ declare(strict_types=1);
                             <?php endif; ?>
                         </section>
                         <footer class="card-footer bg-white border-top-0 pb-4 px-4">
-                            <a href="#" class="btn btn-sm btn-warning px-4 rounded-pill stretched-link text-white fw-bold">
+                            <a href="/?page=projet_detail&id=<?= (int) $projet['id'] ?>"
+                               class="btn btn-sm btn-warning px-4 rounded-pill stretched-link text-white fw-bold">
                                 <?= htmlspecialchars($t['search_btn_open'], ENT_QUOTES) ?>
                             </a>
                         </footer>
@@ -169,7 +168,8 @@ declare(strict_types=1);
                             <?php endif; ?>
                         </section>
                         <footer class="card-footer bg-white border-top-0 pb-4 px-4">
-                            <a href="#" class="btn btn-sm btn-success px-4 rounded-pill stretched-link">
+                            <a href="/?page=gerer_event&id=<?= (int) $event['id'] ?>"
+                               class="btn btn-sm btn-success px-4 rounded-pill stretched-link">
                                 <?= htmlspecialchars($t['search_btn_details'], ENT_QUOTES) ?>
                             </a>
                         </footer>

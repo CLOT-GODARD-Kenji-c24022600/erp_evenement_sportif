@@ -3,16 +3,15 @@
 /**
  * YES - Your Event Solution
  *
- * Vue : Formulaire de création d'un nouvel événement.
- *
  * @file nouvel_event.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.0
+ * @version 1.1
  * @since 2026
  *
  * Variables attendues :
- * @var array $t Traductions chargées.
+ * @var array $t       Traductions chargées.
+ * @var array $projets Liste des projets pour le select.
  */
 
 declare(strict_types=1);
@@ -91,11 +90,11 @@ $errorMsg = \Core\Session::flash('error_msg');
                             <?= htmlspecialchars($t['form_end_date'], ENT_QUOTES) ?>
                         </label>
                         <input type="date" class="form-control form-control-lg fs-6"
-                               id="date_fin" name="date_fin" disabled>
+                               id="date_fin" name="date_fin">
                     </fieldset>
                 </div>
 
-                <div class="row mb-5">
+                <div class="row mb-4">
                     <fieldset class="col-md-6 border-0 p-0 px-2">
                         <label for="lieu" class="form-label fw-semibold text-body event-label">
                             <?= htmlspecialchars($t['form_location'], ENT_QUOTES) ?>
@@ -115,6 +114,20 @@ $errorMsg = \Core\Session::flash('error_msg');
                                min="0">
                     </fieldset>
                 </div>
+
+                <fieldset class="mb-5 border-0 p-0">
+                    <label for="projet_id" class="form-label fw-semibold text-body event-label">
+                        <?= htmlspecialchars($t['form_project'], ENT_QUOTES) ?>
+                    </label>
+                    <select class="form-select form-select-lg fs-6" id="projet_id" name="projet_id">
+                        <option value=""><?= htmlspecialchars($t['label_none'], ENT_QUOTES) ?></option>
+                        <?php foreach ($projets as $pr): ?>
+                        <option value="<?= (int) $pr['id'] ?>">
+                            <?= htmlspecialchars((string) $pr['nom'], ENT_QUOTES) ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                </fieldset>
 
                 <div class="d-flex justify-content-end gap-3 pt-4 border-top">
                     <a href="/?page=dashboard" class="btn btn-outline-secondary px-4 py-2 fw-semibold rounded-3">

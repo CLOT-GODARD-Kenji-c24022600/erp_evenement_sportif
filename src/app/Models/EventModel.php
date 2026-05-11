@@ -90,21 +90,25 @@ class EventModel
      */
     public function create(array $data): bool
     {
+        $projetId = isset($data['projet_id']) && $data['projet_id'] !== '' 
+                    ? (int) $data['projet_id'] 
+                    : null;
+
         $stmt = $this->db->prepare(
             'INSERT INTO evenements (projet_id, nom, sport, date_debut, date_fin, lieu, capacite, description)
              VALUES (:projet_id, :nom, :sport, :date_debut, :date_fin, :lieu, :capacite, :description)'
         );
 
-        return $stmt->execute([
-            'projet_id'   => $data['projet_id']   ?? 1,
-            'nom'         => $data['nom'],
-            'sport'       => $data['sport']        ?? null,
-            'date_debut'  => $data['date_debut'],
-            'date_fin'    => $data['date_fin']     ?? null,
-            'lieu'        => $data['lieu']         ?? null,
-            'capacite'    => $data['capacite']     ?? null,
-            'description' => $data['description']  ?? null,
-        ]);
+        $stmt->bindValue(':projet_id',   $projetId,              $projetId === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+        $stmt->bindValue(':nom',         $data['nom'],           PDO::PARAM_STR);
+        $stmt->bindValue(':sport',       $data['sport'] ?? null, PDO::PARAM_STR);
+        $stmt->bindValue(':date_debut',  $data['date_debut'],    PDO::PARAM_STR);
+        $stmt->bindValue(':date_fin',    $data['date_fin'] ?? null, PDO::PARAM_STR);
+        $stmt->bindValue(':lieu',        $data['lieu'] ?? null,  PDO::PARAM_STR);
+        $stmt->bindValue(':capacite',    $data['capacite'] ?? null, $data['capacite'] === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+        $stmt->bindValue(':description', $data['description'] ?? null, PDO::PARAM_STR);
+
+        return $stmt->execute();
     }
 
     /**
@@ -130,12 +134,12 @@ class EventModel
 
         return $stmt->execute([
             'nom'         => $data['nom'],
-            'sport'       => $data['sport']        ?? null,
+            'sport'       => $data['sport']       ?? null,
             'date_debut'  => $data['date_debut'],
-            'date_fin'    => $data['date_fin']     ?? null,
-            'lieu'        => $data['lieu']         ?? null,
-            'capacite'    => $data['capacite']     ?? null,
-            'description' => $data['description']  ?? null,
+            'date_fin'    => $data['date_fin']    ?? null,
+            'lieu'        => $data['lieu']        ?? null,
+            'capacite'    => $data['capacite']    ?? null,
+            'description' => $data['description'] ?? null,
             'id'          => $id,
         ]);
     }

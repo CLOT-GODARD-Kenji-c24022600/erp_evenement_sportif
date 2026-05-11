@@ -9,7 +9,7 @@
  * @file todolist.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.0
+ * @version 1.1
  * @since 2026
  *
  * Variables attendues (héritées du dashboard) :
@@ -17,6 +17,7 @@
  * @var array $todoStats    Statistiques des tâches.
  * @var array $utilisateurs Liste des utilisateurs pour le select.
  * @var array $evenements   Liste des événements pour le select.
+ * @var array $projets      Liste des projets pour le select.
  * @var array $t            Traductions chargées.
  */
 
@@ -203,6 +204,12 @@ $terminees = array_filter($todos, fn($t) => $t['status'] === 'termine');
                                 <small class="text-body-secondary">
                                     <i class="bi bi-person-fill me-1 text-primary" aria-hidden="true"></i>
                                     <?= htmlspecialchars((string) $todo['assigne_prenom'] . ' ' . $todo['assigne_nom'], ENT_QUOTES) ?>
+                                </small>
+                                <?php endif; ?>
+                                <?php if (!empty($todo['projet_nom'])): ?>
+                                <small class="text-body-secondary">
+                                    <i class="bi bi-kanban-fill me-1 text-info" aria-hidden="true"></i>
+                                    <?= htmlspecialchars((string) $todo['projet_nom'], ENT_QUOTES) ?>
                                 </small>
                                 <?php endif; ?>
                                 <?php if (!empty($todo['createur_prenom'])): ?>
@@ -392,6 +399,19 @@ $terminees = array_filter($todos, fn($t) => $t['status'] === 'termine');
                             </select>
                         </p>
                     </section>
+                    <section class="row g-3 mb-3">
+                        <p class="col mb-0">
+                            <label for="new-projet" class="form-label fw-semibold">
+                                <?= htmlspecialchars($t['todo_field_project'], ENT_QUOTES) ?>
+                            </label>
+                            <select id="new-projet" name="projet_id" class="form-select rounded-3">
+                                <option value=""><?= htmlspecialchars($t['todo_no_project'], ENT_QUOTES) ?></option>
+                                <?php foreach ($projets as $pr): ?>
+                                <option value="<?= (int) $pr['id'] ?>"><?= htmlspecialchars((string) $pr['nom'], ENT_QUOTES) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </p>
+                    </section>
                     <footer class="d-flex justify-content-end gap-2 pt-2">
                         <button type="button" class="btn btn-outline-secondary rounded-3" data-bs-dismiss="modal">
                             <?= htmlspecialchars($t['todo_btn_cancel'], ENT_QUOTES) ?>
@@ -500,6 +520,19 @@ $terminees = array_filter($todos, fn($t) => $t['status'] === 'termine');
                                 <option value=""><?= htmlspecialchars($t['todo_no_event'], ENT_QUOTES) ?></option>
                                 <?php foreach ($evenements as $ev): ?>
                                 <option value="<?= (int) $ev['id'] ?>"><?= htmlspecialchars((string) $ev['nom'], ENT_QUOTES) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </p>
+                    </section>
+                    <section class="row g-3 mb-3">
+                        <p class="col mb-0">
+                            <label for="edit-projet" class="form-label fw-semibold">
+                                <?= htmlspecialchars($t['todo_field_project'], ENT_QUOTES) ?>
+                            </label>
+                            <select id="edit-projet" name="projet_id" class="form-select rounded-3">
+                                <option value=""><?= htmlspecialchars($t['todo_no_project'], ENT_QUOTES) ?></option>
+                                <?php foreach ($projets as $pr): ?>
+                                <option value="<?= (int) $pr['id'] ?>"><?= htmlspecialchars((string) $pr['nom'], ENT_QUOTES) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </p>

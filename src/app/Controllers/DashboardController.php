@@ -8,7 +8,7 @@
  * @file DashboardController.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.0
+ * @version 1.1
  * @since 2026
  */
 
@@ -18,6 +18,7 @@ namespace App\Controllers;
 
 use App\Models\EventModel;
 use App\Models\TodoModel;
+use App\Models\ProjectModel;
 use App\Controllers\TodoController;
 use Core\Session;
 
@@ -25,22 +26,22 @@ use Core\Session;
  * Contrôleur du tableau de bord.
  *
  * Charge les données nécessaires à l'affichage du dashboard :
- * liste des événements, statistiques et tâches.
+ * liste des événements, statistiques, tâches et projets.
  */
 class DashboardController
 {
-    private EventModel   $eventModel;
-    private TodoModel    $todoModel;
+    private EventModel     $eventModel;
+    private TodoModel      $todoModel;
     private TodoController $todoController;
 
     /**
-     * @param EventModel    $eventModel     Modèle événements.
-     * @param TodoModel     $todoModel      Modèle tâches.
+     * @param EventModel     $eventModel     Modèle événements.
+     * @param TodoModel      $todoModel      Modèle tâches.
      * @param TodoController $todoController Contrôleur tâches.
      */
     public function __construct(
-        EventModel    $eventModel,
-        TodoModel     $todoModel,
+        EventModel     $eventModel,
+        TodoModel      $todoModel,
         TodoController $todoController
     ) {
         $this->eventModel     = $eventModel;
@@ -58,6 +59,7 @@ class DashboardController
      *   todos: array,
      *   todoStats: array,
      *   utilisateurs: array,
+     *   projets: array,
      *   todoMsg: string|null,
      *   todoType: string,
      *   erreur_bdd: string|null
@@ -97,11 +99,21 @@ class DashboardController
             // Table inexistante : migration SQL pas encore jouée
         }
 
+        // Chargement des projets pour les selects de la todolist
+        $projets = [];
+
+        try {
+            $projets = (new ProjectModel())->getAllSimple();
+        } catch (\Exception $e) {
+            // Table projets inexistante : migration pas encore jouée
+        }
+
         return [
             'evenements'   => $evenements,
             'todos'        => $todos,
             'todoStats'    => $todoStats,
             'utilisateurs' => $utilisateurs,
+            'projets'      => $projets,
             'todoMsg'      => $todoMsg,
             'todoType'     => $todoType,
             'erreur_bdd'   => $erreurBdd,

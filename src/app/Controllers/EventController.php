@@ -49,16 +49,19 @@ class EventController
             Router::redirect('/?page=dashboard');
         }
 
-        $nom        = Security::sanitizeString($_POST['nom_event']    ?? '');
-        $sport      = Security::sanitizeString($_POST['type_sport']   ?? '');
-        $description = Security::sanitizeString($_POST['description'] ?? '');
-        $dateDebut  = Security::sanitizeString($_POST['date_debut']   ?? '');
-        $lieu       = Security::sanitizeString($_POST['lieu']         ?? '');
-        $dateFinRaw = Security::sanitizeString($_POST['date_fin']     ?? '');
-        $dateFin    = $dateFinRaw !== '' ? $dateFinRaw : null;
-        $capacite   = isset($_POST['capacite']) && $_POST['capacite'] !== ''
-                      ? Security::sanitizeInt($_POST['capacite'])
-                      : null;
+        $nom         = Security::sanitizeString($_POST['nom_event']    ?? '');
+        $sport       = Security::sanitizeString($_POST['type_sport']   ?? '');
+        $description = Security::sanitizeString($_POST['description']  ?? '');
+        $dateDebut   = Security::sanitizeString($_POST['date_debut']   ?? '');
+        $lieu        = Security::sanitizeString($_POST['lieu']         ?? '');
+        $dateFinRaw  = Security::sanitizeString($_POST['date_fin']     ?? '');
+        $dateFin     = $dateFinRaw !== '' ? $dateFinRaw : null;
+        $capacite    = isset($_POST['capacite']) && $_POST['capacite'] !== ''
+                       ? Security::sanitizeInt($_POST['capacite'])
+                       : null;
+        $projetId    = isset($_POST['projet_id']) && $_POST['projet_id'] !== ''
+                       ? Security::sanitizeInt($_POST['projet_id'])
+                       : null;
 
         $erreurs = $this->validateEvent($nom, $dateDebut, $dateFin);
 
@@ -76,7 +79,7 @@ class EventController
                 'date_fin'    => $dateFin,
                 'lieu'        => $lieu,
                 'capacite'    => $capacite,
-                'projet_id'   => 1,
+                'projet_id'   => $projetId,
             ]);
 
             Session::set('success_msg', "L'événement '{$nom}' a été enregistré avec succès !");
@@ -124,16 +127,16 @@ class EventController
             }
 
             if ($action === 'update') {
-                $nom        = Security::sanitizeString($_POST['nom_event']    ?? '');
-                $sport      = Security::sanitizeString($_POST['type_sport']   ?? '');
-                $description = Security::sanitizeString($_POST['description'] ?? '');
-                $dateDebut  = Security::sanitizeString($_POST['date_debut']   ?? '');
-                $lieu       = Security::sanitizeString($_POST['lieu']         ?? '');
-                $dateFinRaw = Security::sanitizeString($_POST['date_fin']     ?? '');
-                $dateFin    = $dateFinRaw !== '' ? $dateFinRaw : null;
-                $capacite   = isset($_POST['capacite']) && $_POST['capacite'] !== ''
-                              ? Security::sanitizeInt($_POST['capacite'])
-                              : null;
+                $nom         = Security::sanitizeString($_POST['nom_event']    ?? '');
+                $sport       = Security::sanitizeString($_POST['type_sport']   ?? '');
+                $description = Security::sanitizeString($_POST['description']  ?? '');
+                $dateDebut   = Security::sanitizeString($_POST['date_debut']   ?? '');
+                $lieu        = Security::sanitizeString($_POST['lieu']         ?? '');
+                $dateFinRaw  = Security::sanitizeString($_POST['date_fin']     ?? '');
+                $dateFin     = $dateFinRaw !== '' ? $dateFinRaw : null;
+                $capacite    = isset($_POST['capacite']) && $_POST['capacite'] !== ''
+                               ? Security::sanitizeInt($_POST['capacite'])
+                               : null;
 
                 $erreurs = $this->validateEvent($nom, $dateDebut, $dateFin);
 

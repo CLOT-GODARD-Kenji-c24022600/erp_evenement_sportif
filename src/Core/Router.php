@@ -6,7 +6,7 @@
  * @file Router.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.0
+ * @version 1.1
  * @since 2026
  */
 
@@ -19,6 +19,7 @@ use App\Models\EventModel;
 use App\Models\TodoModel;
 use App\Models\SearchModel;
 use App\Models\QuickCreateModel;
+use App\Models\ProjectModel;
 use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
 use App\Controllers\EventController;
@@ -27,20 +28,10 @@ use App\Controllers\ProfileController;
 use App\Controllers\UserController;
 use App\Controllers\SearchController;
 use App\Controllers\QuickCreateController;
+use App\Controllers\ProjectController;
 
-/**
- * Routeur principal de l'application.
- *
- * Responsabilités :
- * - Gérer les routes spéciales (logout, change_lang).
- * - Appliquer la liste blanche des pages autorisées.
- * - Appliquer le garde d'authentification.
- * - Dispatcher vers le bon controller.
- * - Déléguer le rendu à Renderer.
- */
 class Router
 {
-    /** @var string[] Pages accessibles sans être connecté */
     private const PUBLIC_PAGES = [
         'login',
         'inscription',
@@ -48,7 +39,6 @@ class Router
         'reset_password',
     ];
 
-    /** @var string[] Toutes les pages autorisées (liste blanche) */
     private const ALLOWED_PAGES = [
         'login',
         'inscription',
@@ -64,14 +54,11 @@ class Router
         'change_lang',
         'gerer_event',
         'logout',
+        'projets',
+        'projet_detail',
+        'ajax_search',
     ];
 
-    /**
-     * Point d'entrée principal du routeur.
-     * Résout la page, applique les guards, dispatche vers le controller.
-     *
-     * @return void
-     */
     public static function dispatch(): void
     {
         $page  = self::resolvePage();
@@ -79,45 +66,26 @@ class Router
         $theme = Bootstrap::getTheme();
         $t     = Bootstrap::loadTranslations($lang);
 
-        // ── Routes spéciales (pas de vue) ─────────────────────
         self::handleSpecialRoutes($page, $lang);
 
-        // ── Pages publiques ────────────────────────────────────
         if (in_array($page, self::PUBLIC_PAGES, true)) {
             self::dispatchPublic($page, $t, $theme);
             return;
         }
 
-        // ── Guard : authentification requise ──────────────────
         if (!Session::has('user_id')) {
             self::redirect('/?page=login');
         }
 
-        // ── Pages authentifiées ────────────────────────────────
         self::dispatchApp($page, $t, $lang, $theme);
     }
 
-    /**
-     * Redirige vers une URL et termine l'exécution.
-     *
-     * @param string $url URL de destination.
-     * @return never
-     */
     public static function redirect(string $url): never
     {
         header('Location: ' . $url);
         exit();
     }
 
-    // ════════════════════════════════════════════════════════
-    // Méthodes privées
-    // ════════════════════════════════════════════════════════
-
-    /**
-     * Résout la page courante avec liste blanche.
-     *
-     * @return string
-     */
     private static function resolvePage(): string
     {
         $page = Security::sanitizeString($_GET['page'] ?? 'dashboard');
@@ -129,13 +97,6 @@ class Router
         return $page;
     }
 
-    /**
-     * Gère les routes sans vue (logout, change_lang).
-     *
-     * @param string $page Page courante.
-     * @param string $lang Langue active.
-     * @return void
-     */
     private static function handleSpecialRoutes(string $page, string $lang): void
     {
         if ($page === 'logout') {
@@ -151,16 +112,50 @@ class Router
             Session::set('lang', $newLang);
             self::redirect("/?page={$return}");
         }
+
+        if ($page === 'ajax_search') {
+            if (!Session::has('user_id')) {
+                http_response_code(401);
+                echo json_encode(['error' => 'Unauthorized']);
+                exit();
+            }
+
+            header('Content-Type: application/json; charset=UTF-8');
+
+            $q = Security::sanitizeString($_GET['q'] ?? '');
+
+            if (strlen($q) < 2) {
+                echo json_encode(['projets' => [], 'events' => [], 'staff' => []]);
+                exit();
+            }
+
+            $model = new SearchModel();
+
+            echo json_encode([
+                'projets' => array_map(fn($p) => [
+                    'id'  => (int) $p['id'],
+                    'nom' => $p['nom'],
+                    'sub' => ucfirst(str_replace('_', ' ', $p['statut'] ?? '')),
+                ], array_slice($model->searchProjets($q), 0, 5)),
+
+                'events' => array_map(fn($e) => [
+                    'id'  => (int) $e['id'],
+                    'nom' => $e['nom'],
+                    'sub' => !empty($e['date_debut']) ? date('d/m/Y', strtotime($e['date_debut'])) : '',
+                ], array_slice($model->searchEvents($q), 0, 5)),
+
+                'staff' => array_map(fn($u) => [
+                    'nom'         => $u['nom'],
+                    'prenom'      => $u['prenom'] ?? '',
+                    'nom_famille' => $u['nom'],
+                    'sub'         => $u['poste'] ?? '',
+                ], array_slice($model->searchStaff($q), 0, 4)),
+            ], JSON_UNESCAPED_UNICODE);
+
+            exit();
+        }
     }
 
-    /**
-     * Dispatche les pages publiques (pas de layout app).
-     *
-     * @param string $page  Page courante.
-     * @param array  $t     Traductions.
-     * @param string $theme Thème actif.
-     * @return void
-     */
     private static function dispatchPublic(string $page, array $t, string $theme): void
     {
         $authController = new AuthController(new UserModel());
@@ -224,22 +219,12 @@ class Router
         );
     }
 
-    /**
-     * Dispatche les pages authentifiées (layout app complet).
-     *
-     * @param string $page  Page courante.
-     * @param array  $t     Traductions.
-     * @param string $lang  Langue active.
-     * @param string $theme Thème actif.
-     * @return void
-     */
     private static function dispatchApp(string $page, array $t, string $lang, string $theme): void
     {
         $userModel = new UserModel();
         $userId    = (int) Session::get('user_id');
         $isAdmin   = Session::get('user_role') === 'admin';
 
-        // Mise à jour dernière activité + vérification statut
         try {
             $userModel->updateLastActivity($userId);
 
@@ -251,10 +236,8 @@ class Router
                 }
             }
         } catch (\Exception $e) {
-            // BDD momentanément indisponible : on laisse passer
         }
 
-        // Variables communes à toutes les vues authentifiées
         $currentUser   = $userModel->findById($userId);
         $sidebarNom    = Session::get('user_nom', 'Utilisateur');
         $sidebarAvatar = $currentUser['avatar'] ?? null;
@@ -272,19 +255,16 @@ class Router
         } catch (\Exception $e) {
         }
 
-        // Quick-create (modales header)
         $qcResult = (new QuickCreateController(new QuickCreateModel()))->handle();
         $qcMsg    = $qcResult['msg']  ?? '';
         $qcType   = $qcResult['type'] ?? 'success';
 
-        // Variables communes injectées dans toutes les vues
         $common = compact(
             'page', 't', 'lang', 'theme', 'isAdmin',
             'sidebarNom', 'sidebarAvatar', 'dbStatus',
             'notifications', 'qcMsg', 'qcType'
         );
 
-        // Dispatch par page
         switch ($page) {
 
             case 'dashboard':
@@ -303,9 +283,14 @@ class Router
                 break;
 
             case 'nouvel_event':
+                $projetsSimple = [];
+                try {
+                    $projetsSimple = (new ProjectModel())->getAllSimple();
+                } catch (\Exception $e) {
+                }
                 Renderer::renderApp(
                     __DIR__ . '/../app/Views/events/nouvel_event.php',
-                    $common,
+                    array_merge($common, ['projets' => $projetsSimple]),
                     '',
                     '<script src="assets/js/events.js"></script>'
                 );
@@ -387,6 +372,34 @@ class Router
                     __DIR__ . '/../app/Views/search/recherche.php',
                     array_merge($common, $viewData),
                     '<link rel="stylesheet" href="assets/css/staff.css">'
+                );
+                break;
+
+            case 'projets':
+                $ctrl     = new ProjectController(new ProjectModel());
+                $viewData = $ctrl->index();
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/projects/projets.php',
+                    array_merge($common, $viewData),
+                    '<link rel="stylesheet" href="assets/css/projects.css">',
+                    '<script src="assets/js/projects.js"></script>'
+                );
+                break;
+
+            case 'projet_detail':
+                $ctrl = new ProjectController(new ProjectModel());
+                $id   = Security::sanitizeInt($_GET['id'] ?? 0);
+                $data = $ctrl->detail($id);
+
+                if ($data === null) {
+                    self::redirect('/?page=projets');
+                }
+
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/projects/projet_detail.php',
+                    array_merge($common, $data),
+                    '<link rel="stylesheet" href="assets/css/projects.css">',
+                    '<script src="assets/js/projects.js"></script>'
                 );
                 break;
 
