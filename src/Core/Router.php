@@ -58,6 +58,7 @@ class Router
         'projet_detail',
         'ajax_search',
         'ajax_presence',
+        'import_csv',
     ];
 
     public static function dispatch(): void
@@ -84,10 +85,11 @@ class Router
     public static function redirect(string $url): never
     {
         // Convertir les anciennes URLs /?page=xxx en /xxx
-        if (str_starts_with($url, '/?page=')) {
+        /*if (str_starts_with($url, '/?page=')) {
             $url = '/' . substr($url, 7);
             $url = preg_replace('/&/', '?', $url, 1);
         }
+        */
         header('Location: ' . $url);
         exit();
     }
@@ -117,6 +119,7 @@ class Router
             'ajax_search'     => 'ajax_search',
             'ajax_presence'   => 'ajax_presence',
             'change_lang'     => 'change_lang',
+            'import_csv'      => 'import_csv',
         ];
 
         if (isset($uriMap[$uri])) {
@@ -356,9 +359,16 @@ class Router
                 break;
 
             case 'annuaire':
+                $utilisateurs = [];
+                try {
+                    // On récupère tous les utilisateurs depuis la base de données
+                    $utilisateurs = $userModel->getAll();
+                } catch (\Exception $e) {
+                }
                 Renderer::renderApp(
                     __DIR__ . '/../app/Views/directory/annuaire.php',
-                    $common
+                    // On passe la variable $utilisateurs à la vue
+                    array_merge($common, ['utilisateurs' => $utilisateurs])
                 );
                 break;
 
@@ -374,6 +384,17 @@ class Router
                     '<link rel="stylesheet" href="assets/css/staff.css">',
                     '<script src="assets/js/staff.js"></script>'
                 );
+                break;
+
+            case 'import_csv':
+                // ... ton code de contrôle ...
+                
+                if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['dbFile'])) {
+                    $ctrl->importCsv($_FILES['dbFile']);
+                }
+                
+                // On utilise le format avec ?page=
+                self::redirect('/?page=annuaire'); 
                 break;
 
             case 'profil':

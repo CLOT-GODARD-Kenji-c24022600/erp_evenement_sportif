@@ -8,22 +8,16 @@
  * @file annuaire.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.0
+ * @version 1.1
  * @since 2026
  *
  * Variables attendues :
  * @var array $t Traductions chargées.
+ * @var array $utilisateurs Liste des utilisateurs issue de la BDD.
  */
 
 declare(strict_types=1);
 
-$mockData = [
-    ['nom' => 'Léon Marchand',    'role' => 'Athlète',          'entite' => 'Dauphins du TOEC',  'contact' => 'leon.m@example.com'],
-    ['nom' => 'Antoine Dupont',   'role' => 'Athlète',          'entite' => 'Stade Toulousain',  'contact' => 'antoine.d@example.com'],
-    ['nom' => 'Stade Vélodrome',  'role' => 'Lieu',             'entite' => 'Marseille',         'contact' => 'resa@velodrome.fr'],
-    ['nom' => 'Marie Dupont',     'role' => 'Médecin Bénévole', 'entite' => 'Croix-Rouge',       'contact' => 'm.dupont@croix-rouge.fr'],
-    ['nom' => 'Nike France',      'role' => 'Sponsor',          'entite' => 'Équipementier',     'contact' => 'partenariat@nike.fr'],
-];
 ?>
 <section class="container mt-5 mb-5">
 
@@ -43,19 +37,43 @@ $mockData = [
                         <tr>
                             <th scope="col" class="ps-4"><?= htmlspecialchars($t['dir_th_name'], ENT_QUOTES) ?></th>
                             <th scope="col"><?= htmlspecialchars($t['dir_th_role'], ENT_QUOTES) ?></th>
-                            <th scope="col"><?= htmlspecialchars($t['dir_th_entity'], ENT_QUOTES) ?></th>
+                            <th scope="col">Statut</th>
                             <th scope="col"><?= htmlspecialchars($t['dir_th_email'], ENT_QUOTES) ?></th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($mockData as $entree): ?>
-                        <tr>
-                            <td class="ps-4 fw-medium text-body"><?= htmlspecialchars($entree['nom'], ENT_QUOTES) ?></td>
-                            <td><span class="badge bg-secondary"><?= htmlspecialchars($entree['role'], ENT_QUOTES) ?></span></td>
-                            <td class="text-body-secondary"><?= htmlspecialchars($entree['entite'], ENT_QUOTES) ?></td>
-                            <td class="text-primary"><?= htmlspecialchars($entree['contact'], ENT_QUOTES) ?></td>
-                        </tr>
-                        <?php endforeach; ?>
+                        <?php if (empty($utilisateurs)): ?>
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">Aucun utilisateur dans l'annuaire.</td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($utilisateurs as $user): ?>
+                            <tr>
+                                <td class="ps-4 fw-medium text-body">
+                                    <?= htmlspecialchars($user['nom'] . ' ' . $user['prenom'], ENT_QUOTES) ?>
+                                </td>
+                                <td>
+                                    <span class="badge bg-<?= $user['role'] === 'admin' ? 'danger' : 'secondary' ?>">
+                                        <?= htmlspecialchars(ucfirst($user['role'] ?? 'staff'), ENT_QUOTES) ?>
+                                    </span>
+                                </td>
+                                <td class="text-body-secondary">
+                                    <?php 
+                                        $statut = $user['statut'] ?? 'en_attente';
+                                        $badgeClass = ($statut === 'approuve') ? 'success' : (($statut === 'rejete') ? 'danger' : 'warning');
+                                    ?>
+                                    <span class="badge bg-<?= $badgeClass ?>-subtle text-<?= $badgeClass ?>-emphasis">
+                                        <?= htmlspecialchars(ucfirst($statut), ENT_QUOTES) ?>
+                                    </span>
+                                </td>
+                                <td class="text-primary">
+                                    <a href="mailto:<?= htmlspecialchars($user['email'], ENT_QUOTES) ?>" class="text-decoration-none">
+                                        <?= htmlspecialchars($user['email'], ENT_QUOTES) ?>
+                                    </a>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
@@ -64,9 +82,8 @@ $mockData = [
 
 </section>
 
-<!-- Modale d'importation -->
-<dialog class="modal fade" id="importModal" tabindex="-1"
-        aria-labelledby="importModalLabel" aria-modal="true">
+<div class="modal fade" id="importModal" tabindex="-1"
+        aria-labelledby="importModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <article class="modal-content border-0 shadow">
             <header class="modal-header bg-primary text-white border-0">
@@ -75,23 +92,24 @@ $mockData = [
                 </h2>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
             </header>
-            <div class="modal-body p-4 text-body">
-                <p class="text-body-secondary mb-4"><?= htmlspecialchars($t['dir_modal_desc'], ENT_QUOTES) ?></p>
-                <form action="#" method="POST" enctype="multipart/form-data">
+            
+            <form action="/?page=import_csv" method="POST" enctype="multipart/form-data">
+                <div class="modal-body p-4 text-body">
+                    <p class="text-body-secondary mb-4"><?= htmlspecialchars($t['dir_modal_desc'], ENT_QUOTES) ?></p>
                     <fieldset class="mb-3 border-0 p-0">
                         <label for="dbFile" class="form-label fw-semibold"><?= htmlspecialchars($t['dir_modal_file'], ENT_QUOTES) ?></label>
-                        <input class="form-control" type="file" id="dbFile" accept=".csv,.sql">
+                        <input class="form-control" type="file" id="dbFile" name="dbFile" accept=".csv" required>
                     </fieldset>
-                </form>
-            </div>
-            <footer class="modal-footer border-0 bg-body-tertiary">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                    <?= htmlspecialchars($t['form_cancel'], ENT_QUOTES) ?>
-                </button>
-                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
-                    <?= htmlspecialchars($t['dir_modal_upload'], ENT_QUOTES) ?>
-                </button>
-            </footer>
+                </div>
+                <footer class="modal-footer border-0 bg-body-tertiary">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <?= htmlspecialchars($t['form_cancel'], ENT_QUOTES) ?>
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <?= htmlspecialchars($t['dir_modal_upload'], ENT_QUOTES) ?>
+                    </button>
+                </footer>
+            </form>
         </article>
     </div>
-</dialog>
+</div>
