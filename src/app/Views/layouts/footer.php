@@ -4,11 +4,12 @@
  * YES - Your Event Solution
  *
  * Layout : Pied de page de l'application.
+ * Les balises </body> et </html> sont gérées par Renderer::renderApp().
  *
  * @file footer.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.1
+ * @version 1.2
  * @since 2026
  *
  * Variables attendues :
@@ -43,11 +44,7 @@ declare(strict_types=1);
 
     </main><!-- /.main-content -->
 
-</main>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="assets/js/layout.js"></script>
 <script src="assets/js/search.js"></script>
 <script src="assets/js/presence.js"></script>
-</body>
-</html>

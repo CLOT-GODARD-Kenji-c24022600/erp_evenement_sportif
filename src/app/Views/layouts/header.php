@@ -3,12 +3,13 @@
 /**
  * YES - Your Event Solution
  *
- * Layout : En-tête principal de l'application.
+ * Layout : En-tête principal de l'application (topbar uniquement).
+ * Le <head> et le <body> sont gérés par Renderer::renderApp().
  *
  * @file header.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.1
+ * @version 1.2
  * @since 2026
  *
  * Variables attendues :
@@ -24,19 +25,6 @@
 
 declare(strict_types=1);
 ?>
-<!DOCTYPE html>
-<html lang="<?= htmlspecialchars($lang, ENT_QUOTES) ?>" data-bs-theme="<?= htmlspecialchars($theme, ENT_QUOTES) ?>">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($t['app_name'], ENT_QUOTES) ?></title>
-    <link rel="icon" type="image/png" href="assets/img/YES-Your-Event-Solution.png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="assets/css/layout.css">
-</head>
-<body class="<?= (isset($_COOKIE['sidebar']) && $_COOKIE['sidebar'] === 'collapsed') ? 'collapsed' : '' ?>">
-
 <main class="main-content">
 
     <header class="top-bar d-flex align-items-center px-4">

@@ -130,7 +130,7 @@ $errorMsg = \Core\Session::flash('error_msg');
                 </fieldset>
 
                 <div class="d-flex justify-content-end gap-3 pt-4 border-top">
-                    <a href="/?page=dashboard" class="btn btn-outline-secondary px-4 py-2 fw-semibold rounded-3">
+                    <a href="/dashboard" class="btn btn-outline-secondary px-4 py-2 fw-semibold rounded-3">
                         <?= htmlspecialchars($t['form_cancel'], ENT_QUOTES) ?>
                     </a>
                     <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold rounded-3">

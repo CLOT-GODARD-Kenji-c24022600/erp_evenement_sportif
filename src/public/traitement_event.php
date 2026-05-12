@@ -9,7 +9,7 @@
  * @file traitement_event.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.0
+ * @version 1.1
  * @since 2026
  */
 
@@ -25,7 +25,7 @@ use App\Controllers\EventController;
 Session::start();
 
 if (!Session::has('user_id')) {
-    Router::redirect('/?page=login');
+    Router::redirect('/login');
 }
 
 $envFile = __DIR__ . '/../../../.env';

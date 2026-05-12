@@ -6,7 +6,7 @@
  * @file Router.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.3
+ * @version 1.4
  * @since 2026
  */
 
@@ -86,7 +86,6 @@ class Router
         // Convertir les anciennes URLs /?page=xxx en /xxx
         if (str_starts_with($url, '/?page=')) {
             $url = '/' . substr($url, 7);
-            // Convertir le premier & en ? pour les paramètres supplémentaires
             $url = preg_replace('/&/', '?', $url, 1);
         }
         header('Location: ' . $url);
@@ -95,11 +94,9 @@ class Router
 
     private static function resolvePage(): string
     {
-        // Lire l'URI propre (/dashboard, /staff, etc.)
         $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
         $uri = trim($uri, '/');
 
-        // Mapping URI propre → page interne
         $uriMap = [
             ''                => 'dashboard',
             'dashboard'       => 'dashboard',
@@ -126,7 +123,6 @@ class Router
             return $uriMap[$uri];
         }
 
-        // Fallback : ancien système ?page=xxx (rétrocompatibilité totale)
         $page = Security::sanitizeString($_GET['page'] ?? 'dashboard');
         if (in_array($page, self::ALLOWED_PAGES, true)) {
             return $page;
@@ -278,7 +274,6 @@ class Router
         try {
             $userModel->updateLastActivity($userId);
 
-            // Vérification à chaque requête : compte supprimé ou rejeté → déconnexion forcée
             $statut = $userModel->getStatut($userId);
             if ($statut === null || $statut === 'rejete') {
                 Session::destroy();
@@ -341,7 +336,7 @@ class Router
                     __DIR__ . '/../app/Views/events/nouvel_event.php',
                     array_merge($common, ['projets' => $projetsSimple]),
                     '',
-                    '<script src="assets/js/events.js"></script>'
+                    '<script src="assets/js/event.js"></script>'
                 );
                 break;
 

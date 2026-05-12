@@ -8,7 +8,7 @@
  * @file EventController.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.0
+ * @version 1.1
  * @since 2026
  */
 
@@ -46,7 +46,7 @@ class EventController
     public function create(): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            Router::redirect('/?page=dashboard');
+            Router::redirect('/dashboard');
         }
 
         $nom         = Security::sanitizeString($_POST['nom_event']    ?? '');
@@ -67,7 +67,7 @@ class EventController
 
         if (!empty($erreurs)) {
             Session::set('error_msg', implode('<br>', $erreurs));
-            Router::redirect('/?page=nouvel_event');
+            Router::redirect('/nouvel_event');
         }
 
         try {
@@ -83,10 +83,10 @@ class EventController
             ]);
 
             Session::set('success_msg', "L'événement '{$nom}' a été enregistré avec succès !");
-            Router::redirect('/?page=dashboard');
+            Router::redirect('/dashboard');
         } catch (\Exception $e) {
             Session::set('error_msg', 'Erreur BDD : ' . $e->getMessage());
-            Router::redirect('/?page=nouvel_event');
+            Router::redirect('/nouvel_event');
         }
     }
 
@@ -109,21 +109,21 @@ class EventController
     public function handleUpdate(): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            Router::redirect('/?page=dashboard');
+            Router::redirect('/dashboard');
         }
 
         $idEvent = Security::sanitizeInt($_POST['id'] ?? 0);
         $action  = Security::sanitizeString($_POST['action'] ?? '');
 
         if ($idEvent <= 0) {
-            Router::redirect('/?page=dashboard');
+            Router::redirect('/dashboard');
         }
 
         try {
             if ($action === 'delete') {
                 $this->eventModel->delete($idEvent);
                 Session::set('success_msg', "L'événement a été supprimé avec succès.");
-                Router::redirect('/?page=dashboard');
+                Router::redirect('/dashboard');
             }
 
             if ($action === 'update') {
@@ -142,7 +142,7 @@ class EventController
 
                 if (!empty($erreurs)) {
                     Session::set('error_msg', implode('<br>', $erreurs));
-                    Router::redirect("/?page=gerer_event&id={$idEvent}");
+                    Router::redirect("/gerer_event?id={$idEvent}");
                 }
 
                 $this->eventModel->update($idEvent, [
@@ -156,14 +156,14 @@ class EventController
                 ]);
 
                 Session::set('success_msg', "L'événement '{$nom}' a été mis à jour avec succès !");
-                Router::redirect('/?page=dashboard');
+                Router::redirect('/dashboard');
             }
         } catch (\Exception $e) {
             Session::set('error_msg', 'Erreur BDD : ' . $e->getMessage());
-            Router::redirect("/?page=gerer_event&id={$idEvent}");
+            Router::redirect("/gerer_event?id={$idEvent}");
         }
 
-        Router::redirect('/?page=dashboard');
+        Router::redirect('/dashboard');
     }
 
     /**
