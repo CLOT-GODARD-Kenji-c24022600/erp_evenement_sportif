@@ -51,21 +51,25 @@ declare(strict_types=1);
                 </ol>
             </nav>
 
-            <search aria-label="Recherche globale" class="d-none d-md-block">
-                <form action="index.php" method="GET">
-                    <input type="hidden" name="page" value="recherche">
-                    <div class="input-group">
-                        <button type="submit" class="input-group-text bg-body-secondary border-0 text-muted search-btn"
-                                aria-label="Lancer la recherche">
-                            <i class="bi bi-search small" aria-hidden="true"></i>
-                        </button>
-                        <input type="text" name="q" class="form-control form-control-sm border-0 bg-body-secondary px-3 shadow-none search-input"
-                               placeholder="Rechercher (Staff, Projets...)"
-                               value="<?= htmlspecialchars($_GET['q'] ?? '', ENT_QUOTES) ?>"
-                               required
-                               aria-label="Terme de recherche">
-                    </div>
-                </form>
+            <search aria-label="Recherche globale" class="d-none d-md-block position-relative">
+                <div class="input-group">
+                    <span class="input-group-text bg-body-secondary border-0 text-muted search-btn">
+                        <i class="bi bi-search small" aria-hidden="true"></i>
+                    </span>
+                    <input type="text"
+                        id="globalSearchInput"
+                        class="form-control form-control-sm border-0 bg-body-secondary px-3 shadow-none search-input"
+                        placeholder="Rechercher (Staff, Projets...)"
+                        autocomplete="off"
+                        aria-label="Terme de recherche"
+                        aria-expanded="false"
+                        aria-controls="searchDropdown">
+                </div>
+                <div id="searchDropdown"
+                    class="d-none position-absolute bg-body border shadow rounded-3 mt-1 overflow-hidden"
+                    role="listbox"
+                    style="top:100%; left:0; min-width:320px; z-index:1080; max-height:400px; overflow-y:auto;">
+                </div>
             </search>
 
             <nav class="d-flex align-items-center gap-3" aria-label="Actions globales">

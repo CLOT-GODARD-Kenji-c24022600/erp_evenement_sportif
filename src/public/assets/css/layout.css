@@ -211,3 +211,20 @@ body.collapsed .main-content {
     width: 180px;
   }
 }
+
+/* ===== SEARCH DYNAMIQUE ===== */
+.search-result-item {
+  transition: background-color .12s ease;
+}
+.search-result-item:hover,
+.search-result-item.active {
+  background-color: var(--bs-primary-bg-subtle, #e7f1ff);
+}
+#searchDropdown {
+  min-width: 320px;
+}
+#searchDropdown mark {
+  background: #fff3cd;
+  border-radius: 2px;
+  padding: 0 1px;
+}
