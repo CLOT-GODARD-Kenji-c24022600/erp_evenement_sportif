@@ -6,7 +6,7 @@
  * @file Router.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.1
+ * @version 1.2
  * @since 2026
  */
 
@@ -74,7 +74,7 @@ class Router
         }
 
         if (!Session::has('user_id')) {
-            self::redirect('/?page=login');
+            self::redirect('/login');
         }
 
         self::dispatchApp($page, $t, $lang, $theme);
@@ -82,26 +82,62 @@ class Router
 
     public static function redirect(string $url): never
     {
+        // Convertir les anciennes URLs /?page=xxx en /xxx
+        if (str_starts_with($url, '/?page=')) {
+            $url = '/' . substr($url, 7);
+            // Convertir le premier & en ? pour les paramètres supplémentaires
+            $url = preg_replace('/&/', '?', $url, 1);
+        }
         header('Location: ' . $url);
         exit();
     }
 
     private static function resolvePage(): string
     {
-        $page = Security::sanitizeString($_GET['page'] ?? 'dashboard');
+        // Lire l'URI propre (/dashboard, /staff, etc.)
+        $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+        $uri = trim($uri, '/');
 
-        if (!in_array($page, self::ALLOWED_PAGES, true)) {
-            return 'dashboard';
+        // Mapping URI propre → page interne
+        $uriMap = [
+            ''                => 'dashboard',
+            'dashboard'       => 'dashboard',
+            'staff'           => 'staff',
+            'projets'         => 'projets',
+            'annuaire'        => 'annuaire',
+            'profil'          => 'profil',
+            'utilisateurs'    => 'utilisateurs',
+            'nouvel_event'    => 'nouvel_event',
+            'recherche'       => 'recherche',
+            'login'           => 'login',
+            'inscription'     => 'inscription',
+            'logout'          => 'logout',
+            'forgot_password' => 'forgot_password',
+            'reset_password'  => 'reset_password',
+            'gerer_event'     => 'gerer_event',
+            'projet_detail'   => 'projet_detail',
+            'ajax_search'     => 'ajax_search',
+            'change_lang'     => 'change_lang',
+        ];
+
+        if (isset($uriMap[$uri])) {
+            return $uriMap[$uri];
         }
 
-        return $page;
+        // Fallback : ancien système ?page=xxx (rétrocompatibilité totale)
+        $page = Security::sanitizeString($_GET['page'] ?? 'dashboard');
+        if (in_array($page, self::ALLOWED_PAGES, true)) {
+            return $page;
+        }
+
+        return 'dashboard';
     }
 
     private static function handleSpecialRoutes(string $page, string $lang): void
     {
         if ($page === 'logout') {
             Session::destroy();
-            self::redirect('/?page=login');
+            self::redirect('/login');
         }
 
         if ($page === 'change_lang') {
@@ -110,7 +146,7 @@ class Router
                 : 'fr';
             $return = Security::sanitizeString($_GET['return'] ?? 'dashboard');
             Session::set('lang', $newLang);
-            self::redirect("/?page={$return}");
+            self::redirect("/{$return}");
         }
 
         if ($page === 'ajax_search') {
@@ -232,7 +268,7 @@ class Router
                 $statut = $userModel->getStatut($userId);
                 if ($statut === 'rejete') {
                     Session::destroy();
-                    self::redirect('/?page=login');
+                    self::redirect('/login');
                 }
             }
         } catch (\Exception $e) {
@@ -302,7 +338,7 @@ class Router
                 $event = $ctrl->getForEdit($id);
 
                 if ($event === null) {
-                    self::redirect('/?page=dashboard');
+                    self::redirect('/dashboard');
                 }
 
                 Renderer::renderApp(
@@ -345,7 +381,7 @@ class Router
 
             case 'utilisateurs':
                 if (!$isAdmin) {
-                    self::redirect('/?page=dashboard');
+                    self::redirect('/dashboard');
                 }
                 $ctrl = new UserController($userModel);
 
@@ -356,7 +392,7 @@ class Router
                         Security::sanitizeInt($_POST['user_id']),
                         Security::sanitizeString($_POST['action'])
                     );
-                    self::redirect('/?page=utilisateurs');
+                    self::redirect('/utilisateurs');
                 }
 
                 Renderer::renderApp(
@@ -392,7 +428,7 @@ class Router
                 $data = $ctrl->detail($id);
 
                 if ($data === null) {
-                    self::redirect('/?page=projets');
+                    self::redirect('/projets');
                 }
 
                 Renderer::renderApp(
@@ -404,7 +440,7 @@ class Router
                 break;
 
             default:
-                self::redirect('/?page=dashboard');
+                self::redirect('/dashboard');
         }
     }
 }

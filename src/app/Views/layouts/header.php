@@ -8,7 +8,7 @@
  * @file header.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.0
+ * @version 1.1
  * @since 2026
  *
  * Variables attendues :
@@ -57,18 +57,18 @@ declare(strict_types=1);
                         <i class="bi bi-search small" aria-hidden="true"></i>
                     </span>
                     <input type="text"
-                        id="globalSearchInput"
-                        class="form-control form-control-sm border-0 bg-body-secondary px-3 shadow-none search-input"
-                        placeholder="Rechercher (Staff, Projets...)"
-                        autocomplete="off"
-                        aria-label="Terme de recherche"
-                        aria-expanded="false"
-                        aria-controls="searchDropdown">
+                           id="globalSearchInput"
+                           class="form-control form-control-sm border-0 bg-body-secondary px-3 shadow-none search-input"
+                           placeholder="Rechercher (Staff, Projets...)"
+                           autocomplete="off"
+                           aria-label="Terme de recherche"
+                           aria-expanded="false"
+                           aria-controls="searchDropdown">
                 </div>
                 <div id="searchDropdown"
-                    class="d-none position-absolute bg-body border shadow rounded-3 mt-1 overflow-hidden"
-                    role="listbox"
-                    style="top:100%; left:0; min-width:320px; z-index:1080; max-height:400px; overflow-y:auto;">
+                     class="d-none position-absolute bg-body border shadow rounded-3 mt-1 overflow-hidden"
+                     role="listbox"
+                     style="top:100%; left:0; min-width:320px; z-index:1080; max-height:400px; overflow-y:auto;">
                 </div>
             </search>
 
@@ -110,10 +110,10 @@ declare(strict_types=1);
                 </div>
 
                 <nav class="btn-group border rounded-pill overflow-hidden" role="group" aria-label="Sélection de la langue">
-                    <a href="?page=change_lang&lang=fr&return=<?= htmlspecialchars($page, ENT_QUOTES) ?>"
+                    <a href="/change_lang?lang=fr&return=<?= htmlspecialchars($page, ENT_QUOTES) ?>"
                        class="btn btn-xs py-0 px-2 <?= $lang === 'fr' ? 'bg-body-secondary fw-bold text-dark' : 'text-muted' ?>"
                        hreflang="fr" lang="fr">FR</a>
-                    <a href="?page=change_lang&lang=en&return=<?= htmlspecialchars($page, ENT_QUOTES) ?>"
+                    <a href="/change_lang?lang=en&return=<?= htmlspecialchars($page, ENT_QUOTES) ?>"
                        class="btn btn-xs py-0 px-2 <?= $lang === 'en' ? 'bg-body-secondary fw-bold text-dark' : 'text-muted' ?>"
                        hreflang="en" lang="en">EN</a>
                 </nav>
