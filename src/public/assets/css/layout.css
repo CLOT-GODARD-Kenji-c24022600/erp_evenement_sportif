@@ -5,7 +5,7 @@
  * @file layout.css
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.0
+ * @version 2.2
  * @since 2026
  */
 
@@ -24,12 +24,14 @@
   box-sizing: border-box;
 }
 
+html,
 body {
   font-family: 'Inter', system-ui, sans-serif;
   background-color: var(--bs-tertiary-bg);
   transition: var(--transition);
   margin: 0;
   overflow-x: hidden;
+  max-width: 100%;
 }
 
 /* ─── Dark mode overrides ───────────────────────────── */
@@ -50,10 +52,10 @@ body {
   z-index: 1040;
   transition: var(--transition);
   background-color: var(--sidebar-bg);
-  overflow: hidden;
+  overflow: hidden; /* pas de scrollbar */
 }
 
-/* Sidebar réduite */
+/* Sidebar réduite (desktop) */
 body.collapsed .sidebar {
   width: var(--sb-collapsed);
 }
@@ -96,7 +98,7 @@ body.collapsed .user-block .ms-3 {
   display: none !important;
 }
 
-/* Toggle button */
+/* Toggle button (desktop) */
 .toggle-btn {
   position: absolute;
   right: 15px;
@@ -126,6 +128,48 @@ body.collapsed .user-block .ms-3 {
   border-radius: 8px;
 }
 
+/* ─── Hamburger button (mobile) ─────────────────────── */
+.hamburger-btn {
+  display: none;
+  position: fixed;
+  top: 14px;
+  left: 12px;
+  z-index: 1050;
+  width: 42px;
+  height: 42px;
+  background-color: var(--sidebar-bg);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  transition: var(--transition);
+}
+
+.hamburger-btn:hover {
+  background-color: #2d3f58;
+}
+
+/* ─── Overlay (mobile) ──────────────────────────────── */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1039;
+  backdrop-filter: blur(2px);
+  transition: opacity 0.3s ease;
+}
+
+body.sidebar-open .sidebar-overlay {
+  display: block;
+}
+
+/* ─── Mobile header actions in sidebar ──────────────── */
+.mobile-header-actions {
+  gap: 0.5rem;
+}
+
 /* ─── Main content ──────────────────────────────────── */
 .main-content {
   margin-left: var(--sb-width);
@@ -134,11 +178,14 @@ body.collapsed .user-block .ms-3 {
   display: flex;
   flex-direction: column;
   width: calc(100% - var(--sb-width));
+  overflow-x: hidden;
+  max-width: calc(100% - var(--sb-width));
 }
 
 body.collapsed .main-content {
   margin-left: var(--sb-collapsed);
   width: calc(100% - var(--sb-collapsed));
+  max-width: calc(100% - var(--sb-collapsed));
 }
 
 /* ─── Top bar ───────────────────────────────────────── */
@@ -149,6 +196,7 @@ body.collapsed .main-content {
   position: sticky;
   top: 0;
   z-index: 1020;
+  /* PAS de overflow:hidden ici — les dropdowns doivent déborder vers le bas */
 }
 
 /* Search bar */
@@ -159,6 +207,13 @@ body.collapsed .main-content {
 .search-input {
   width: 300px;
   border-radius: 0 8px 8px 0;
+  min-width: 0;
+}
+
+/* Dropdown recherche : passe au-dessus du contenu */
+#searchDropdown {
+  z-index: 1080;
+  min-width: 280px;
 }
 
 /* ─── Notifications ─────────────────────────────────── */
@@ -166,6 +221,8 @@ body.collapsed .main-content {
   width: 300px;
   max-height: 400px;
   overflow-y: auto;
+  /* z-index élevé pour passer au-dessus du contenu */
+  z-index: 1080 !important;
 }
 
 .notif-dot {
@@ -192,21 +249,85 @@ body.collapsed .main-content {
   overflow: hidden;
 }
 
-/* ─── Responsive ────────────────────────────────────── */
-@media (max-width: 768px) {
+/* ─── Responsive mobile (< 768px) ───────────────────── */
+@media (max-width: 767.98px) {
+
+  /* Sidebar cachée par défaut */
   .sidebar {
     transform: translateX(-100%);
+    width: var(--sb-width) !important;
   }
 
   body.sidebar-open .sidebar {
     transform: translateX(0);
   }
 
-  .main-content {
-    margin-left: 0;
-    width: 100%;
+  body.sidebar-open .sb-text,
+  body.sidebar-open .logo-link span {
+    display: inline !important;
   }
 
+  body.sidebar-open .sidebar-header {
+    justify-content: flex-start !important;
+    padding: 1.5rem !important;
+  }
+
+  body.sidebar-open #toggleIcon {
+    transform: rotate(0deg) !important;
+  }
+
+  /* Main content pleine largeur */
+  .main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Header : espace pour le hamburger à gauche */
+  .top-bar {
+    padding-left: 64px !important;
+    padding-right: 12px !important;
+  }
+
+  /* ── Loupe cachée sur mobile ── */
+  .search-btn {
+    display: none !important;
+  }
+
+  .search-input {
+    width: 100% !important;
+    min-width: 0 !important;
+    /* Coins arrondis des deux côtés sans la loupe */
+    border-radius: 8px !important;
+  }
+
+  .top-bar search,
+  .top-bar .input-group {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Notifications dropdown */
+  .notif-dropdown {
+    width: 260px;
+  }
+
+  /* Tableaux scrollables horizontalement */
+  .main-content table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Images ne débordent jamais */
+  .main-content img {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* ─── Tablette (md → lg) ────────────────────────────── */
+@media (min-width: 768px) and (max-width: 991.98px) {
   .search-input {
     width: 180px;
   }
@@ -216,13 +337,12 @@ body.collapsed .main-content {
 .search-result-item {
   transition: background-color .12s ease;
 }
+
 .search-result-item:hover,
 .search-result-item.active {
   background-color: var(--bs-primary-bg-subtle, #e7f1ff);
 }
-#searchDropdown {
-  min-width: 320px;
-}
+
 #searchDropdown mark {
   background: #fff3cd;
   border-radius: 2px;

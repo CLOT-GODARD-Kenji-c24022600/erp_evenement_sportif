@@ -48,7 +48,7 @@ const YesSearch = (() => {
         // Fallback : soumettre une recherche pleine page
         const term = input.value.trim();
         if (term.length >= 2) {
-          window.location.href = `/?page=recherche&q=${encodeURIComponent(term)}`;
+          window.location.href = `/recherche?q=${encodeURIComponent(term)}`;
         }
         return;
       }
@@ -83,7 +83,7 @@ const YesSearch = (() => {
     input.setAttribute('aria-expanded', 'true');
 
     try {
-      const res = await fetch(`/?page=ajax_search&q=${encodeURIComponent(term)}`, {
+      const res = await fetch(`/ajax_search?q=${encodeURIComponent(term)}`, {
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
       });
       if (!res.ok) { dropdown.classList.add('d-none'); return; }
@@ -135,7 +135,7 @@ const YesSearch = (() => {
     addSection(data.staff ?? [], '👤', 'text-primary', 'Staff', (u) => {
       const name = highlight(`${u.prenom} ${u.nom}`.trim(), term);
       const sub  = u.sub ? `<small class="text-muted ms-1">— ${highlight(u.sub, term)}</small>` : '';
-      return `<a href="/?page=staff" role="option" tabindex="-1"
+      return `<a href="/staff" role="option" tabindex="-1"
                  class="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-body search-result-item">
                 <i class="bi bi-person-fill text-primary flex-shrink-0" aria-hidden="true"></i>
                 <span>${name}${sub}</span>
@@ -145,7 +145,7 @@ const YesSearch = (() => {
     // --- Événements ---
     addSection(data.events ?? [], '📅', 'text-success', 'Événements', (ev) => {
       const sub = ev.sub ? `<small class="text-muted ms-1">— ${ev.sub}</small>` : '';
-      return `<a href="/?page=gerer_event&id=${ev.id}" role="option" tabindex="-1"
+      return `<a href="/gerer_event?id=${ev.id}" role="option" tabindex="-1"
                  class="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-body search-result-item">
                 <i class="bi bi-calendar-event text-success flex-shrink-0" aria-hidden="true"></i>
                 <span>${highlight(ev.nom, term)}${sub}</span>
@@ -155,7 +155,7 @@ const YesSearch = (() => {
     // --- Projets ---
     addSection(data.projets ?? [], '📁', 'text-warning', 'Projets', (p) => {
       const sub = p.sub ? `<small class="text-muted ms-1">— ${p.sub}</small>` : '';
-      return `<a href="/?page=projet_detail&id=${p.id}" role="option" tabindex="-1"
+      return `<a href="/projet_detail?id=${p.id}" role="option" tabindex="-1"
                  class="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-body search-result-item">
                 <i class="bi bi-folder2-open text-warning flex-shrink-0" aria-hidden="true"></i>
                 <span>${highlight(p.nom, term)}${sub}</span>
@@ -170,7 +170,7 @@ const YesSearch = (() => {
     } else {
       // Lien "Voir tous les résultats"
       html += `<div class="border-top px-3 py-2 text-center">
-        <a href="/?page=recherche&q=${encodeURIComponent(term)}"
+        <a href="/recherche?q=${encodeURIComponent(term)}"
            class="small text-primary text-decoration-none">
           Voir tous les résultats →
         </a>

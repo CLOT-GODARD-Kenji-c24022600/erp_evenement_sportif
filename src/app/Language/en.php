@@ -20,7 +20,7 @@ return [
     // ── Navigation ────────────────────────────────────────
     'nav_dashboard'         => 'Dashboard',
     'nav_directory'         => 'Directory',
-    'nav_new_event'         => '+ New Event',
+    'nav_new_event'         => 'New Event',
     'nav_staff'             => 'Staff',
     'nav_settings'          => 'Settings',
     'nav_profile'           => 'My Profile',
@@ -257,7 +257,7 @@ return [
     'project_finance_modal_title'=> 'Add financial line',
     'project_finance_save_btn'   => 'Save line',
     'project_events_title'       => 'Linked events',
-    'project_event_add_btn'      => '+ New event',
+    'project_event_add_btn'      => 'New event',
     'project_events_empty'       => 'No events linked to this project.',
     'todo_field_project'         => 'Link to a project',
     'todo_no_project'            => '— None —',

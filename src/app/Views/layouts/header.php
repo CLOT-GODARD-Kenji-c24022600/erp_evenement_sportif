@@ -9,7 +9,7 @@
  * @file header.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.2
+ * @version 1.3
  * @since 2026
  *
  * Variables attendues :
@@ -27,19 +27,21 @@ declare(strict_types=1);
 ?>
 <main class="main-content">
 
-    <header class="top-bar d-flex align-items-center px-4">
-        <div class="d-flex justify-content-between w-100 align-items-center">
+    <header class="top-bar d-flex align-items-center px-3 px-md-4">
+        <div class="d-flex justify-content-between w-100 align-items-center gap-2">
 
-            <nav aria-label="breadcrumb">
+            <!-- Breadcrumb (desktop) / Titre page (mobile) -->
+            <nav aria-label="breadcrumb" class="flex-shrink-0">
                 <ol class="breadcrumb mb-0">
-                    <li class="breadcrumb-item text-muted small">Projects</li>
+                    <li class="breadcrumb-item text-muted small d-none d-md-block">Projects</li>
                     <li class="breadcrumb-item active fw-bold small text-dark-emphasis">
                         <?= ucfirst(htmlspecialchars($page, ENT_QUOTES)) ?>
                     </li>
                 </ol>
             </nav>
 
-            <search aria-label="Recherche globale" class="d-none d-md-block position-relative">
+            <!-- Barre de recherche (visible sur tous les écrans) -->
+            <search aria-label="Recherche globale" class="position-relative flex-grow-1 flex-md-grow-0">
                 <div class="input-group">
                     <span class="input-group-text bg-body-secondary border-0 text-muted search-btn">
                         <i class="bi bi-search small" aria-hidden="true"></i>
@@ -47,7 +49,7 @@ declare(strict_types=1);
                     <input type="text"
                            id="globalSearchInput"
                            class="form-control form-control-sm border-0 bg-body-secondary px-3 shadow-none search-input"
-                           placeholder="Rechercher (Staff, Projets...)"
+                           placeholder="Rechercher..."
                            autocomplete="off"
                            aria-label="Terme de recherche"
                            aria-expanded="false"
@@ -56,11 +58,12 @@ declare(strict_types=1);
                 <div id="searchDropdown"
                      class="d-none position-absolute bg-body border shadow rounded-3 mt-1 overflow-hidden"
                      role="listbox"
-                     style="top:100%; left:0; min-width:320px; z-index:1080; max-height:400px; overflow-y:auto;">
+                     style="top:100%; left:0; min-width:280px; z-index:1080; max-height:400px; overflow-y:auto;">
                 </div>
             </search>
 
-            <nav class="d-flex align-items-center gap-3" aria-label="Actions globales">
+            <!-- Actions desktop (cachées sur mobile) -->
+            <nav class="d-none d-md-flex align-items-center gap-3" aria-label="Actions globales">
 
                 <div class="dropdown">
                     <button class="btn btn-primary btn-sm px-3 fw-bold shadow-sm dropdown-toggle"
@@ -115,51 +118,53 @@ declare(strict_types=1);
                     <?php endif; ?>
                 </button>
 
-                <div class="dropdown">
-                    <button class="btn btn-link text-body p-0 fs-5 position-relative shadow-none"
-                            type="button"
-                            data-bs-toggle="dropdown"
-                            aria-expanded="false"
-                            aria-label="<?= htmlspecialchars($t['notif_title'], ENT_QUOTES) ?>">
-                        <i class="bi bi-bell" aria-hidden="true"></i>
-                        <?php if (count($notifications) > 0): ?>
-                            <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle notif-dot"
-                                  aria-hidden="true"></span>
-                        <?php endif; ?>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end notif-dropdown shadow" role="menu">
-                        <li role="none">
-                            <h6 class="dropdown-header text-primary fw-bold">
-                                <?= htmlspecialchars($t['notif_title'], ENT_QUOTES) ?>
-                            </h6>
-                        </li>
-                        <?php if (count($notifications) > 0): ?>
-                            <?php foreach ($notifications as $notif): ?>
-                                <li role="none">
-                                    <a class="dropdown-item d-flex flex-column py-2" href="#" role="menuitem">
-                                        <span class="fw-bold fs-6 text-truncate">
-                                            <?= htmlspecialchars((string) $notif['nom'], ENT_QUOTES) ?>
-                                        </span>
-                                        <small class="text-muted">
-                                            <i class="bi bi-calendar-event me-1" aria-hidden="true"></i>
-                                            <time datetime="<?= htmlspecialchars((string) $notif['date_debut'], ENT_QUOTES) ?>">
-                                                <?= date('d/m/Y', strtotime((string) $notif['date_debut'])) ?>
-                                            </time>
-                                        </small>
-                                    </a>
-                                </li>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <li role="none">
-                                <span class="dropdown-item text-muted small py-3 text-center" role="menuitem">
-                                    <?= htmlspecialchars($t['notif_empty'], ENT_QUOTES) ?>
-                                </span>
-                            </li>
-                        <?php endif; ?>
-                    </ul>
-                </div>
-
             </nav>
+
+            <!-- Notifications (visible partout) -->
+            <div class="dropdown flex-shrink-0">
+                <button class="btn btn-link text-body p-0 fs-5 position-relative shadow-none"
+                        type="button"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                        aria-label="<?= htmlspecialchars($t['notif_title'], ENT_QUOTES) ?>">
+                    <i class="bi bi-bell" aria-hidden="true"></i>
+                    <?php if (count($notifications) > 0): ?>
+                        <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle notif-dot"
+                              aria-hidden="true"></span>
+                    <?php endif; ?>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end notif-dropdown shadow" role="menu">
+                    <li role="none">
+                        <h6 class="dropdown-header text-primary fw-bold">
+                            <?= htmlspecialchars($t['notif_title'], ENT_QUOTES) ?>
+                        </h6>
+                    </li>
+                    <?php if (count($notifications) > 0): ?>
+                        <?php foreach ($notifications as $notif): ?>
+                            <li role="none">
+                                <a class="dropdown-item d-flex flex-column py-2" href="#" role="menuitem">
+                                    <span class="fw-bold fs-6 text-truncate">
+                                        <?= htmlspecialchars((string) $notif['nom'], ENT_QUOTES) ?>
+                                    </span>
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar-event me-1" aria-hidden="true"></i>
+                                        <time datetime="<?= htmlspecialchars((string) $notif['date_debut'], ENT_QUOTES) ?>">
+                                            <?= date('d/m/Y', strtotime((string) $notif['date_debut'])) ?>
+                                        </time>
+                                    </small>
+                                </a>
+                            </li>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <li role="none">
+                            <span class="dropdown-item text-muted small py-3 text-center" role="menuitem">
+                                <?= htmlspecialchars($t['notif_empty'], ENT_QUOTES) ?>
+                            </span>
+                        </li>
+                    <?php endif; ?>
+                </ul>
+            </div>
+
         </div>
     </header>
 

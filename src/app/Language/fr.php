@@ -20,7 +20,7 @@ return [
     // ── Navigation ────────────────────────────────────────
     'nav_dashboard'         => 'Tableau de bord',
     'nav_directory'         => 'Annuaire',
-    'nav_new_event'         => '+ Nouvel Événement',
+    'nav_new_event'         => 'Nouvel Événement',
     'nav_staff'             => 'Staff',
     'nav_settings'          => 'Paramètres',
     'nav_profile'           => 'Mon profil',
@@ -257,7 +257,7 @@ return [
     'project_finance_modal_title'=> 'Ajouter une ligne financière',
     'project_finance_save_btn'   => 'Enregistrer la ligne',
     'project_events_title'       => 'Événements liés',
-    'project_event_add_btn'      => '+ Nouvel événement',
+    'project_event_add_btn'      => 'Nouvel événement',
     'project_events_empty'       => 'Aucun événement lié à ce projet.',
     'todo_field_project'         => 'Lier à un projet',
     'todo_no_project'            => '— Aucun —',

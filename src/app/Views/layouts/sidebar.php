@@ -8,7 +8,7 @@
  * @file sidebar.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.1
+ * @version 1.3
  * @since 2026
  *
  * Variables attendues :
@@ -23,7 +23,21 @@ declare(strict_types=1);
 
 $isProjectPage = in_array($page, ['projets', 'projet_detail'], true);
 ?>
-<nav class="sidebar d-flex flex-column flex-shrink-0 text-white shadow" aria-label="Navigation principale">
+
+<!-- ── Bouton hamburger (mobile uniquement) ── -->
+<button id="hamburgerBtn"
+        class="hamburger-btn d-flex d-md-none align-items-center justify-content-center"
+        aria-label="Ouvrir le menu"
+        aria-expanded="false"
+        aria-controls="mobileSidebar">
+    <i class="bi bi-list fs-4" aria-hidden="true"></i>
+</button>
+
+<!-- ── Overlay (mobile) ── -->
+<div id="sidebarOverlay" class="sidebar-overlay" aria-hidden="true"></div>
+
+<!-- ── Sidebar ── -->
+<nav class="sidebar d-flex flex-column flex-shrink-0 text-white shadow" id="mobileSidebar" aria-label="Navigation principale">
 
     <header class="d-flex align-items-center sidebar-header p-4 mb-2 position-relative">
         <a href="/dashboard" class="text-white text-decoration-none d-flex align-items-center logo-link"
@@ -34,6 +48,7 @@ $isProjectPage = in_array($page, ['projets', 'projet_detail'], true);
             </figure>
             <span class="fs-5 fw-bold ms-2 sb-text" style="letter-spacing: 1px;">YES</span>
         </a>
+        <!-- Bouton fermer (mobile) / réduire (desktop) -->
         <button id="sidebarToggle" class="btn btn-link text-white p-0 toggle-btn"
                 aria-label="Réduire / Agrandir la sidebar">
             <i class="bi bi-chevron-left" id="toggleIcon" aria-hidden="true"></i>
@@ -101,6 +116,67 @@ $isProjectPage = in_array($page, ['projets', 'projet_detail'], true);
         </li>
         <?php endif; ?>
     </ul>
+
+    <!-- ── Section mobile : actions du header dans le menu ── -->
+    <div class="d-flex d-md-none flex-column px-3 py-2 border-top border-secondary mx-2 mobile-header-actions">
+
+        <!-- Quick Create -->
+        <div class="dropdown mb-2">
+            <button class="btn btn-primary btn-sm w-100 fw-bold dropdown-toggle"
+                    type="button"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                <?= htmlspecialchars($t['qc_btn_add'], ENT_QUOTES) ?>
+            </button>
+            <ul class="dropdown-menu shadow border-0 mt-2 w-100" role="menu">
+                <li role="none">
+                    <a class="dropdown-item py-2" href="#" role="menuitem"
+                       data-bs-toggle="modal" data-bs-target="#modalEvent">
+                        <i class="bi bi-calendar-event me-2 text-success" aria-hidden="true"></i>
+                        <?= htmlspecialchars($t['qc_event_title'], ENT_QUOTES) ?>
+                    </a>
+                </li>
+                <li role="none">
+                    <a class="dropdown-item py-2" href="#" role="menuitem"
+                       data-bs-toggle="modal" data-bs-target="#modalProjet">
+                        <i class="bi bi-folder me-2 text-warning" aria-hidden="true"></i>
+                        <?= htmlspecialchars($t['qc_projet_title'], ENT_QUOTES) ?>
+                    </a>
+                </li>
+                <?php if ($isAdmin): ?>
+                    <li role="none"><hr class="dropdown-divider"></li>
+                    <li role="none">
+                        <a class="dropdown-item py-2" href="#" role="menuitem"
+                           data-bs-toggle="modal" data-bs-target="#modalUser">
+                            <i class="bi bi-person-plus me-2 text-primary" aria-hidden="true"></i>
+                            <?= htmlspecialchars($t['qc_user_title'], ENT_QUOTES) ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+            </ul>
+        </div>
+
+        <!-- Langue + Dark mode -->
+        <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
+            <nav class="btn-group border border-secondary rounded-pill overflow-hidden" role="group" aria-label="Langue">
+                <a href="/change_lang?lang=fr&return=<?= htmlspecialchars($page, ENT_QUOTES) ?>"
+                   class="btn btn-xs py-1 px-3 <?= $lang === 'fr' ? 'bg-body-secondary fw-bold text-dark' : 'text-white opacity-75' ?>"
+                   hreflang="fr" lang="fr">FR</a>
+                <a href="/change_lang?lang=en&return=<?= htmlspecialchars($page, ENT_QUOTES) ?>"
+                   class="btn btn-xs py-1 px-3 <?= $lang === 'en' ? 'bg-body-secondary fw-bold text-dark' : 'text-white opacity-75' ?>"
+                   hreflang="en" lang="en">EN</a>
+            </nav>
+
+            <button id="darkModeToggleMobile" class="btn btn-link text-white p-0 fs-5 shadow-none"
+                    aria-label="Basculer entre mode clair et sombre">
+                <?php if ($theme === 'dark'): ?>
+                    <i class="bi bi-moon-stars-fill text-warning" aria-hidden="true"></i>
+                <?php else: ?>
+                    <i class="bi bi-sun-fill text-warning" aria-hidden="true"></i>
+                <?php endif; ?>
+            </button>
+        </div>
+    </div>
 
     <footer class="p-3 border-top border-secondary mx-2 mb-3">
         <a href="/profil" class="d-flex align-items-center user-block text-decoration-none text-white"
