@@ -25,7 +25,7 @@ use App\Controllers\EventController;
 Session::start();
 
 if (!Session::has('user_id')) {
-    Router::redirect('/?page=login');
+    Router::redirect('/login');
 }
 
 $envFile = __DIR__ . '/../../../.env';

@@ -69,7 +69,7 @@ declare(strict_types=1);
                 <i class="bi bi-calendar-event me-2 text-primary" aria-hidden="true"></i>
                 <?= htmlspecialchars($t['dash_events_title'], ENT_QUOTES) ?>
             </h2>
-            <a href="/?page=nouvel_event" class="btn btn-primary fw-semibold shadow-sm">
+            <a href="/nouvel_event" class="btn btn-primary fw-semibold shadow-sm">
                 <i class="bi bi-plus-lg me-2" aria-hidden="true"></i>
                 <?= htmlspecialchars($t['nav_new_event'], ENT_QUOTES) ?>
             </a>
@@ -129,7 +129,7 @@ declare(strict_types=1);
                             </ul>
                         </div>
                         <footer class="card-footer bg-transparent border-top p-3 text-center">
-                            <a href="/?page=gerer_event&id=<?= (int) $event['id'] ?>"
+                            <a href="/gerer_event?id=<?= (int) $event['id'] ?>"
                                class="btn btn-sm btn-outline-secondary fw-semibold w-100 rounded-3">
                                 <?= htmlspecialchars($t['dash_manage_btn'], ENT_QUOTES) ?>
                             </a>

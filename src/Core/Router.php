@@ -394,7 +394,7 @@ class Router
                 }
                 
                 // On utilise le format avec ?page=
-                self::redirect('/?page=annuaire'); 
+                self::redirect('/annuaire'); 
                 break;
 
             case 'profil':

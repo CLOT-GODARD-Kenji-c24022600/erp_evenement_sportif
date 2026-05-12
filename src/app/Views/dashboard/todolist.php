@@ -156,7 +156,7 @@ $terminees = array_filter($todos, fn($t) => $t['status'] === 'termine');
 
                         <nav aria-label="Changer le statut" class="flex-shrink-0 mt-1 d-flex flex-column gap-1">
                             <?php foreach ($trans as $newStatus => $info): ?>
-                            <form method="POST" action="/?page=dashboard">
+                            <form method="POST" action="/dashboard">
                                 <input type="hidden" name="todo_action" value="set_status">
                                 <input type="hidden" name="todo_id"     value="<?= (int) $todo['id'] ?>">
                                 <input type="hidden" name="status"      value="<?= htmlspecialchars($newStatus, ENT_QUOTES) ?>">
@@ -229,7 +229,7 @@ $terminees = array_filter($todos, fn($t) => $t['status'] === 'termine');
                                     aria-label="<?= htmlspecialchars($t['btn_edit'], ENT_QUOTES) ?>">
                                 <i class="bi bi-pencil" aria-hidden="true"></i>
                             </button>
-                            <form method="POST" action="/?page=dashboard"
+                            <form method="POST" action="/dashboard"
                                   onsubmit="return confirm('<?= htmlspecialchars($t['users_confirm_delete'], ENT_QUOTES) ?>')">
                                 <input type="hidden" name="todo_action" value="delete">
                                 <input type="hidden" name="todo_id"     value="<?= (int) $todo['id'] ?>">
@@ -262,7 +262,7 @@ $terminees = array_filter($todos, fn($t) => $t['status'] === 'termine');
                 <li class="list-group-item px-3 py-2 opacity-60">
                     <article class="d-flex align-items-center gap-3">
                         <?php foreach ($trans as $newStatus => $info): ?>
-                        <form method="POST" action="/?page=dashboard">
+                        <form method="POST" action="/dashboard">
                             <input type="hidden" name="todo_action" value="set_status">
                             <input type="hidden" name="todo_id"     value="<?= (int) $todo['id'] ?>">
                             <input type="hidden" name="status"      value="<?= htmlspecialchars($newStatus, ENT_QUOTES) ?>">
@@ -282,7 +282,7 @@ $terminees = array_filter($todos, fn($t) => $t['status'] === 'termine');
                                 </small>
                             <?php endif; ?>
                         </p>
-                        <form method="POST" action="/?page=dashboard"
+                        <form method="POST" action="/dashboard"
                               onsubmit="return confirm('<?= htmlspecialchars($t['users_confirm_delete'], ENT_QUOTES) ?>')">
                             <input type="hidden" name="todo_action" value="delete">
                             <input type="hidden" name="todo_id"     value="<?= (int) $todo['id'] ?>">
@@ -316,7 +316,7 @@ $terminees = array_filter($todos, fn($t) => $t['status'] === 'termine');
                         aria-label="<?= htmlspecialchars($t['btn_close'], ENT_QUOTES) ?>"></button>
             </header>
             <div class="modal-body pt-3">
-                <form method="POST" action="/?page=dashboard" novalidate>
+                <form method="POST" action="/dashboard" novalidate>
                     <input type="hidden" name="todo_action" value="create">
                     <p class="mb-3">
                         <label for="new-title" class="form-label fw-semibold">
@@ -441,7 +441,7 @@ $terminees = array_filter($todos, fn($t) => $t['status'] === 'termine');
                         aria-label="<?= htmlspecialchars($t['btn_close'], ENT_QUOTES) ?>"></button>
             </header>
             <div class="modal-body pt-3">
-                <form method="POST" action="/?page=dashboard" novalidate>
+                <form method="POST" action="/dashboard" novalidate>
                     <input type="hidden" name="todo_action" value="edit">
                     <input type="hidden" name="todo_id" id="edit-id">
                     <p class="mb-3">

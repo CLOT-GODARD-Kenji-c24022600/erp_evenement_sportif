@@ -99,7 +99,7 @@ $statuts = [
                         </ul>
                     </div>
                     <footer class="card-footer bg-transparent border-top p-3 d-flex gap-2">
-                        <a href="/?page=projet_detail&id=<?= (int) $p['id'] ?>"
+                        <a href="/projet_detail?id=<?= (int) $p['id'] ?>"
                            class="btn btn-sm btn-primary fw-semibold flex-grow-1 rounded-3">
                             <i class="bi bi-eye me-1"></i>
                             <?= htmlspecialchars($t['project_detail_btn'], ENT_QUOTES) ?>

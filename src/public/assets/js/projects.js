@@ -70,9 +70,9 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     };
 
-    addSection('Projets',    'kanban-fill',         'primary', data.projets, (p)  => `/?page=projet_detail&id=${p.id}`);
-    addSection('Événements', 'calendar-event-fill', 'warning', data.events,  (ev) => `/?page=gerer_event&id=${ev.id}`);
-    addSection('Staff',      'person-fill',         'info',    data.staff,   ()   => `/?page=staff`);
+    addSection('Projets',    'kanban-fill',         'primary', data.projets, (p)  => `/projet_detail?id=${p.id}`);
+    addSection('Événements', 'calendar-event-fill', 'warning', data.events,  (ev) => `/gerer_event?id=${ev.id}`);
+    addSection('Staff',      'person-fill',         'info',    data.staff,   ()   => `/staff`);
 
     const container = searchInput.closest('search') ?? searchInput.parentElement;
     container.style.position = 'relative';
@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (q.length < 2) { removeSuggestions(); return; }
     debounceTimer = setTimeout(async () => {
       try {
-        const res  = await fetch(`/?page=ajax_search&q=${encodeURIComponent(q)}`);
+        const res  = await fetch(`/ajax_search&q=${encodeURIComponent(q)}`);
         if (!res.ok) return;
         buildSuggestions(await res.json());
       } catch { /* réseau indisponible */ }

@@ -18,7 +18,7 @@ $categories = ['Subvention', 'Sponsoring', 'Billetterie', 'Hébergement', 'Trans
 <div class="container-fluid py-4">
 
     <header class="d-flex align-items-center gap-3 mb-4 flex-wrap">
-        <a href="/?page=projets" class="btn btn-outline-secondary btn-sm rounded-3">
+        <a href="/projets" class="btn btn-outline-secondary btn-sm rounded-3">
             <i class="bi bi-arrow-left me-1"></i><?= htmlspecialchars($t['btn_back'], ENT_QUOTES) ?>
         </a>
         <hgroup class="flex-grow-1">
@@ -194,7 +194,7 @@ $categories = ['Subvention', 'Sponsoring', 'Billetterie', 'Hébergement', 'Trans
                     <i class="bi bi-calendar-event-fill me-2 text-warning"></i>
                     <?= htmlspecialchars($t['project_events_title'], ENT_QUOTES) ?>
                 </h2>
-                <a href="/?page=nouvel_event" class="btn btn-outline-warning btn-sm rounded-3">
+                <a href="/nouvel_event" class="btn btn-outline-warning btn-sm rounded-3">
                     <i class="bi bi-plus-lg me-1"></i><?= htmlspecialchars($t['project_event_add_btn'], ENT_QUOTES) ?>
                 </a>
             </header>
@@ -224,7 +224,7 @@ $categories = ['Subvention', 'Sponsoring', 'Billetterie', 'Hébergement', 'Trans
                                     <li><i class="bi bi-geo-alt me-1 text-danger"></i><?= htmlspecialchars((string) $ev['lieu'], ENT_QUOTES) ?></li>
                                     <?php endif; ?>
                                 </ul>
-                                <a href="/?page=gerer_event&id=<?= (int) $ev['id'] ?>" class="btn btn-sm btn-outline-secondary rounded-3 w-100">
+                                <a href="/gerer_event?id=<?= (int) $ev['id'] ?>" class="btn btn-sm btn-outline-secondary rounded-3 w-100">
                                     <?= htmlspecialchars($t['dash_manage_btn'], ENT_QUOTES) ?>
                                 </a>
                             </div>

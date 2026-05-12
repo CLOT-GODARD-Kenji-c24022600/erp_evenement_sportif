@@ -93,7 +93,7 @@ declare(strict_types=1);
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
             </header>
             
-            <form action="/?page=import_csv" method="POST" enctype="multipart/form-data">
+            <form action="/import_csv" method="POST" enctype="multipart/form-data">
                 <div class="modal-body p-4 text-body">
                     <p class="text-body-secondary mb-4"><?= htmlspecialchars($t['dir_modal_desc'], ENT_QUOTES) ?></p>
                     <fieldset class="mb-3 border-0 p-0">

@@ -28,7 +28,7 @@ $successMsg = \Core\Session::flash('success_msg');
             <h1 class="fw-bold text-body mb-0">Gérer l'événement</h1>
             <p class="text-body-secondary mb-0">Modification de l'événement #<?= (int) $event['id'] ?></p>
         </hgroup>
-        <a href="/?page=dashboard" class="btn btn-outline-secondary shadow-sm">
+        <a href="/dashboard" class="btn btn-outline-secondary shadow-sm">
             <?= htmlspecialchars($t['btn_back'], ENT_QUOTES) ?>
         </a>
     </header>
