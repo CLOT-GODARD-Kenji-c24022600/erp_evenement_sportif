@@ -9,7 +9,7 @@
  * @file footer.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.2
+ * @version 1.3
  * @since 2026
  *
  * Variables attendues :
@@ -48,3 +48,4 @@ declare(strict_types=1);
 <script src="assets/js/layout.js"></script>
 <script src="assets/js/search.js"></script>
 <script src="assets/js/presence.js"></script>
+<script src="assets/js/routeur.js"></script>

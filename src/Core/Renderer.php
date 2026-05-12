@@ -6,7 +6,7 @@
  * @file Renderer.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.2
+ * @version 1.3
  * @since 2026
  */
 
@@ -23,6 +23,7 @@ namespace Core;
  *   (sidebar + header + vue + footer).
  * - Injecter les variables dans le scope des vues via extract().
  * - Supprimer le FOUC : CSS chargé dans le <head> avant tout HTML visible.
+ * - Rendu partiel JSON pour les requêtes AJAX SPA (X-Requested-With).
  */
 class Renderer
 {
@@ -53,7 +54,6 @@ class Renderer
             <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
             <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
             <link rel="stylesheet" href="assets/css/auth.css">
-            <?php /* Anti-FOUC : cache le body, révèle dès que le DOM est parsé sans attendre le CDN */ ?>
             <style>body { visibility: hidden; }</style>
             <script>
                 (function () {
@@ -77,13 +77,14 @@ class Renderer
     }
 
     /**
-     * Affiche une page authentifiée avec le layout complet.
+     * Affiche une page authentifiée avec le layout complet,
+     * ou retourne un JSON partiel si c'est une requête AJAX SPA.
      *
-     * Structure HTML correcte pour éviter le FOUC :
-     * 1. <head> avec TOUS les CSS (Bootstrap + layout + page-specific)
-     * 2. <body> caché jusqu'au DOMContentLoaded (sans attendre le CDN)
-     * 3. Sidebar + Header + Vue + Footer
-     * 4. Scripts JS en fin de body
+     * Mode SPA (header X-Requested-With: XMLHttpRequest) :
+     *   → JSON { html, page, extraCss, extraJs }
+     *
+     * Mode normal :
+     *   → HTML complet avec <head>, sidebar, header, vue, footer.
      *
      * @param string               $viewFile Chemin absolu de la vue principale.
      * @param array<string, mixed> $data     Variables à injecter dans toutes les vues.
@@ -97,12 +98,21 @@ class Renderer
         string $extraCss = '',
         string $extraJs  = ''
     ): void {
+        // ── Mode SPA : requête AJAX → rendu partiel JSON ──────────────────
+        if (
+            isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+            strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest'
+        ) {
+            self::renderPartial($viewFile, $data, $extraCss, $extraJs);
+            return;
+        }
+
+        // ── Mode normal : rendu HTML complet ──────────────────────────────
         extract($data, EXTR_SKIP);
 
         $layoutDir = __DIR__ . '/../app/Views/layouts/';
-
-        $lang  = $lang  ?? 'fr';
-        $theme = $theme ?? 'light';
+        $lang      = $lang  ?? 'fr';
+        $theme     = $theme ?? 'light';
         ?>
         <!DOCTYPE html>
         <html lang="<?= htmlspecialchars($lang, ENT_QUOTES) ?>" data-bs-theme="<?= htmlspecialchars($theme, ENT_QUOTES) ?>">
@@ -112,17 +122,12 @@ class Renderer
             <title><?= htmlspecialchars($t['app_name'] ?? 'YES', ENT_QUOTES) ?></title>
             <link rel="icon" type="image/png" href="assets/img/YES-Your-Event-Solution.png">
 
-            <?php /* Bootstrap en premier — base indispensable */ ?>
             <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
             <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-
-            <?php /* CSS global layout — sidebar, topbar, etc. */ ?>
             <link rel="stylesheet" href="assets/css/layout.css">
 
-            <?php /* CSS spécifique à la page (dashboard.css, staff.css, etc.) */ ?>
             <?php if ($extraCss !== '') echo $extraCss . "\n"; ?>
 
-            <?php /* Anti-FOUC : body invisible, révélé dès que le DOM est parsé sans attendre le CDN */ ?>
             <style>body { visibility: hidden; }</style>
             <script>
                 (function () {
@@ -141,6 +146,10 @@ class Renderer
         <?php
         include $layoutDir . 'sidebar.php';
         include $layoutDir . 'header.php';
+        ?>
+
+        <div id="spa-content">
+        <?php
         include $viewFile;
         include $layoutDir . 'footer.php';
 
@@ -148,9 +157,46 @@ class Renderer
             echo $extraJs . "\n";
         }
         ?>
+        </div>
 
         </body>
         </html>
         <?php
+    }
+
+    /**
+     * Rendu partiel JSON pour le router SPA.
+     * Capture uniquement le contenu de la vue + footer via ob_start().
+     *
+     * @param string               $viewFile Chemin absolu de la vue.
+     * @param array<string, mixed> $data     Variables injectées.
+     * @param string               $extraCss Balise CSS page-specific.
+     * @param string               $extraJs  Balise JS page-specific.
+     * @return void
+     */
+    private static function renderPartial(
+        string $viewFile,
+        array  $data,
+        string $extraCss,
+        string $extraJs
+    ): void {
+        extract($data, EXTR_SKIP);
+
+        $layoutDir = __DIR__ . '/../app/Views/layouts/';
+
+        // Capture le HTML de la vue + footer
+        ob_start();
+        include $viewFile;
+        include $layoutDir . 'footer.php';
+        $html = ob_get_clean();
+
+        header('Content-Type: application/json; charset=UTF-8');
+
+        echo json_encode([
+            'html'     => $html,
+            'page'     => $page ?? '',
+            'extraCss' => $extraCss,
+            'extraJs'  => $extraJs,
+        ], JSON_UNESCAPED_UNICODE);
     }
 }
