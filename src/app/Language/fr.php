@@ -8,7 +8,7 @@
  * @file fr.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.0
+ * @version 1.1
  * @since 2026
  */
 
@@ -262,4 +262,10 @@ return [
     'todo_field_project'         => 'Lier à un projet',
     'todo_no_project'            => '— Aucun —',
     'form_project'               => 'Projet associé',
+
+    // ── Erreurs ───────────────────────────────────────────
+    'error_404_title'       => 'Page introuvable',
+    'error_404_desc'        => 'La page que vous cherchez n\'existe pas ou a été déplacée.',
+    'error_404_home'        => 'Accueil',
+    'error_404_back'        => 'Retour',
 ];

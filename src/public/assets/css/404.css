@@ -1,0 +1,43 @@
+/**
+ * YES - Your Event Solution
+ * CSS : Page d'erreur 404
+ *
+ * @file 404.css
+ * @author CELESTINE Samuel
+ * @author CLOT-GODARD Kenji
+ * @version 1.0
+ * @since 2026
+ */
+
+/* ─── Carte centrale ────────────────────────────────── */
+.error-card {
+    max-width: 480px;
+    padding: 2.5rem 2rem;
+    border-radius: 1rem;
+    background-color: var(--bs-body-bg, #fff);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, .08);
+}
+
+/* ─── Code d'erreur animé ───────────────────────────── */
+.error-code {
+    font-size: clamp(5rem, 15vw, 8rem);
+    font-weight: 900;
+    line-height: 1;
+    margin: 0;
+    background: linear-gradient(135deg, #0d6efd 0%, #6ea8fe 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: pulse-404 2.4s ease-in-out infinite;
+}
+
+@keyframes pulse-404 {
+    0%, 100% { opacity: 1;   transform: scale(1); }
+    50%       { opacity: .85; transform: scale(.97); }
+}
+
+/* ─── Dark mode ─────────────────────────────────────── */
+[data-bs-theme="dark"] .error-card {
+    background-color: var(--bs-tertiary-bg, #1e293b);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, .4);
+}

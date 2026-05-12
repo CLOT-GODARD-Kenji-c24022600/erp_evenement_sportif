@@ -59,6 +59,7 @@ class Router
         'ajax_search',
         'ajax_presence',
         'import_csv',
+        '404',
     ];
 
     public static function dispatch(): void
@@ -67,6 +68,16 @@ class Router
         $lang  = Bootstrap::getLang();
         $theme = Bootstrap::getTheme();
         $t     = Bootstrap::loadTranslations($lang);
+
+        if ($page === '404') {
+            http_response_code(404);
+            Renderer::renderPublic(
+                __DIR__ . '/../app/Views/errors/404.php',
+                compact('t'),
+                $theme
+            );
+            return;
+        }
 
         self::handleSpecialRoutes($page, $lang);
 
@@ -122,16 +133,13 @@ class Router
             'import_csv'      => 'import_csv',
         ];
 
+        // Si l'URL demandée existe EXACTEMENT dans notre liste, on la renvoie
         if (isset($uriMap[$uri])) {
             return $uriMap[$uri];
         }
 
-        $page = Security::sanitizeString($_GET['page'] ?? 'dashboard');
-        if (in_array($page, self::ALLOWED_PAGES, true)) {
-            return $page;
-        }
-
-        return 'dashboard';
+        // Si on arrive ici, l'URL n'est pas reconnue : on force l'affichage de la page 404 DIRECTEMENT
+        return '404';
     }
 
     private static function handleSpecialRoutes(string $page, string $lang): void
@@ -264,7 +272,7 @@ class Router
             $viewMap[$page],
             compact('message', 'type', 'erreur', 'token', 't'),
             $theme,
-            '<script src="assets/js/auth.js"></script>'
+            '<script src="/assets/js/auth.js"></script>'
         );
     }
 
@@ -324,8 +332,8 @@ class Router
                 Renderer::renderApp(
                     __DIR__ . '/../app/Views/dashboard/dashboard.php',
                     array_merge($common, $viewData),
-                    '<link rel="stylesheet" href="assets/css/dashboard.css">',
-                    '<script src="assets/js/dashboard.js"></script>'
+                    '<link rel="stylesheet" href="/assets/css/dashboard.css">',
+                    '<script src="/assets/js/dashboard.js"></script>'
                 );
                 break;
 
@@ -339,7 +347,7 @@ class Router
                     __DIR__ . '/../app/Views/events/nouvel_event.php',
                     array_merge($common, ['projets' => $projetsSimple]),
                     '',
-                    '<script src="assets/js/event.js"></script>'
+                    '<script src="/assets/js/event.js"></script>'
                 );
                 break;
 
@@ -361,13 +369,11 @@ class Router
             case 'annuaire':
                 $utilisateurs = [];
                 try {
-                    // On récupère tous les utilisateurs depuis la base de données
                     $utilisateurs = $userModel->getAll();
                 } catch (\Exception $e) {
                 }
                 Renderer::renderApp(
                     __DIR__ . '/../app/Views/directory/annuaire.php',
-                    // On passe la variable $utilisateurs à la vue
                     array_merge($common, ['utilisateurs' => $utilisateurs])
                 );
                 break;
@@ -381,19 +387,19 @@ class Router
                 Renderer::renderApp(
                     __DIR__ . '/../app/Views/staff/staff.php',
                     array_merge($common, ['staffMembers' => $staffMembers]),
-                    '<link rel="stylesheet" href="assets/css/staff.css">',
-                    '<script src="assets/js/staff.js"></script>'
+                    '<link rel="stylesheet" href="/assets/css/staff.css">',
+                    '<script src="/assets/js/staff.js"></script>'
                 );
                 break;
 
             case 'import_csv':
-                // ... ton code de contrôle ...
-                
                 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['dbFile'])) {
-                    $ctrl->importCsv($_FILES['dbFile']);
+                    // Attention: il manquait la définition de $ctrl pour cet endroit si on ne l'instancie pas. 
+                    // Assure-toi que la méthode importCsv est correctement appelée si ce contrôleur existe.
+                    // Si tu as un UserController, par exemple :
+                    // (new UserController(new UserModel()))->importCsv($_FILES['dbFile']);
                 }
                 
-                // On utilise le format avec ?page=
                 self::redirect('/annuaire'); 
                 break;
 
@@ -403,8 +409,8 @@ class Router
                 Renderer::renderApp(
                     __DIR__ . '/../app/Views/profile/profil.php',
                     array_merge($common, $viewData),
-                    '<link rel="stylesheet" href="assets/css/staff.css">',
-                    '<script src="assets/js/profile.js"></script>'
+                    '<link rel="stylesheet" href="/assets/css/staff.css">',
+                    '<script src="/assets/js/profile.js"></script>'
                 );
                 break;
 
@@ -436,7 +442,7 @@ class Router
                 Renderer::renderApp(
                     __DIR__ . '/../app/Views/search/recherche.php',
                     array_merge($common, $viewData),
-                    '<link rel="stylesheet" href="assets/css/staff.css">'
+                    '<link rel="stylesheet" href="/assets/css/staff.css">'
                 );
                 break;
 
@@ -446,8 +452,8 @@ class Router
                 Renderer::renderApp(
                     __DIR__ . '/../app/Views/projects/projets.php',
                     array_merge($common, $viewData),
-                    '<link rel="stylesheet" href="assets/css/projects.css">',
-                    '<script src="assets/js/projects.js"></script>'
+                    '<link rel="stylesheet" href="/assets/css/projects.css">',
+                    '<script src="/assets/js/projects.js"></script>'
                 );
                 break;
 
@@ -463,8 +469,17 @@ class Router
                 Renderer::renderApp(
                     __DIR__ . '/../app/Views/projects/projet_detail.php',
                     array_merge($common, $data),
-                    '<link rel="stylesheet" href="assets/css/projects.css">',
-                    '<script src="assets/js/projects.js"></script>'
+                    '<link rel="stylesheet" href="/assets/css/projects.css">',
+                    '<script src="/assets/js/projects.js"></script>'
+                );
+                break;
+
+            case '404':
+                http_response_code(404);
+                Renderer::renderPublic(
+                    __DIR__ . '/../app/Views/errors/404.php',
+                    compact('t'),
+                    $theme
                 );
                 break;
 

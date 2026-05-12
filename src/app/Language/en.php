@@ -8,7 +8,7 @@
  * @file en.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.0
+ * @version 1.1
  * @since 2026
  */
 
@@ -262,4 +262,10 @@ return [
     'todo_field_project'         => 'Link to a project',
     'todo_no_project'            => '— None —',
     'form_project'               => 'Associated project',
+
+    // ── Errors ────────────────────────────────────────────
+    'error_404_title'       => 'Page not found',
+    'error_404_desc'        => 'The page you are looking for does not exist or has been moved.',
+    'error_404_home'        => 'Home',
+    'error_404_back'        => 'Go back',
 ];
