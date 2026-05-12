@@ -6,7 +6,7 @@
  * @file Router.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.2
+ * @version 1.3
  * @since 2026
  */
 
@@ -57,6 +57,7 @@ class Router
         'projets',
         'projet_detail',
         'ajax_search',
+        'ajax_presence',
     ];
 
     public static function dispatch(): void
@@ -117,6 +118,7 @@ class Router
             'gerer_event'     => 'gerer_event',
             'projet_detail'   => 'projet_detail',
             'ajax_search'     => 'ajax_search',
+            'ajax_presence'   => 'ajax_presence',
             'change_lang'     => 'change_lang',
         ];
 
@@ -188,6 +190,18 @@ class Router
                 ], array_slice($model->searchStaff($q), 0, 4)),
             ], JSON_UNESCAPED_UNICODE);
 
+            exit();
+        }
+
+        if ($page === 'ajax_presence') {
+            if (!Session::has('user_id')) {
+                http_response_code(401);
+                echo json_encode(['error' => 'Unauthorized']);
+                exit();
+            }
+
+            header('Content-Type: application/json; charset=UTF-8');
+            echo json_encode((new UserModel())->getPresence(), JSON_UNESCAPED_UNICODE);
             exit();
         }
     }
@@ -264,12 +278,11 @@ class Router
         try {
             $userModel->updateLastActivity($userId);
 
-            if (!$isAdmin) {
-                $statut = $userModel->getStatut($userId);
-                if ($statut === 'rejete') {
-                    Session::destroy();
-                    self::redirect('/login');
-                }
+            // Vérification à chaque requête : compte supprimé ou rejeté → déconnexion forcée
+            $statut = $userModel->getStatut($userId);
+            if ($statut === null || $statut === 'rejete') {
+                Session::destroy();
+                self::redirect('/login');
             }
         } catch (\Exception $e) {
         }

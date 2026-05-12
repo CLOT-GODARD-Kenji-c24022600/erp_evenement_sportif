@@ -8,7 +8,7 @@
  * @file staff.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.0
+ * @version 1.1
  * @since 2026
  *
  * Variables attendues :
@@ -66,7 +66,7 @@ declare(strict_types=1);
                 $dotTitle = $t['staff_status_online'];
             }
         ?>
-        <li class="col staff-card">
+        <li class="col staff-card" data-user-id="<?= (int) $member['id'] ?>">
             <article class="card h-100 border-0 shadow-sm staff-card-hover">
                 <section class="card-body text-center p-4">
 
@@ -80,7 +80,7 @@ declare(strict_types=1);
                                 <?= strtoupper(substr($fullName, 0, 1)) ?>
                             </span>
                         <?php endif; ?>
-                        <span class="position-absolute bottom-0 end-0 p-2 <?= $dotColor ?> border border-light rounded-circle status-dot"
+                        <span class="position-absolute bottom-0 end-0 p-2 <?= $dotColor ?> border border-light rounded-circle status-dot presence-dot"
                               title="<?= htmlspecialchars($dotTitle, ENT_QUOTES) ?>"
                               data-bs-toggle="tooltip"
                               aria-label="Statut : <?= htmlspecialchars($dotTitle, ENT_QUOTES) ?>"></span>

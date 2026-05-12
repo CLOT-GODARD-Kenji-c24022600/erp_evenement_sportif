@@ -8,7 +8,7 @@
  * @file AuthController.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.0
+ * @version 1.1
  * @since 2026
  */
 
@@ -76,7 +76,8 @@ class AuthController
         Session::set('user_role', $user['role']);
         Session::set('user_nom',  trim(($user['prenom'] ?? '') . ' ' . $user['nom']));
 
-        Router::redirect('?page=dashboard');
+        // URL absolue pour éviter les redirections relatives cassées (ex: /login?page=dashboard)
+        Router::redirect('/dashboard');
     }
 
     /**
@@ -172,7 +173,7 @@ class AuthController
             $mail->setFrom('erp-evenement@alwaysdata.net', 'YES - Your Event Solution');
             $mail->addAddress($email);
 
-            $link = 'http://localhost:8080/?page=reset_password&token=' . $token;
+            $link = 'http://localhost:8080/reset_password?token=' . $token;
 
             $mail->isHTML(true);
             $mail->Subject = 'Réinitialisation de votre mot de passe';

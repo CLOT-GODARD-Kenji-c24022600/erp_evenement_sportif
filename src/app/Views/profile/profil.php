@@ -74,7 +74,7 @@ declare(strict_types=1);
 
                     <hr class="my-4">
 
-                    <a href="?page=logout" class="btn btn-danger btn-sm w-100 fw-bold shadow-sm">
+                    <a href="/logout" class="btn btn-danger btn-sm w-100 fw-bold shadow-sm">
                         <i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>
                         <?= htmlspecialchars($t['profile_btn_logout'], ENT_QUOTES) ?>
                     </a>

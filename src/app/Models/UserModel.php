@@ -8,7 +8,7 @@
  * @file UserModel.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.0
+ * @version 1.1
  * @since 2026
  */
 
@@ -320,5 +320,52 @@ class UserModel
         $value = $stmt->fetchColumn();
 
         return $value !== false ? (string) $value : null;
+    }
+
+    /**
+     * Retourne la présence temps réel de tous les utilisateurs approuvés.
+     * Utilisé par l'endpoint ajax_presence pour le polling JS.
+     *
+     * Logique :
+     * - offline forcé (statut_presence = 'offline') ou inactif > 15 min → gris
+     * - idle forcé ou inactif > 5 min                                   → jaune
+     * - dnd forcé                                                        → rouge
+     * - sinon                                                            → vert
+     *
+     * @return array<int, array{dot: string, label: string}>
+     */
+    public function getPresence(): array
+    {
+        $rows = $this->db->query(
+            "SELECT id, statut_presence, derniere_activite
+             FROM utilisateurs
+             WHERE statut = 'approuve'"
+        )->fetchAll();
+
+        $result = [];
+        $now    = time();
+
+        foreach ($rows as $row) {
+            $pref = $row['statut_presence'] ?? 'online';
+            $diff = $now - (int) strtotime($row['derniere_activite'] ?? '2000-01-01');
+
+            if ($pref === 'offline' || $diff > 900) {
+                $dot   = 'bg-secondary';
+                $label = 'Hors ligne';
+            } elseif ($pref === 'idle' || $diff > 300) {
+                $dot   = 'bg-warning';
+                $label = 'Absent';
+            } elseif ($pref === 'dnd') {
+                $dot   = 'bg-danger';
+                $label = 'Ne pas déranger';
+            } else {
+                $dot   = 'bg-success';
+                $label = 'En ligne';
+            }
+
+            $result[(int) $row['id']] = ['dot' => $dot, 'label' => $label];
+        }
+
+        return $result;
     }
 }
