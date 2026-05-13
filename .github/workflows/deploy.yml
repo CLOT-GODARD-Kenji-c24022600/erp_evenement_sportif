@@ -12,6 +12,12 @@ jobs:
     - name: Récupération du code
       uses: actions/checkout@v4
 
+    - name: Installation des dépendances PHP (Composer)
+      run: composer install --no-dev --optimize-autoloader
+
+    - name: Création du fichier .env
+      run: echo "${{ secrets.PRODUCTION_ENV }}" > .env
+
     - name: Déploiement FTPS (Contournement sécurité)
       env:
         FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
@@ -22,5 +28,5 @@ jobs:
         set ftp:ssl-protect-data true
         set ssl:verify-certificate no
         open -u ${{ secrets.FTP_USERNAME }},\"$FTP_PASSWORD\" ${{ secrets.FTP_SERVER }}
-        mirror -R --verbose --exclude-glob .git* --exclude-glob node_modules/ --exclude-glob docker-compose.yml --exclude-glob Dockerfile ./ /www/
+        mirror -R --verbose --exclude-glob .git* --exclude-glob docker/ --exclude-glob docker-compose.yml --exclude-glob Dockerfile ./ /www/
         "
