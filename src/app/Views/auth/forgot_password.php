@@ -35,7 +35,7 @@ declare(strict_types=1);
             <?php endif; ?>
 
             <?php if ($type !== 'success'): ?>
-            <form method="POST" action="?page=forgot_password" novalidate>
+            <form method="POST" action="forgot_password" novalidate>
                 <fieldset class="mb-3 border-0 p-0">
                     <label for="email" class="form-label">
                         <?= htmlspecialchars($t['auth_login_email'], ENT_QUOTES) ?>
@@ -50,7 +50,7 @@ declare(strict_types=1);
             <?php endif; ?>
 
             <footer class="text-center mt-4 border-top pt-3">
-                <a href="?page=login" class="text-decoration-none small">
+                <a href="login" class="text-decoration-none small">
                     🔙 <?= htmlspecialchars($t['auth_register_back'], ENT_QUOTES) ?>
                 </a>
             </footer>

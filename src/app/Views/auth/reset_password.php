@@ -36,7 +36,7 @@ declare(strict_types=1);
             <?php endif; ?>
 
             <?php if ($type !== 'success' && $token !== ''): ?>
-            <form method="POST" action="?page=reset_password&token=<?= htmlspecialchars($token, ENT_QUOTES) ?>" novalidate>
+            <form method="POST" action="reset_password&token=<?= htmlspecialchars($token, ENT_QUOTES) ?>" novalidate>
                 <fieldset class="mb-3 border-0 p-0">
                     <label for="password" class="form-label">
                         <?= htmlspecialchars($t['profile_field_new_pwd'], ENT_QUOTES) ?>
@@ -59,7 +59,7 @@ declare(strict_types=1);
 
             <?php if ($type === 'success' || $token === ''): ?>
             <footer class="text-center mt-4">
-                <a href="?page=login" class="btn btn-outline-primary w-100">
+                <a href="login" class="btn btn-outline-primary w-100">
                     <?= htmlspecialchars($t['auth_go_login'], ENT_QUOTES) ?>
                 </a>
             </footer>

@@ -35,7 +35,7 @@ declare(strict_types=1);
             <?php endif; ?>
 
             <?php if ($type !== 'success'): ?>
-            <form method="POST" action="?page=inscription" novalidate>
+            <form method="POST" action="inscription" novalidate>
                 <section class="row">
                     <fieldset class="col-md-6 mb-3 border-0 p-0 px-2">
                         <label for="prenom" class="form-label">
@@ -84,7 +84,7 @@ declare(strict_types=1);
             <?php endif; ?>
 
             <footer class="text-center mt-4 border-top pt-3">
-                <a href="?page=login" class="text-decoration-none">
+                <a href="login" class="text-decoration-none">
                     🔙 <?= htmlspecialchars($t['auth_register_back'], ENT_QUOTES) ?>
                 </a>
             </footer>

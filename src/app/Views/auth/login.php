@@ -33,7 +33,7 @@ declare(strict_types=1);
                 </aside>
             <?php endif; ?>
 
-            <form method="POST" action="?page=login" novalidate>
+            <form method="POST" action="login" novalidate>
                 <fieldset class="mb-3 border-0 p-0">
                     <label for="email" class="form-label">
                         <?= htmlspecialchars($t['auth_login_email'], ENT_QUOTES) ?>
@@ -56,7 +56,7 @@ declare(strict_types=1);
                 </fieldset>
 
                 <nav class="d-flex justify-content-end mb-3">
-                    <a href="?page=forgot_password" class="text-decoration-none small text-muted">
+                    <a href="forgot_password" class="text-decoration-none small text-muted">
                         <?= htmlspecialchars($t['auth_login_forgot'], ENT_QUOTES) ?>
                     </a>
                 </nav>
@@ -70,7 +70,7 @@ declare(strict_types=1);
                 <span class="text-muted small">
                     <?= htmlspecialchars($t['auth_login_no_account'], ENT_QUOTES) ?>
                 </span><br>
-                <a href="?page=inscription" class="text-decoration-none fw-bold">
+                <a href="inscription" class="text-decoration-none fw-bold">
                     <?= htmlspecialchars($t['auth_login_register'], ENT_QUOTES) ?>
                 </a>
             </footer>
