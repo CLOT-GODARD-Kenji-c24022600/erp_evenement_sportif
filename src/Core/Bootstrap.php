@@ -43,7 +43,7 @@ class Bootstrap
      */
     private static function loadEnv(): void
     {
-        $envFile = __DIR__ . '/../../../.env';
+        $envFile = __DIR__ . '/../../.env';
 
         if (!file_exists($envFile)) {
             return;
