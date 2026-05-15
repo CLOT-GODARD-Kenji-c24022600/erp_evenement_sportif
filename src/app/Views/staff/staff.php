@@ -122,4 +122,5 @@ declare(strict_types=1);
         <?= htmlspecialchars($t['staff_no_result'], ENT_QUOTES) ?>
     </p>
 
+    <script src="assets/js/staff.js"></script>
 </section>
