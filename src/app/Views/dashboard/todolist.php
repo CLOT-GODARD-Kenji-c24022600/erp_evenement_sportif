@@ -9,7 +9,7 @@
  * @file todolist.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.1
+ * @version 1.2
  * @since 2026
  *
  * Variables attendues (héritées du dashboard) :
@@ -59,6 +59,8 @@ $percent    = $total > 0 ? (int) round(($done / $total) * 100) : 0;
 
 $actives   = array_filter($todos, fn($t) => $t['status'] !== 'termine');
 $terminees = array_filter($todos, fn($t) => $t['status'] === 'termine');
+
+$today = date('Y-m-d');
 ?>
 
 <section class="mb-5" aria-labelledby="todolist-heading">
@@ -92,22 +94,45 @@ $terminees = array_filter($todos, fn($t) => $t['status'] === 'termine');
                   aria-label="<?= $percent ?>%"></progress>
     </figure>
 
-    <ul class="list-unstyled d-flex gap-3 mb-4 flex-wrap">
+    <!-- Cartes stats cliquables pour filtrer par statut -->
+    <ul class="list-unstyled d-flex gap-3 mb-4 flex-wrap" id="todo-stat-filters">
         <?php foreach ([
-            ['val' => $total,      'color' => 'primary',   'label' => $t['todo_total']],
-            ['val' => $en_attente, 'color' => 'secondary', 'label' => $t['todo_pending']],
-            ['val' => $en_cours,   'color' => 'primary',   'label' => $t['todo_in_progress']],
-            ['val' => $done,       'color' => 'success',   'label' => $t['todo_done']],
+            ['val' => $total,      'color' => 'primary',   'label' => $t['todo_total'],       'filter' => 'all'],
+            ['val' => $en_attente, 'color' => 'secondary', 'label' => $t['todo_pending'],      'filter' => 'en_attente'],
+            ['val' => $en_cours,   'color' => 'primary',   'label' => $t['todo_in_progress'],  'filter' => 'en_cours'],
+            ['val' => $done,       'color' => 'success',   'label' => $t['todo_done'],         'filter' => 'termine'],
         ] as $stat): ?>
         <li>
-            <article class="rounded-3 px-3 py-2 shadow-sm border text-center todo-stat-card">
+            <button type="button"
+                    class="btn border rounded-3 px-3 py-2 shadow-sm todo-stat-card <?= $stat['filter'] === 'all' ? 'todo-stat-active' : '' ?>"
+                    data-todo-status-filter="<?= $stat['filter'] ?>"
+                    aria-pressed="<?= $stat['filter'] === 'all' ? 'true' : 'false' ?>">
                 <p class="fw-bold fs-5 mb-0 text-<?= $stat['color'] ?>"><?= $stat['val'] ?></p>
                 <p class="small text-body-secondary mb-0"><?= htmlspecialchars($stat['label'], ENT_QUOTES) ?></p>
-            </article>
+            </button>
         </li>
         <?php endforeach; ?>
     </ul>
 
+    <!-- Barre de recherche + tri -->
+    <div class="d-flex gap-2 mb-3 flex-wrap align-items-center">
+        <div class="input-group input-group-sm flex-grow-1" style="max-width:300px;">
+            <span class="input-group-text bg-body border-end-0">
+                <i class="bi bi-search text-body-secondary" aria-hidden="true"></i>
+            </span>
+            <input type="search" id="todo-search" class="form-control border-start-0 rounded-end-3"
+                   placeholder="Rechercher une tâche…" aria-label="Rechercher une tâche">
+        </div>
+        <select id="todo-sort" class="form-select form-select-sm" style="width:auto;" aria-label="Trier les tâches">
+            <option value="default">Ordre par défaut</option>
+            <option value="priority-desc">Priorité (haute → basse)</option>
+            <option value="priority-asc">Priorité (basse → haute)</option>
+            <option value="date-asc">Échéance (proche → lointaine)</option>
+            <option value="date-desc">Échéance (lointaine → proche)</option>
+        </select>
+    </div>
+
+    <!-- Filtres de catégorie -->
     <nav aria-label="<?= htmlspecialchars($t['todo_filter_all'], ENT_QUOTES) ?>" class="mb-3">
         <ul class="nav nav-pills gap-1" role="tablist">
             <li class="nav-item" role="presentation">
@@ -140,6 +165,12 @@ $terminees = array_filter($todos, fn($t) => $t['status'] === 'termine');
         </p>
     <?php else: ?>
 
+        <!-- Message aucun résultat -->
+        <p id="todo-no-results" class="text-body-secondary text-center py-4" style="display:none;">
+            <i class="bi bi-search fs-2 d-block mb-2 opacity-50" aria-hidden="true"></i>
+            Aucune tâche ne correspond à votre recherche.
+        </p>
+
         <?php if (!empty($actives)): ?>
         <section aria-labelledby="todo-actives-heading">
             <h3 id="todo-actives-heading" class="visually-hidden">Tâches actives</h3>
@@ -149,9 +180,16 @@ $terminees = array_filter($todos, fn($t) => $t['status'] === 'termine');
                     $prio   = $priorities[(int) $todo['priority']] ?? $priorities[1];
                     $statut = $statuts[$todo['status']] ?? $statuts['en_attente'];
                     $trans  = $transitions[$todo['status']] ?? [];
+                    $isOverdue = !empty($todo['due_date'])
+                              && $todo['status'] !== 'termine'
+                              && $todo['due_date'] < $today;
                 ?>
-                <li class="list-group-item px-3 py-3 todo-item"
-                    data-category="<?= htmlspecialchars((string) $todo['category'], ENT_QUOTES) ?>">
+                <li class="list-group-item px-3 py-3 todo-item <?= $isOverdue ? 'todo-overdue' : '' ?>"
+                    data-category="<?= htmlspecialchars((string) $todo['category'], ENT_QUOTES) ?>"
+                    data-status="<?= htmlspecialchars((string) $todo['status'], ENT_QUOTES) ?>"
+                    data-priority="<?= (int) $todo['priority'] ?>"
+                    data-due="<?= htmlspecialchars((string) ($todo['due_date'] ?? ''), ENT_QUOTES) ?>"
+                    data-title="<?= htmlspecialchars(strtolower((string) $todo['title']), ENT_QUOTES) ?>">
                     <article class="d-flex align-items-start gap-3">
 
                         <nav aria-label="Changer le statut" class="flex-shrink-0 mt-1 d-flex flex-column gap-1">
@@ -176,6 +214,11 @@ $terminees = array_filter($todos, fn($t) => $t['status'] === 'termine');
                         <section class="flex-grow-1" style="min-width:0;">
                             <p class="mb-1 fw-semibold text-body lh-sm">
                                 <?= htmlspecialchars((string) $todo['title'], ENT_QUOTES) ?>
+                                <?php if ($isOverdue): ?>
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill ms-1" title="Tâche en retard">
+                                        <i class="bi bi-exclamation-triangle-fill me-1" aria-hidden="true"></i>En retard
+                                    </span>
+                                <?php endif; ?>
                             </p>
                             <?php if (!empty($todo['description'])): ?>
                                 <p class="text-body-secondary small mb-1">
@@ -195,7 +238,8 @@ $terminees = array_filter($todos, fn($t) => $t['status'] === 'termine');
                                     <?= htmlspecialchars($prio['label'], ENT_QUOTES) ?>
                                 </span>
                                 <?php if (!empty($todo['due_date'])): ?>
-                                <time datetime="<?= htmlspecialchars((string) $todo['due_date'], ENT_QUOTES) ?>" class="small text-body-secondary">
+                                <time datetime="<?= htmlspecialchars((string) $todo['due_date'], ENT_QUOTES) ?>"
+                                      class="small <?= $isOverdue ? 'text-danger fw-semibold' : 'text-body-secondary' ?>">
                                     <i class="bi bi-calendar3 me-1" aria-hidden="true"></i>
                                     <?= date('d/m/Y', strtotime((string) $todo['due_date'])) ?>
                                 </time>
@@ -246,11 +290,17 @@ $terminees = array_filter($todos, fn($t) => $t['status'] === 'termine');
                 </li>
                 <?php endforeach; ?>
             </ul>
+
+            <!-- Pagination -->
+            <nav id="todo-pagination" aria-label="Pagination des tâches" class="d-flex justify-content-between align-items-center mt-2" style="display:none!important;">
+                <p class="small text-body-secondary mb-0" id="todo-pagination-info"></p>
+                <ul class="pagination pagination-sm mb-0" id="todo-pagination-pages"></ul>
+            </nav>
         </section>
         <?php endif; ?>
 
         <?php if (!empty($terminees)): ?>
-        <details class="mt-2">
+        <details class="mt-2" id="todo-done-section">
             <summary class="text-body-secondary small fw-semibold mb-2 todo-summary">
                 <i class="bi bi-check-all text-success" aria-hidden="true"></i>
                 <?= count($terminees) ?> <?= htmlspecialchars($t['todo_done_count'], ENT_QUOTES) ?>
@@ -259,7 +309,12 @@ $terminees = array_filter($todos, fn($t) => $t['status'] === 'termine');
                 <?php foreach ($terminees as $todo):
                     $trans = $transitions['termine'] ?? [];
                 ?>
-                <li class="list-group-item px-3 py-2 opacity-60">
+                <li class="list-group-item px-3 py-2 opacity-60 todo-item todo-item-done"
+                    data-category="<?= htmlspecialchars((string) $todo['category'], ENT_QUOTES) ?>"
+                    data-status="termine"
+                    data-priority="<?= (int) $todo['priority'] ?>"
+                    data-due="<?= htmlspecialchars((string) ($todo['due_date'] ?? ''), ENT_QUOTES) ?>"
+                    data-title="<?= htmlspecialchars(strtolower((string) $todo['title']), ENT_QUOTES) ?>">
                     <article class="d-flex align-items-center gap-3">
                         <?php foreach ($trans as $newStatus => $info): ?>
                         <form method="POST" action="/dashboard">
