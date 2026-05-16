@@ -8,15 +8,8 @@
  * @file sidebar.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.3
+ * @version 2.0
  * @since 2026
- *
- * Variables attendues :
- * @var string      $page          Page courante.
- * @var array       $t             Traductions chargées.
- * @var string      $sidebarNom    Nom complet de l'utilisateur connecté.
- * @var string|null $sidebarAvatar Nom du fichier avatar (ou null).
- * @var bool        $isAdmin       L'utilisateur est-il admin ?
  */
 
 declare(strict_types=1);
@@ -48,7 +41,6 @@ $isProjectPage = in_array($page, ['projets', 'projet_detail'], true);
             </figure>
             <span class="fs-5 fw-bold ms-2 sb-text" style="letter-spacing: 1px;">YES</span>
         </a>
-        <!-- Bouton fermer (mobile) / réduire (desktop) -->
         <button id="sidebarToggle" class="btn btn-link text-white p-0 toggle-btn"
                 aria-label="Réduire / Agrandir la sidebar">
             <i class="bi bi-chevron-left" id="toggleIcon" aria-hidden="true"></i>
@@ -56,6 +48,8 @@ $isProjectPage = in_array($page, ['projets', 'projet_detail'], true);
     </header>
 
     <ul class="nav nav-pills flex-column mb-auto px-2" role="menubar">
+
+        <!-- Dashboard -->
         <li class="nav-item mb-1" role="none">
             <a href="/dashboard"
                class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'dashboard' ? 'active bg-primary' : 'opacity-75' ?>"
@@ -65,6 +59,8 @@ $isProjectPage = in_array($page, ['projets', 'projet_detail'], true);
                 <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_dashboard'], ENT_QUOTES) ?></span>
             </a>
         </li>
+
+        <!-- Projets -->
         <li class="nav-item mb-1" role="none">
             <a href="/projets"
                class="nav-link text-white d-flex align-items-center py-3 <?= $isProjectPage ? 'active bg-primary' : 'opacity-75' ?>"
@@ -74,6 +70,19 @@ $isProjectPage = in_array($page, ['projets', 'projet_detail'], true);
                 <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_projects'], ENT_QUOTES) ?></span>
             </a>
         </li>
+
+        <!-- Opérationnel (Planning · Matériel · Facturation · Budget) -->
+        <li class="nav-item mb-1" role="none">
+            <a href="/operationnel"
+               class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'operationnel' ? 'active bg-primary' : 'opacity-75' ?>"
+               role="menuitem"
+               <?= $page === 'operationnel' ? 'aria-current="page"' : '' ?>>
+                <i class="bi bi-clipboard2-data-fill fs-5 mx-2" aria-hidden="true"></i>
+                <span class="ms-2 sb-text">Opérationnel</span>
+            </a>
+        </li>
+
+        <!-- Annuaire -->
         <li class="nav-item mb-1" role="none">
             <a href="/annuaire"
                class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'annuaire' ? 'active bg-primary' : 'opacity-75' ?>"
@@ -83,6 +92,8 @@ $isProjectPage = in_array($page, ['projets', 'projet_detail'], true);
                 <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_directory'], ENT_QUOTES) ?></span>
             </a>
         </li>
+
+        <!-- Nouvel Événement -->
         <li class="nav-item mb-1" role="none">
             <a href="/nouvel_event"
                class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'nouvel_event' ? 'active bg-primary' : 'opacity-75' ?>"
@@ -92,12 +103,14 @@ $isProjectPage = in_array($page, ['projets', 'projet_detail'], true);
                 <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_new_event'], ENT_QUOTES) ?></span>
             </a>
         </li>
+
+        <!-- Staff -->
         <li class="nav-item mb-1" role="none">
             <a href="/staff"
                class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'staff' ? 'active bg-primary' : 'opacity-75' ?>"
                role="menuitem"
                <?= $page === 'staff' ? 'aria-current="page"' : '' ?>>
-                <i class="bi bi-people-fill fs-5 mx-2" aria-hidden="true"></i>
+                <i class="bi bi-person-badge-fill fs-5 mx-2" aria-hidden="true"></i>
                 <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_staff'], ENT_QUOTES) ?></span>
             </a>
         </li>
@@ -117,15 +130,11 @@ $isProjectPage = in_array($page, ['projets', 'projet_detail'], true);
         <?php endif; ?>
     </ul>
 
-    <!-- ── Section mobile : actions du header dans le menu ── -->
+    <!-- ── Section mobile : actions du header ── -->
     <div class="d-flex d-md-none flex-column px-3 py-2 border-top border-secondary mx-2 mobile-header-actions">
-
-        <!-- Quick Create -->
         <div class="dropdown mb-2">
             <button class="btn btn-primary btn-sm w-100 fw-bold dropdown-toggle"
-                    type="button"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false">
+                    type="button" data-bs-toggle="dropdown" aria-expanded="false">
                 <?= htmlspecialchars($t['qc_btn_add'], ENT_QUOTES) ?>
             </button>
             <ul class="dropdown-menu shadow border-0 mt-2 w-100" role="menu">
@@ -155,8 +164,6 @@ $isProjectPage = in_array($page, ['projets', 'projet_detail'], true);
                 <?php endif; ?>
             </ul>
         </div>
-
-        <!-- Langue + Dark mode -->
         <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
             <nav class="btn-group border border-secondary rounded-pill overflow-hidden" role="group" aria-label="Langue">
                 <a href="/change_lang?lang=fr&return=<?= htmlspecialchars($page, ENT_QUOTES) ?>"
@@ -166,7 +173,6 @@ $isProjectPage = in_array($page, ['projets', 'projet_detail'], true);
                    class="btn btn-xs py-1 px-3 <?= $lang === 'en' ? 'bg-body-secondary fw-bold text-dark' : 'text-white opacity-75' ?>"
                    hreflang="en" lang="en">EN</a>
             </nav>
-
             <button id="darkModeToggleMobile" class="btn btn-link text-white p-0 fs-5 shadow-none"
                     aria-label="Basculer entre mode clair et sombre">
                 <?php if ($theme === 'dark'): ?>

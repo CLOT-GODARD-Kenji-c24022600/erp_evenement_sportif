@@ -227,7 +227,7 @@ return [
     // ── Projects ──────────────────────────────────────────
     'nav_projects'               => 'Projects',
     'project_subtitle'           => 'Manage your projects, budget and linked events.',
-    'project_new_btn'            => '+ New project',
+    'project_new_btn'            => 'New project',
     'project_empty'              => 'No projects yet. Create one!',
     'project_detail_btn'         => 'View detail',
     'project_budget'             => 'Budget',
