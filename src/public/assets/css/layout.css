@@ -15,6 +15,7 @@
   --sb-collapsed: 80px;
   --transition: all 0.3s ease;
   --sidebar-bg: #1e293b;
+  --footer-height: 64px;
 }
 
 /* ─── Reset / Base ──────────────────────────────────── */
@@ -32,6 +33,11 @@ body {
   margin: 0;
   overflow-x: hidden;
   max-width: 100%;
+}
+
+/* Ensure the root elements take full height so 100vh calculations work reliably */
+html, body {
+  height: 100%;
 }
 
 /* ─── Dark mode overrides ───────────────────────────── */
@@ -177,10 +183,22 @@ body.sidebar-open .sidebar-overlay {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  /* Make sure main-content behaves as a column flex container so footer can push to bottom */
+  width: calc(100% - var(--sb-width));
   width: calc(100% - var(--sb-width));
   overflow-x: hidden;
   max-width: calc(100% - var(--sb-width));
 }
+
+/* Make SPA content fill remaining vertical space so footer can be pushed down */
+.main-content > #spa-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0; /* allow children to shrink correctly in flex layout */
+}
+
+/* (no bottom padding — footer is flex-managed and sits after content) */
 
 body.collapsed .main-content {
   margin-left: var(--sb-collapsed);
@@ -238,6 +256,17 @@ body.collapsed .main-content {
 /* ─── Footer ────────────────────────────────────────── */
 .app-footer {
   margin-top: auto;
+  /* Ensure footer is treated as a flex item and stays visually at the bottom when content is short */
+  flex-shrink: 0;
+  background: var(--bs-body-bg);
+  position: static;
+  z-index: 1010;
+}
+
+/* Ensure app name in footer is always visible and contrasts with theme */
+.app-footer .app-name {
+  color: var(--bs-body-color, #212529) !important;
+  font-weight: 600;
 }
 
 /* ─── Event card description clamp ─────────────────── */
