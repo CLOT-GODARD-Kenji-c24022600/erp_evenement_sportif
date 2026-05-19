@@ -18,7 +18,6 @@
 
 declare(strict_types=1);
 ?>
-    </main><!-- /.main-content -->
 
     <footer class="py-4 bg-body border-top mt-auto app-footer">
         <div class="container-fluid px-4">
@@ -48,7 +47,7 @@ declare(strict_types=1);
             </div>
         </div>
     </footer>
-
+</main>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/assets/js/layout.js"></script>
 <script src="/assets/js/search.js"></script>
