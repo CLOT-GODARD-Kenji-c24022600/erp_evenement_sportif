@@ -18,22 +18,29 @@
 
 declare(strict_types=1);
 ?>
+    </main><!-- /.main-content -->
+
     <footer class="py-4 bg-body border-top mt-auto app-footer">
         <div class="container-fluid px-4">
-            <div class="d-flex justify-content-between align-items-center small text-body-secondary">
+            <div class="d-flex justify-content-between align-items-center small">
                 <p class="mb-0">
-                    &copy; <?= date('Y') ?> <?= htmlspecialchars($t['app_name'], ENT_QUOTES) ?>
+                    &copy; <?= date('Y') ?> <?= htmlspecialchars($t['app_name'] ?? 'YES', ENT_QUOTES) ?>
                 </p>
                 <nav aria-label="Liens du pied de page">
                     <ul class="list-unstyled d-flex gap-3 align-items-center mb-0">
                         <li>
-                            <a href="#" class="text-decoration-none text-reset">
-                                <?= htmlspecialchars($t['footer_help'], ENT_QUOTES) ?>
+                            <a href="/aide" class="text-decoration-none text-reset">
+                                <?= htmlspecialchars($t['footer_help'] ?? 'Aide', ENT_QUOTES) ?>
                             </a>
                         </li>
                         <li class="border-start ps-3">
-                            <a href="#" class="text-decoration-none text-reset">
-                                <?= htmlspecialchars($t['footer_privacy'], ENT_QUOTES) ?>
+                            <a href="/mentions_legales" class="text-decoration-none text-reset">
+                                <?= htmlspecialchars($t['footer_privacy'] ?? 'Mentions légales', ENT_QUOTES) ?>
+                            </a>
+                        </li>
+                        <li class="border-start ps-3">
+                            <a href="/plan_du_site" class="text-decoration-none text-reset">
+                                Plan du site
                             </a>
                         </li>
                     </ul>
@@ -42,10 +49,8 @@ declare(strict_types=1);
         </div>
     </footer>
 
-    </main><!-- /.main-content -->
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="assets/js/layout.js"></script>
-<script src="assets/js/search.js"></script>
-<script src="assets/js/presence.js"></script>
-<script src="assets/js/routeur.js"></script>
+<script src="/assets/js/layout.js"></script>
+<script src="/assets/js/search.js"></script>
+<script src="/assets/js/presence.js"></script>
+<script src="/assets/js/routeur.js"></script>
