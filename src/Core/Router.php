@@ -60,6 +60,9 @@ class Router
         'ajax_presence',
         'import_csv',
         '404',
+        'aide',
+        'mentions_legales',
+        'plan_du_site',
     ];
 
     public static function dispatch(): void
@@ -131,6 +134,9 @@ class Router
             'ajax_presence'   => 'ajax_presence',
             'change_lang'     => 'change_lang',
             'import_csv'      => 'import_csv',
+            'aide'             => 'aide',
+            'mentions_legales' => 'mentions_legales',
+            'plan_du_site'     => 'plan_du_site',
         ];
 
         // Si l'URL demandée existe EXACTEMENT dans notre liste, on la renvoie
@@ -471,6 +477,27 @@ class Router
                     array_merge($common, $data),
                     '<link rel="stylesheet" href="/assets/css/projects.css">',
                     '<script src="/assets/js/projects.js"></script>'
+                );
+                break;
+
+            case 'aide':
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/legal/aide.php',
+                    $common
+                );
+                break;
+
+            case 'mentions_legales':
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/legal/mentions_legales.php',
+                    $common
+                );
+                break;
+
+            case 'plan_du_site':
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/legal/plan_du_site.php',
+                    $common
                 );
                 break;
 
