@@ -173,10 +173,12 @@ class AuthController
             $mail->setFrom('erp-evenement@alwaysdata.net', 'YES - Your Event Solution');
             $mail->addAddress($email);
 
-            $link = 'http://localhost:8080/reset_password?token=' . $token;
+            $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http')
+                    . '://' . $_SERVER['HTTP_HOST'];
+            $link = $baseUrl . '/reset_password?token=' . $token;
 
             $mail->isHTML(true);
-            $mail->Subject = 'Réinitialisation de votre mot de passe';
+            $mail->Subject = 'Reinitialisation de votre mot de passe';
             $mail->Body    = "Bonjour " . Security::escape($user['prenom']) . ",<br><br>"
                            . "Cliquez sur le lien suivant pour modifier votre mot de passe : "
                            . "<a href='{$link}'>{$link}</a><br><br>"

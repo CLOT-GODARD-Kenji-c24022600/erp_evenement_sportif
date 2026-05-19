@@ -5,7 +5,7 @@
  * @file routeur.js
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.2
+ * @version 1.3
  * @since 2026
  */
 
@@ -18,9 +18,6 @@ const YesRouter = (() => {
 
   const getContentZone = () => document.getElementById('spa-content');
 
-  /**
-   * Récupère une page — depuis le cache si dispo et frais, sinon fetch AJAX.
-   */
   async function fetchPage(url) {
     const cached = pageCache.get(url);
     if (cached && (Date.now() - cached.ts) < CACHE_TTL) {
@@ -46,17 +43,11 @@ const YesRouter = (() => {
     return data;
   }
 
-  /**
-   * Précharge une page en arrière-plan au survol (déclenché avant le clic).
-   */
   function prefetch(url) {
     if (!url || pageCache.has(url)) return;
     fetchPage(url).catch(() => {});
   }
 
-  /**
-   * Injecte une feuille CSS si pas encore chargée dans le <head>.
-   */
   const loadedCss = new Set();
   function ensureCss(href) {
     if (!href || loadedCss.has(href)) return;
@@ -67,22 +58,29 @@ const YesRouter = (() => {
     loadedCss.add(href);
   }
 
-  /**
-   * Réexécute le script JS spécifique à la page.
-   * Supprime le précédent pour éviter les doublons d'event listeners.
-   */
   function rerunJs(src) {
-    if (!src) return;
     document.querySelectorAll('script[data-spa-page]').forEach(s => s.remove());
+    window.YesPageInit = null;
+
+    if (!src) return;
+
     const s           = document.createElement('script');
-    s.src             = src + '?v=' + Date.now(); // cache-bust
+    s.src             = src + '?v=' + Date.now();
     s.dataset.spaPage = '1';
+
+    s.onload = () => {
+      if (typeof window.YesPageInit === 'function') {
+        window.YesPageInit();
+      }
+    };
+
+    s.onerror = () => {
+      console.warn('[YesRouter] Échec chargement script :', src);
+    };
+
     document.body.appendChild(s);
   }
 
-  /**
-   * Met à jour le lien actif dans la sidebar et le breadcrumb.
-   */
   function updateSidebarActive(page) {
     document.querySelectorAll('.sidebar .nav-link').forEach(link => {
       const href     = link.getAttribute('href');
@@ -94,16 +92,12 @@ const YesRouter = (() => {
       else          link.removeAttribute('aria-current');
     });
 
-    // Breadcrumb dans le header
     const breadcrumb = document.querySelector('.breadcrumb-item.active');
     if (breadcrumb) {
       breadcrumb.textContent = page.charAt(0).toUpperCase() + page.slice(1).replace(/_/g, ' ');
     }
   }
 
-  /**
-   * Vérifie si un lien doit être intercepté par le SPA ou laissé en navigation normale.
-   */
   function shouldIntercept(href) {
     if (!href) return false;
     if (href.startsWith('http') || href.startsWith('//')) return false;
@@ -112,22 +106,23 @@ const YesRouter = (() => {
     if (href.includes('logout')) return false;
     if (href.includes('change_lang')) return false;
     if (href.includes('traitement_')) return false;
-    if (/\.\w{2,4}$/.test(href)) return false; // fichiers (.pdf, .png…)
+    if (/\.\w{2,4}$/.test(href)) return false;
     return true;
   }
 
-  /**
-   * Navigue vers une URL — instantané si la page est dans le cache.
-   */
   async function navigate(url, pushState = true) {
     const zone = getContentZone();
     if (!zone) {
-      // Fallback : pas de zone SPA (page publique par ex.)
       window.location.href = url;
       return;
     }
 
-    // Légère opacité seulement si pas en cache (évite tout flash)
+    // ✅ Pages dont le contenu change fréquemment : on invalide le cache
+    const noCache = ['/dashboard', '/annuaire', '/staff', '/operationnel'];
+    if (noCache.some(p => url.startsWith(p))) {
+      pageCache.delete(url);
+    }
+
     const isCached = pageCache.has(url) && (Date.now() - pageCache.get(url).ts) < CACHE_TTL;
     if (!isCached) {
       zone.style.opacity    = '0.5';
@@ -138,64 +133,58 @@ const YesRouter = (() => {
       const data = await fetchPage(url);
       if (!data) return;
 
-      // Injection du contenu
+      // ✅ Détruire les tooltips Bootstrap avant d'écraser le HTML
+      zone.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+        bootstrap.Tooltip.getInstance(el)?.dispose();
+      });
+
       zone.innerHTML     = data.html;
       zone.style.opacity = '1';
 
-      // CSS page-specific (chargé une seule fois)
       if (data.extraCss) {
         const match = data.extraCss.match(/href="([^"]+)"/);
         if (match) ensureCss(match[1]);
       }
 
-      // JS page-specific (réexécuté à chaque navigation)
+      // ✅ Toujours appeler rerunJs (même sans extraJs) pour nettoyer YesPageInit
+      let jsSrc = null;
       if (data.extraJs) {
         const match = data.extraJs.match(/src="([^"]+)"/);
-        if (match) rerunJs(match[1]);
+        if (match) jsSrc = match[1];
       }
+      rerunJs(jsSrc);
 
-      // Historique navigateur + titre onglet
       const page = data.page || url.replace(/^\//, '').replace(/\?.*$/, '');
       if (pushState) history.pushState({ page, url }, '', url);
       document.title = 'YES – ' + page.charAt(0).toUpperCase() + page.slice(1).replace(/_/g, ' ');
 
       updateSidebarActive(page);
 
-      // Réinitialise les tooltips Bootstrap sur le nouveau contenu
       zone.querySelectorAll('[data-bs-toggle="tooltip"]')
           .forEach(el => new bootstrap.Tooltip(el));
 
-      // Scroll en haut
       window.scrollTo({ top: 0, behavior: 'instant' });
 
     } catch (_) {
-      // Fallback navigation normale si erreur réseau
       window.location.href = url;
     } finally {
       zone.style.opacity = '1';
     }
   }
 
-  /**
-   * Intercepte les clics sur les liens internes + survols pour préchargement.
-   */
   function interceptLinks() {
-    // Clics
     document.addEventListener('click', (e) => {
       const link = e.target.closest('a[href]');
       if (!link) return;
 
       const href = link.getAttribute('href');
       if (!shouldIntercept(href)) return;
-
-      // Ne pas intercepter les liens Bootstrap (modales, dropdowns)
       if (link.dataset.bsDismiss || link.dataset.bsToggle) return;
 
       e.preventDefault();
       navigate(href);
     });
 
-    // Survols → préchargement silencieux
     document.addEventListener('mouseover', (e) => {
       const link = e.target.closest('a[href]');
       if (!link) return;
@@ -207,9 +196,6 @@ const YesRouter = (() => {
     });
   }
 
-  /**
-   * Gère le bouton retour/avant du navigateur.
-   */
   function handlePopState() {
     window.addEventListener('popstate', (e) => {
       const url = e.state?.url || window.location.pathname + window.location.search;
@@ -218,7 +204,6 @@ const YesRouter = (() => {
   }
 
   function init() {
-    // Ne pas initialiser sur les pages publiques (login, inscription…)
     if (!getContentZone()) return;
 
     interceptLinks();

@@ -5,7 +5,7 @@
  * @file dashboard.css
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.0
+ * @version 2.0
  * @since 2026
  */
 
@@ -16,14 +16,43 @@
   accent-color: #1a56db;
 }
 
+/* Cartes stat : cliquables */
 .todo-stat-card {
   min-width: 90px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+  background: var(--bs-body-bg);
+  border-color: var(--bs-border-color) !important;
 }
 
+.todo-stat-card:hover {
+  border-color: var(--bs-primary) !important;
+  box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.1) !important;
+  transform: translateY(-1px);
+}
+
+.todo-stat-card.todo-stat-active {
+  border-color: var(--bs-primary) !important;
+  box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.15) !important;
+  background: var(--bs-primary-bg-subtle);
+}
+
+/* Tâche en retard : légère teinte rouge sur la ligne */
+.todo-item.todo-overdue {
+  border-left: 3px solid var(--bs-danger);
+  background-color: var(--bs-danger-bg-subtle);
+}
+
+/* Summary des tâches terminées */
 .todo-summary {
   cursor: pointer;
   list-style: none;
   display: flex;
   align-items: center;
   gap: 0.4rem;
+}
+
+/* Pagination */
+#todo-pagination {
+  margin-top: 0.5rem;
 }

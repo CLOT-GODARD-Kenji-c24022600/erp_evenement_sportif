@@ -122,3 +122,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
 });
+// ── Fix bfcache : forcer le rechargement si la page vient du cache ──
+// Quand l'utilisateur navigue en arrière/avant, le navigateur peut
+// restaurer la page depuis son cache sans ré-exécuter le JS.
+// On détecte ça avec l'event "pageshow" et on force un reload propre.
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) {
+    // La page a été restaurée depuis le bfcache → reload
+    window.location.reload();
+  }
+});

@@ -11,17 +11,13 @@
 
 'use strict';
 
-document.addEventListener('DOMContentLoaded', () => {
-
+function _pageInit() {
   const searchInput = document.getElementById('searchInput');
   const staffCards  = document.querySelectorAll('.staff-card');
   const noResultMsg = document.getElementById('noResultMsg');
 
   if (!searchInput) return;
 
-  /**
-   * Filtre les cartes staff selon le terme saisi.
-   */
   searchInput.addEventListener('input', () => {
     const term    = searchInput.value.toLowerCase().trim();
     let   visible = 0;
@@ -30,12 +26,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const name  = card.querySelector('.staff-name')?.textContent.toLowerCase()  ?? '';
       const poste = card.querySelector('.staff-poste')?.textContent.toLowerCase() ?? '';
       const match = name.includes(term) || poste.includes(term);
-
       card.style.display = match ? '' : 'none';
       if (match) visible++;
-    });
+    }); // ✅ ferme le .forEach()
 
     noResultMsg?.classList.toggle('d-none', visible > 0);
-  });
+  }); // ✅ ferme le addEventListener
+} // ✅ ferme _pageInit
 
-});
+// Chargement initial (page complète)
+document.addEventListener('DOMContentLoaded', _pageInit);
+
+// Navigation SPA : appelé par routeur.js après injection AJAX
+window.YesPageInit = _pageInit;

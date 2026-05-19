@@ -1,0 +1,60 @@
+/**
+ * YES – Your Event Solution
+ * CSS : Page Opérationnel
+ *
+ * @file operationnel.css
+ * @version 1.0  –  2026
+ */
+
+/* ── KPI Cards ────────────────────────────────────────────── */
+.ops-kpi-card {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ops-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* ── Tableau générique ─────────────────────────────────────── */
+.ops-table th {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.ops-table td {
+    vertical-align: middle;
+    font-size: 0.875rem;
+}
+
+/* ── Badges statut planning ────────────────────────────────── */
+.badge-wip      { background-color: var(--bs-warning-bg-subtle);   color: var(--bs-warning);   border: 1px solid var(--bs-warning-border-subtle); }
+.badge-valide   { background-color: var(--bs-success-bg-subtle);   color: var(--bs-success);   border: 1px solid var(--bs-success-border-subtle); }
+.badge-annule   { background-color: var(--bs-danger-bg-subtle);    color: var(--bs-danger);    border: 1px solid var(--bs-danger-border-subtle);  }
+.badge-en-cours { background-color: var(--bs-primary-bg-subtle);   color: var(--bs-primary);   border: 1px solid var(--bs-primary-border-subtle); }
+.badge-autre    { background-color: var(--bs-secondary-bg-subtle); color: var(--bs-secondary); border: 1px solid var(--bs-secondary-border-subtle); }
+
+/* ── Total facturation highlight ───────────────────────────── */
+.ops-total-bar {
+    background: var(--bs-primary-bg-subtle);
+    border-left: 4px solid var(--bs-primary);
+    border-radius: 0.5rem;
+    padding: 0.75rem 1.25rem;
+}
+
+/* ── Résultat budget ───────────────────────────────────────── */
+.ops-resultat {
+    font-size: 1.1rem;
+    border-radius: 0.75rem;
+    padding: 1rem 1.5rem;
+}
+
+/* ── Sélecteur de contexte ─────────────────────────────────── */
+.ops-context-bar {
+    background: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.75rem;
+    padding: 0.75rem 1.25rem;
+}

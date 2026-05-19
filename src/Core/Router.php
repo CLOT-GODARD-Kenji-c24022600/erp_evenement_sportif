@@ -6,7 +6,7 @@
  * @file Router.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.4
+ * @version 2.0
  * @since 2026
  */
 
@@ -29,6 +29,8 @@ use App\Controllers\UserController;
 use App\Controllers\SearchController;
 use App\Controllers\QuickCreateController;
 use App\Controllers\ProjectController;
+use App\Controllers\ContactController;
+use App\Controllers\OperationnelController;
 
 class Router
 {
@@ -59,6 +61,7 @@ class Router
         'ajax_search',
         'ajax_presence',
         'import_csv',
+        'operationnel',
         '404',
         'aide',
         'mentions_legales',
@@ -98,12 +101,6 @@ class Router
 
     public static function redirect(string $url): never
     {
-        // Convertir les anciennes URLs /?page=xxx en /xxx
-        /*if (str_starts_with($url, '/?page=')) {
-            $url = '/' . substr($url, 7);
-            $url = preg_replace('/&/', '?', $url, 1);
-        }
-        */
         header('Location: ' . $url);
         exit();
     }
@@ -137,14 +134,13 @@ class Router
             'aide'             => 'aide',
             'mentions_legales' => 'mentions_legales',
             'plan_du_site'     => 'plan_du_site',
+            'operationnel'    => 'operationnel',
         ];
 
-        // Si l'URL demandée existe EXACTEMENT dans notre liste, on la renvoie
         if (isset($uriMap[$uri])) {
             return $uriMap[$uri];
         }
 
-        // Si on arrive ici, l'URL n'est pas reconnue : on force l'affichage de la page 404 DIRECTEMENT
         return '404';
     }
 
@@ -373,14 +369,24 @@ class Router
                 break;
 
             case 'annuaire':
-                $utilisateurs = [];
-                try {
-                    $utilisateurs = $userModel->getAll();
-                } catch (\Exception $e) {
-                }
+                $ctrl     = new ContactController();
+                $viewData = $ctrl->index();
                 Renderer::renderApp(
                     __DIR__ . '/../app/Views/directory/annuaire.php',
-                    array_merge($common, ['utilisateurs' => $utilisateurs])
+                    array_merge($common, $viewData),
+                    '',
+                    '<script src="/assets/js/annuaire.js"></script>'
+                );
+                break;
+
+            case 'operationnel':
+                $ctrl     = new OperationnelController();
+                $viewData = $ctrl->index();
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/operationnel/operationnel.php',
+                    array_merge($common, $viewData),
+                    '<link rel="stylesheet" href="/assets/css/operationnel.css">',
+                    '<script src="/assets/js/operationnel.js"></script>'
                 );
                 break;
 
@@ -400,13 +406,9 @@ class Router
 
             case 'import_csv':
                 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['dbFile'])) {
-                    // Attention: il manquait la définition de $ctrl pour cet endroit si on ne l'instancie pas. 
-                    // Assure-toi que la méthode importCsv est correctement appelée si ce contrôleur existe.
-                    // Si tu as un UserController, par exemple :
-                    // (new UserController(new UserModel()))->importCsv($_FILES['dbFile']);
+                    // Import CSV désactivé — l'annuaire est désormais géré via l'interface
                 }
-                
-                self::redirect('/annuaire'); 
+                self::redirect('/annuaire');
                 break;
 
             case 'profil':
