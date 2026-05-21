@@ -98,6 +98,20 @@ const YesRouter = (() => {
     }
   }
 
+  function scrollToTarget(url) {
+    const hash = new URL(url, window.location.origin).hash;
+
+    if (!hash) {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+      return;
+    }
+
+    const target = document.querySelector(hash);
+    if (target) {
+      target.scrollIntoView({ behavior: 'auto', block: 'start' });
+    }
+  }
+
   function shouldIntercept(href) {
     if (!href) return false;
     if (href.startsWith('http') || href.startsWith('//')) return false;
@@ -163,7 +177,7 @@ const YesRouter = (() => {
       zone.querySelectorAll('[data-bs-toggle="tooltip"]')
           .forEach(el => new bootstrap.Tooltip(el));
 
-      window.scrollTo({ top: 0, behavior: 'instant' });
+      scrollToTarget(url);
 
     } catch (_) {
       window.location.href = url;

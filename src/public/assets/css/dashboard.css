@@ -56,3 +56,8 @@
 #todo-pagination {
   margin-top: 0.5rem;
 }
+
+/* Anchor des événements pour la pagination du dashboard */
+#events-section {
+  scroll-margin-top: 96px;
+}
