@@ -46,6 +46,40 @@ class EventModel
     }
 
     /**
+     * Retourne le nombre total d'événements.
+     *
+     * @return int
+     */
+    public function countAll(): int
+    {
+        $stmt = $this->db->query('SELECT COUNT(*) AS total FROM evenements');
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return (int) ($row['total'] ?? 0);
+    }
+
+    /**
+     * Retourne une page d'événements triés par date de début.
+     *
+     * @param int $limit  Nombre d'événements à retourner.
+     * @param int $offset Décalage de départ.
+     * @return array[]
+     */
+    public function getPaginated(int $limit, int $offset): array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT * FROM evenements
+             ORDER BY date_debut ASC, id ASC
+             LIMIT :limit OFFSET :offset'
+        );
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Retourne les prochains événements (à venir).
      *
      * @param int $limit Nombre d'événements à retourner.

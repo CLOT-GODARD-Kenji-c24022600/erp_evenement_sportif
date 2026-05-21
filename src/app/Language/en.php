@@ -33,6 +33,9 @@ return [
     'dash_events_title'     => 'Events',
     'dash_no_events'        => 'No events yet.',
     'dash_manage_btn'       => 'Manage event',
+    'dash_events_page_info' => 'Showing events %1$d to %2$d of %3$d.',
+    'dash_events_prev'      => 'Previous',
+    'dash_events_next'      => 'Next',
 
     // ── Todolist ──────────────────────────────────────────
     'todo_title'            => 'Tasks & Progress',

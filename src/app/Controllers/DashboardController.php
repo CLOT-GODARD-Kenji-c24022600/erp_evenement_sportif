@@ -20,6 +20,7 @@ use App\Models\EventModel;
 use App\Models\TodoModel;
 use App\Models\ProjectModel;
 use App\Controllers\TodoController;
+use Core\Security;
 use Core\Session;
 
 /**
@@ -76,12 +77,22 @@ class DashboardController
             [$todoType, $todoMsg] = explode(':', $result, 2);
         }
 
+        $eventsPerPage = 6;
+        $eventsPage    = max(1, Security::sanitizeInt($_GET['events_page'] ?? 1));
+
         // Chargement des événements
         $evenements = [];
         $erreurBdd  = null;
+        $eventsTotal = 0;
+        $eventsPages  = 1;
 
         try {
-            $evenements = $this->eventModel->getAll();
+            $eventsTotal = $this->eventModel->countAll();
+            $eventsPages = max(1, (int) ceil($eventsTotal / $eventsPerPage));
+            $eventsPage  = min($eventsPage, $eventsPages);
+            $offset      = ($eventsPage - 1) * $eventsPerPage;
+
+            $evenements = $this->eventModel->getPaginated($eventsPerPage, $offset);
         } catch (\Exception $e) {
             $erreurBdd = 'Impossible de charger les événements : ' . $e->getMessage();
         }
@@ -109,14 +120,18 @@ class DashboardController
         }
 
         return [
-            'evenements'   => $evenements,
-            'todos'        => $todos,
-            'todoStats'    => $todoStats,
-            'utilisateurs' => $utilisateurs,
-            'projets'      => $projets,
-            'todoMsg'      => $todoMsg,
-            'todoType'     => $todoType,
-            'erreur_bdd'   => $erreurBdd,
+            'evenements'      => $evenements,
+            'eventsPage'      => $eventsPage,
+            'eventsPerPage'    => $eventsPerPage,
+            'eventsTotal'      => $eventsTotal,
+            'eventsTotalPages' => $eventsPages,
+            'todos'           => $todos,
+            'todoStats'       => $todoStats,
+            'utilisateurs'    => $utilisateurs,
+            'projets'         => $projets,
+            'todoMsg'         => $todoMsg,
+            'todoType'        => $todoType,
+            'erreur_bdd'      => $erreurBdd,
         ];
     }
 }

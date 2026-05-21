@@ -13,6 +13,10 @@
  *
  * Variables attendues (injectées par index.php via DashboardController) :
  * @var array       $evenements   Liste des événements.
+ * @var int         $eventsPage   Page courante de la pagination événements.
+ * @var int         $eventsPerPage Nombre d'événements par page.
+ * @var int         $eventsTotal   Nombre total d'événements.
+ * @var int         $eventsTotalPages Nombre total de pages événements.
  * @var array       $todos        Liste des tâches.
  * @var array       $todoStats    Statistiques des tâches.
  * @var array       $utilisateurs Liste des utilisateurs approuvés.
@@ -62,7 +66,15 @@ declare(strict_types=1);
     <hr class="my-5 opacity-25">
 
     <!-- Événements -->
-    <section aria-labelledby="events-heading">
+    <section id="events-section" aria-labelledby="events-heading">
+        <?php
+        $eventsPage = max(1, (int) ($eventsPage ?? 1));
+        $eventsTotalPages = max(1, (int) ($eventsTotalPages ?? 1));
+        $eventsTotal = (int) ($eventsTotal ?? 0);
+        $eventsPerPage = max(1, (int) ($eventsPerPage ?? 6));
+        $eventsStart = $eventsTotal > 0 ? (($eventsPage - 1) * $eventsPerPage) + 1 : 0;
+        $eventsEnd = min($eventsTotal, $eventsPage * $eventsPerPage);
+        ?>
 
         <header class="d-flex justify-content-between align-items-center mb-3">
             <h2 id="events-heading" class="fw-bold fs-5 mb-0">
@@ -138,6 +150,36 @@ declare(strict_types=1);
                 </li>
                 <?php endforeach; ?>
             </ul>
+
+            <?php if ($eventsTotalPages > 1): ?>
+                <nav class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mt-4" aria-label="Pagination des événements">
+                    <p class="small text-body-secondary mb-0">
+                        <?= htmlspecialchars(sprintf($t['dash_events_page_info'], $eventsStart, $eventsEnd, $eventsTotal), ENT_QUOTES) ?>
+                    </p>
+
+                    <ul class="pagination mb-0">
+                        <li class="page-item <?= $eventsPage <= 1 ? 'disabled' : '' ?>">
+                            <a class="page-link" href="/dashboard?events_page=<?= max(1, $eventsPage - 1) ?>#events-section" aria-label="<?= htmlspecialchars($t['dash_events_prev'], ENT_QUOTES) ?>">
+                                <?= htmlspecialchars($t['dash_events_prev'], ENT_QUOTES) ?>
+                            </a>
+                        </li>
+
+                        <?php for ($pageIndex = 1; $pageIndex <= $eventsTotalPages; $pageIndex++): ?>
+                            <li class="page-item <?= $pageIndex === $eventsPage ? 'active' : '' ?>">
+                                <a class="page-link" href="/dashboard?events_page=<?= $pageIndex ?>#events-section">
+                                    <?= $pageIndex ?>
+                                </a>
+                            </li>
+                        <?php endfor; ?>
+
+                        <li class="page-item <?= $eventsPage >= $eventsTotalPages ? 'disabled' : '' ?>">
+                            <a class="page-link" href="/dashboard?events_page=<?= min($eventsTotalPages, $eventsPage + 1) ?>#events-section" aria-label="<?= htmlspecialchars($t['dash_events_next'], ENT_QUOTES) ?>">
+                                <?= htmlspecialchars($t['dash_events_next'], ENT_QUOTES) ?>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            <?php endif; ?>
         <?php endif; ?>
 
     </section>
