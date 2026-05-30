@@ -3,7 +3,8 @@
 /**
  * YES – Your Event Solution
  * @file PlanningModel.php
- * @version 1.0  –  2026
+ * @version 1.1  –  2026
+ * CORRECTION : table = planning_lignes (nom réel en BDD)
  */
 
 declare(strict_types=1);
@@ -18,6 +19,8 @@ class PlanningModel
 {
     private PDO $db;
 
+    private const TABLE = 'planning_lignes';
+
     private const STATUTS_ALLOWED = [
         'wip', 'valide', 'maj', 'devis', 'visuels', 'bat', 'prod', 'en_cours', 'annule'
     ];
@@ -31,7 +34,7 @@ class PlanningModel
     {
         try {
             $stmt = $this->db->prepare(
-                'SELECT * FROM planning_lignes WHERE event_id = :id ORDER BY ordre ASC, id ASC'
+                'SELECT * FROM ' . self::TABLE . ' WHERE event_id = :id ORDER BY ordre ASC, id ASC'
             );
             $stmt->execute(['id' => $eventId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -44,7 +47,7 @@ class PlanningModel
     {
         try {
             $stmt = $this->db->prepare(
-                'SELECT * FROM planning_lignes WHERE projet_id = :id ORDER BY ordre ASC, id ASC'
+                'SELECT * FROM ' . self::TABLE . ' WHERE projet_id = :id ORDER BY ordre ASC, id ASC'
             );
             $stmt->execute(['id' => $projetId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -57,8 +60,10 @@ class PlanningModel
     {
         try {
             $stmt = $this->db->prepare(
-                'INSERT INTO planning_lignes (event_id, projet_id, tache, statut, date_debut, date_fin, note, ordre)
-                 VALUES (:event_id, :projet_id, :tache, :statut, :date_debut, :date_fin, :note, :ordre)'
+                'INSERT INTO ' . self::TABLE . '
+                    (event_id, projet_id, tache, statut, date_debut, date_fin, note, ordre)
+                 VALUES
+                    (:event_id, :projet_id, :tache, :statut, :date_debut, :date_fin, :note, :ordre)'
             );
             return $stmt->execute([
                 'event_id'   => $d['event_id']  ?? null,
@@ -79,7 +84,7 @@ class PlanningModel
     {
         try {
             $stmt = $this->db->prepare(
-                'UPDATE planning_lignes SET
+                'UPDATE ' . self::TABLE . ' SET
                     tache=:tache, statut=:statut, date_debut=:date_debut,
                     date_fin=:date_fin, note=:note, ordre=:ordre
                  WHERE id=:id'
@@ -101,7 +106,7 @@ class PlanningModel
     public function delete(int $id): bool
     {
         try {
-            $stmt = $this->db->prepare('DELETE FROM planning_lignes WHERE id = :id');
+            $stmt = $this->db->prepare('DELETE FROM ' . self::TABLE . ' WHERE id = :id');
             return $stmt->execute(['id' => $id]);
         } catch (PDOException) {
             return false;
@@ -112,7 +117,7 @@ class PlanningModel
     {
         if (!in_array($statut, self::STATUTS_ALLOWED, true)) return false;
         try {
-            $stmt = $this->db->prepare('UPDATE planning_lignes SET statut=:statut WHERE id=:id');
+            $stmt = $this->db->prepare('UPDATE ' . self::TABLE . ' SET statut=:statut WHERE id=:id');
             return $stmt->execute(['statut' => $statut, 'id' => $id]);
         } catch (PDOException) {
             return false;

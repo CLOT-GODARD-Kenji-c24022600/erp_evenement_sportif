@@ -2,16 +2,14 @@
 
 /**
  * YES – Your Event Solution
- * Vue : Opérationnel Événement — Budget / Planning / Matériel / Facturation
+ * Vue : Opérationnel — Budget / Planning / Matériel / Facturation / Pré-production
  *
  * @file operationnel.php
- * @version 1.1  –  2026
+ * @version 2.0  –  2026
  */
 
 declare(strict_types=1);
 
-// ── Helpers de la vue ───────────────────────────────────────
-// On génère les champs cachés pour le contexte et pour le JS
 function opsForm(int $eventId, int $projetId): string {
     return '<input type="hidden" name="event_id" value="' . $eventId . '">' .
            '<input type="hidden" name="projet_id" value="' . $projetId . '">' .
@@ -45,11 +43,21 @@ $budgetProduits = array_filter($budget, fn($l) => $l['type'] === 'produit');
 $budgetCharges  = array_filter($budget, fn($l) => $l['type'] === 'charge');
 
 $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (float)$f['quantite'], $facturation));
+
+// Calcul totaux matériel loué / acheté
+$totalLoue   = $materielTotaux['total_loue']   ?? 0;
+$totalAchete = $materielTotaux['total_achete'] ?? 0;
+$totalMat    = $materielTotaux['total_global'] ?? 0;
+
+// Planning Gantt : tâches avec dates
+$planningAvecDates = array_filter($planning, fn($p) => !empty($p['date_debut']));
 ?>
 
-<div class="container-fluid py-4">
+<div class="container-fluid py-4"
+     id="ops-container"
+     data-restore-tab="<?= htmlspecialchars((string)($restoreTab ?? ''), ENT_QUOTES) ?>">
 
-    <!-- ── En-tête + sélecteur de contexte ──────────────────── -->
+    <!-- ── En-tête + sélecteur ──────────────────────────── -->
     <header class="d-flex flex-wrap align-items-center gap-3 mb-4">
         <hgroup class="flex-grow-1">
             <h1 class="fw-bold fs-4 mb-0">
@@ -59,7 +67,7 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
                     <span class="text-primary">— <?= htmlspecialchars($contextLabel, ENT_QUOTES) ?></span>
                 <?php endif; ?>
             </h1>
-            <p class="text-body-secondary small mb-0">Budget · Planning · Matériel · Facturation</p>
+            <p class="text-body-secondary small mb-0">Budget · Planning · Matériel · Facturation · Pré-production</p>
         </hgroup>
 
         <!-- Sélecteur événement / projet -->
@@ -101,7 +109,36 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
     </div>
     <?php else: ?>
 
-    <!-- ── Onglets ──────────────────────────────────────────── -->
+    <!-- Liens Drive/Maps rapides si événement -->
+    <?php if ($eventId > 0 && $eventData): ?>
+    <?php $hasLinks = !empty($eventData['drive_url']) || !empty($eventData['drive_doc_url']) || !empty($eventData['maps_url']); ?>
+    <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
+        <?php if (!empty($eventData['drive_url'])): ?>
+        <a href="<?= htmlspecialchars($eventData['drive_url'], ENT_QUOTES) ?>" target="_blank"
+           class="btn btn-sm btn-outline-primary rounded-3">
+            <i class="bi bi-cloud me-1"></i>Google Drive
+        </a>
+        <?php endif; ?>
+        <?php if (!empty($eventData['drive_doc_url'])): ?>
+        <a href="<?= htmlspecialchars($eventData['drive_doc_url'], ENT_QUOTES) ?>" target="_blank"
+           class="btn btn-sm btn-outline-success rounded-3">
+            <i class="bi bi-file-earmark-text me-1"></i>Google Doc
+        </a>
+        <?php endif; ?>
+        <?php if (!empty($eventData['maps_url'])): ?>
+        <a href="<?= htmlspecialchars($eventData['maps_url'], ENT_QUOTES) ?>" target="_blank"
+           class="btn btn-sm btn-outline-danger rounded-3">
+            <i class="bi bi-geo-alt me-1"></i>Google Maps
+        </a>
+        <?php endif; ?>
+        <button class="btn btn-sm btn-outline-secondary rounded-3"
+                data-bs-toggle="modal" data-bs-target="#modalDriveLinks">
+            <i class="bi bi-pencil me-1"></i><?= $hasLinks ? 'Modifier les liens' : 'Lier Google Drive / Maps' ?>
+        </button>
+    </div>
+    <?php endif; ?>
+
+    <!-- ── Onglets ──────────────────────────────────────── -->
     <ul class="nav nav-tabs mb-4" id="opsTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active fw-semibold" id="tab-budget" data-bs-toggle="tab"
@@ -131,13 +168,19 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
                 <span class="badge bg-secondary ms-1"><?= count($facturation) ?></span>
             </button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-semibold" id="tab-preprod" data-bs-toggle="tab"
+                    data-bs-target="#pane-preprod" type="button" role="tab">
+                <i class="bi bi-hammer me-1 text-orange" style="color:#fd7e14"></i> Pré-production
+            </button>
+        </li>
     </ul>
 
     <div class="tab-content">
 
-        <!-- ══════════════════════════════════════════════════
+        <!-- ══════════════════════════════════════════════
              ONGLET BUDGET
-        ══════════════════════════════════════════════════ -->
+        ══════════════════════════════════════════════ -->
         <div class="tab-pane fade show active" id="pane-budget" role="tabpanel">
 
             <!-- KPIs -->
@@ -162,6 +205,12 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
                 <?php endforeach; ?>
             </ul>
 
+            <!-- KPI Facturation dans le budget -->
+            <div class="alert alert-info border-0 shadow-sm mb-4 d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-receipt me-2"></i><strong>Total facturation réelle :</strong></span>
+                <span class="fw-bold fs-5"><?= number_format($totalFacturation, 2, ',', ' ') ?> €</span>
+            </div>
+
             <div class="d-flex justify-content-end mb-3">
                 <button class="btn btn-primary btn-sm fw-semibold shadow-sm"
                         data-bs-toggle="modal" data-bs-target="#modalBudgetCreate">
@@ -169,7 +218,7 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
                 </button>
             </div>
 
-            <!-- Produits d'exploitation -->
+            <!-- Produits -->
             <?php if (!empty($budgetProduits)): ?>
             <section class="card border-0 shadow-sm rounded-3 mb-4">
                 <div class="card-header bg-success-subtle border-0 fw-bold text-success rounded-top-3">
@@ -180,7 +229,8 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
                         <thead class="table-light small">
                             <tr>
                                 <th class="ps-3">Catégorie</th><th>Sous-catégorie</th><th>Libellé</th>
-                                <th class="text-end">Prévisionnel</th><th class="text-end">Comparatif 2025</th>
+                                <th>Fournisseur</th><th>Sponsor</th>
+                                <th class="text-end">Prévisionnel</th><th class="text-end">Comparatif</th>
                                 <th class="text-end">Écart</th><th></th>
                             </tr>
                         </thead>
@@ -192,6 +242,8 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
                             <td class="ps-3 small"><?= htmlspecialchars((string)$bl['categorie'], ENT_QUOTES) ?></td>
                             <td class="small text-body-secondary"><?= htmlspecialchars((string)$bl['sous_categorie'], ENT_QUOTES) ?></td>
                             <td class="fw-medium"><?= htmlspecialchars((string)$bl['libelle'], ENT_QUOTES) ?></td>
+                            <td class="small text-body-secondary"><?= htmlspecialchars((string)($bl['fournisseur']??'—'), ENT_QUOTES) ?></td>
+                            <td class="small text-body-secondary"><?= htmlspecialchars((string)($bl['sponsor']??'—'), ENT_QUOTES) ?></td>
                             <td class="text-end text-success fw-bold"><?= number_format((float)$bl['previsionnel'],2,',',' ') ?> €</td>
                             <td class="text-end text-body-secondary"><?= $bl['comparatif'] > 0 ? number_format((float)$bl['comparatif'],2,',',' ').' €' : '—' ?></td>
                             <td class="text-end small <?= $ecart >= 0 ? 'text-success' : 'text-danger' ?>">
@@ -201,8 +253,7 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
                                 <button class="btn btn-sm btn-outline-secondary py-0 px-2 me-1"
                                         onclick="openBudgetEdit(<?= htmlspecialchars(json_encode($bl), ENT_QUOTES) ?>)">
                                     <i class="bi bi-pencil"></i></button>
-                                <form method="POST" class="d-inline"
-                                      onsubmit="return confirm('Supprimer cette ligne ?')">
+                                <form method="POST" class="d-inline" onsubmit="return confirm('Supprimer ?')">
                                     <?= opsForm($eventId, $projetId) ?>
                                     <input type="hidden" name="ops_action" value="budget_delete">
                                     <input type="hidden" name="ligne_id" value="<?= (int)$bl['id'] ?>">
@@ -214,7 +265,7 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
                         </tbody>
                         <tfoot class="table-success fw-bold small">
                             <tr>
-                                <td colspan="3" class="ps-3">TOTAL PRODUITS</td>
+                                <td colspan="5" class="ps-3">TOTAL PRODUITS</td>
                                 <td class="text-end"><?= number_format((float)($budgetTotaux['total_produits_prev']??0),2,',',' ') ?> €</td>
                                 <td class="text-end"><?= number_format((float)($budgetTotaux['total_produits_comp']??0),2,',',' ') ?> €</td>
                                 <td colspan="2"></td>
@@ -225,7 +276,7 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
             </section>
             <?php endif; ?>
 
-            <!-- Charges d'exploitation -->
+            <!-- Charges -->
             <?php if (!empty($budgetCharges)): ?>
             <section class="card border-0 shadow-sm rounded-3 mb-4">
                 <div class="card-header bg-danger-subtle border-0 fw-bold text-danger rounded-top-3">
@@ -236,7 +287,8 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
                         <thead class="table-light small">
                             <tr>
                                 <th class="ps-3">Catégorie</th><th>Sous-catégorie</th><th>Libellé</th>
-                                <th class="text-end">Prévisionnel</th><th class="text-end">Comparatif 2025</th>
+                                <th>Fournisseur</th><th>Sponsor</th>
+                                <th class="text-end">Prévisionnel</th><th class="text-end">Comparatif</th>
                                 <th class="text-end">Écart</th><th></th>
                             </tr>
                         </thead>
@@ -248,6 +300,8 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
                             <td class="ps-3 small"><?= htmlspecialchars((string)$bl['categorie'], ENT_QUOTES) ?></td>
                             <td class="small text-body-secondary"><?= htmlspecialchars((string)$bl['sous_categorie'], ENT_QUOTES) ?></td>
                             <td class="fw-medium"><?= htmlspecialchars((string)$bl['libelle'], ENT_QUOTES) ?></td>
+                            <td class="small text-body-secondary"><?= htmlspecialchars((string)($bl['fournisseur']??'—'), ENT_QUOTES) ?></td>
+                            <td class="small text-body-secondary"><?= htmlspecialchars((string)($bl['sponsor']??'—'), ENT_QUOTES) ?></td>
                             <td class="text-end text-danger fw-bold"><?= number_format((float)$bl['previsionnel'],2,',',' ') ?> €</td>
                             <td class="text-end text-body-secondary"><?= $bl['comparatif'] > 0 ? number_format((float)$bl['comparatif'],2,',',' ').' €' : '—' ?></td>
                             <td class="text-end small <?= $ecart >= 0 ? 'text-success' : 'text-danger' ?>">
@@ -257,8 +311,7 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
                                 <button class="btn btn-sm btn-outline-secondary py-0 px-2 me-1"
                                         onclick="openBudgetEdit(<?= htmlspecialchars(json_encode($bl), ENT_QUOTES) ?>)">
                                     <i class="bi bi-pencil"></i></button>
-                                <form method="POST" class="d-inline"
-                                      onsubmit="return confirm('Supprimer cette ligne ?')">
+                                <form method="POST" class="d-inline" onsubmit="return confirm('Supprimer ?')">
                                     <?= opsForm($eventId, $projetId) ?>
                                     <input type="hidden" name="ops_action" value="budget_delete">
                                     <input type="hidden" name="ligne_id" value="<?= (int)$bl['id'] ?>">
@@ -270,7 +323,7 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
                         </tbody>
                         <tfoot class="table-danger fw-bold small">
                             <tr>
-                                <td colspan="3" class="ps-3">TOTAL CHARGES</td>
+                                <td colspan="5" class="ps-3">TOTAL CHARGES</td>
                                 <td class="text-end"><?= number_format((float)($budgetTotaux['total_charges_prev']??0),2,',',' ') ?> €</td>
                                 <td class="text-end"><?= number_format((float)($budgetTotaux['total_charges_comp']??0),2,',',' ') ?> €</td>
                                 <td colspan="2"></td>
@@ -281,7 +334,6 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
             </section>
             <?php endif; ?>
 
-            <!-- Résultat -->
             <?php $resPrev = (float)($budgetTotaux['resultat_prev']??0); ?>
             <div class="alert alert-<?= $resPrev >= 0 ? 'success' : 'danger' ?> d-flex justify-content-between align-items-center fw-bold shadow-sm">
                 <span><i class="bi bi-calculator me-2"></i>RÉSULTAT D'EXPLOITATION (prévisionnel)</span>
@@ -294,20 +346,95 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
                 Aucune ligne de budget. Ajoute ta première ligne !
             </p>
             <?php endif; ?>
+
+            <!-- ── Récap matériel dans le budget ────────────────── -->
+            <?php if ($totalMat > 0): ?>
+            <hr class="my-4 opacity-25">
+            <h5 class="fw-bold mb-3"><i class="bi bi-box-seam me-2 text-warning"></i>Budget matériel</h5>
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm rounded-3 text-center py-3">
+                        <i class="bi bi-arrow-repeat text-warning fs-4 d-block mb-1"></i>
+                        <p class="small text-body-secondary mb-1">Matériel loué</p>
+                        <p class="fw-bold fs-5 mb-0"><?= number_format((float)$totalLoue,2,',',' ') ?> €</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm rounded-3 text-center py-3">
+                        <i class="bi bi-bag-check text-primary fs-4 d-block mb-1"></i>
+                        <p class="small text-body-secondary mb-1">Matériel acheté</p>
+                        <p class="fw-bold fs-5 mb-0"><?= number_format((float)$totalAchete,2,',',' ') ?> €</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm rounded-3 text-center py-3">
+                        <i class="bi bi-cash-stack text-dark fs-4 d-block mb-1"></i>
+                        <p class="small text-body-secondary mb-1">Total matériel</p>
+                        <p class="fw-bold fs-5 mb-0"><?= number_format((float)$totalMat,2,',',' ') ?> €</p>
+                    </div>
+                </div>
+            </div>
+            <a href="#pane-materiel" class="btn btn-sm btn-outline-warning rounded-3"
+               onclick="bootstrap.Tab.getOrCreateInstance(document.getElementById('tab-materiel')).show(); return false;">
+                <i class="bi bi-box-seam me-1"></i>Voir le détail matériel
+            </a>
+            <?php endif; ?>
+
+            <!-- ── Récap facturation dans le budget ─────────────── -->
+            <?php if ($totalFacturation > 0): ?>
+            <hr class="my-4 opacity-25">
+            <h5 class="fw-bold mb-3"><i class="bi bi-receipt me-2 text-info"></i>Facturation réelle</h5>
+            <div class="d-flex align-items-center justify-content-between card border-0 shadow-sm rounded-3 p-3 mb-3">
+                <div>
+                    <p class="mb-1 fw-semibold">Total facturé</p>
+                    <p class="small text-body-secondary mb-0"><?= count($facturation) ?> ligne<?= count($facturation)>1?'s':'' ?></p>
+                </div>
+                <p class="fw-bold fs-4 mb-0 text-info"><?= number_format($totalFacturation,2,',',' ') ?> €</p>
+            </div>
+            <?php if (!empty($budgetTotaux['total_charges_prev']) && $budgetTotaux['total_charges_prev'] > 0):
+                $ecartBudget = (float)$budgetTotaux['total_charges_prev'] - $totalFacturation;
+            ?>
+            <div class="alert alert-<?= $ecartBudget >= 0 ? 'success' : 'danger' ?> border-0 shadow-sm d-flex justify-content-between">
+                <span><i class="bi bi-calculator me-2"></i>Écart budget charges / facturé</span>
+                <strong><?= ($ecartBudget >= 0 ? '+' : '') . number_format($ecartBudget,2,',',' ') ?> €</strong>
+            </div>
+            <?php endif; ?>
+            <a href="#pane-facturation" class="btn btn-sm btn-outline-info rounded-3"
+               onclick="bootstrap.Tab.getOrCreateInstance(document.getElementById('tab-facturation')).show(); return false;">
+                <i class="bi bi-receipt me-1"></i>Voir le détail facturation
+            </a>
+            <?php endif; ?>
+
         </div>
 
-        <!-- ══════════════════════════════════════════════════
+        <!-- ══════════════════════════════════════════════
              ONGLET PLANNING
-        ══════════════════════════════════════════════════ -->
+        ══════════════════════════════════════════════ -->
         <div class="tab-pane fade" id="pane-planning" role="tabpanel">
 
-            <div class="d-flex justify-content-end mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary active" id="btn-view-list"
+                            onclick="switchPlanningView('list')">
+                        <i class="bi bi-list-ul me-1"></i>Liste
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" id="btn-view-calendar"
+                            onclick="switchPlanningView('calendar')">
+                        <i class="bi bi-calendar3 me-1"></i>Calendrier
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" id="btn-view-gantt"
+                            onclick="switchPlanningView('gantt')">
+                        <i class="bi bi-bar-chart-steps me-1"></i>Gantt
+                    </button>
+                </div>
                 <button class="btn btn-primary btn-sm fw-semibold shadow-sm"
                         data-bs-toggle="modal" data-bs-target="#modalPlanningCreate">
                     <i class="bi bi-plus-lg me-1"></i> Ajouter une tâche
                 </button>
             </div>
 
+            <!-- Vue liste -->
+            <div id="planning-list-view">
             <?php if (empty($planning)): ?>
             <p class="text-body-secondary text-center py-5">
                 <i class="bi bi-calendar-x fs-2 d-block mb-2 opacity-50"></i>Aucune tâche de planning.
@@ -346,8 +473,7 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
                                 <button class="btn btn-sm btn-outline-secondary py-0 px-2 me-1"
                                         onclick="openPlanningEdit(<?= htmlspecialchars(json_encode($pl), ENT_QUOTES) ?>)">
                                     <i class="bi bi-pencil"></i></button>
-                                <form method="POST" class="d-inline"
-                                      onsubmit="return confirm('Supprimer cette tâche ?')">
+                                <form method="POST" class="d-inline" onsubmit="return confirm('Supprimer cette tâche ?')">
                                     <?= opsForm($eventId, $projetId) ?>
                                     <input type="hidden" name="ops_action" value="planning_delete">
                                     <input type="hidden" name="ligne_id" value="<?= (int)$pl['id'] ?>">
@@ -361,12 +487,77 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
                 </div>
             </div>
             <?php endif; ?>
+            </div>
+
+            <!-- ── Vue Calendrier ─────────────────────────── -->
+            <div id="planning-calendar-view" style="display:none;">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center py-3 px-4">
+                        <button class="btn btn-sm btn-outline-secondary rounded-3" onclick="calNav(-1)">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <h3 class="fw-bold fs-6 mb-0" id="cal-title">—</h3>
+                        <button class="btn btn-sm btn-outline-secondary rounded-3" onclick="calNav(+1)">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="card-body p-3">
+                        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px;">
+                            <?php foreach (['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'] as $d): ?>
+                            <div class="text-center fw-bold small text-body-secondary py-1"><?= $d ?></div>
+                            <?php endforeach; ?>
+                        </div>
+                        <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;min-height:380px;"></div>
+                    </div>
+                </div>
+                <div id="cal-day-detail" class="mt-3" style="display:none;">
+                    <div class="card border-0 shadow-sm rounded-3">
+                        <div class="card-header bg-primary-subtle border-0 fw-bold rounded-top-3" id="cal-day-detail-title"></div>
+                        <ul class="list-group list-group-flush rounded-bottom-3" id="cal-day-tasks"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vue Gantt -->
+            <div id="planning-gantt-view" style="display:none;">
+                <?php if (empty($planningAvecDates)): ?>
+                <div class="alert alert-info border-0 shadow-sm">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Aucune tâche avec dates pour afficher le Gantt. Ajoutez des dates de début et fin à vos tâches.
+                </div>
+                <?php else: ?>
+                <div class="card border-0 shadow-sm rounded-3 p-3">
+                    <div id="gantt-container" class="overflow-auto" style="min-height:200px;"></div>
+                </div>
+                <?php endif; ?>
+            </div>
         </div>
 
-        <!-- ══════════════════════════════════════════════════
+        <!-- ══════════════════════════════════════════════
              ONGLET MATÉRIEL
-        ══════════════════════════════════════════════════ -->
+        ══════════════════════════════════════════════ -->
         <div class="tab-pane fade" id="pane-materiel" role="tabpanel">
+
+            <!-- KPIs budget matériel -->
+            <?php if ($totalMat > 0): ?>
+            <ul class="row row-cols-3 g-3 list-unstyled mb-4">
+                <?php foreach ([
+                    ['label'=>'Matériel loué',   'val'=>$totalLoue,   'color'=>'warning', 'icon'=>'bi-arrow-repeat'],
+                    ['label'=>'Matériel acheté',  'val'=>$totalAchete, 'color'=>'primary', 'icon'=>'bi-bag-check'],
+                    ['label'=>'Budget total mat.','val'=>$totalMat,    'color'=>'dark',    'icon'=>'bi-cash-stack'],
+                ] as $kpi): ?>
+                <li class="col">
+                    <article class="card border-0 shadow-sm rounded-3 text-center h-100">
+                        <div class="card-body py-3">
+                            <i class="bi <?= $kpi['icon'] ?> text-<?= $kpi['color'] ?> fs-4 mb-1 d-block"></i>
+                            <p class="text-body-secondary small mb-1"><?= $kpi['label'] ?></p>
+                            <p class="fw-bold fs-5 mb-0"><?= number_format((float)$kpi['val'],2,',',' ') ?> €</p>
+                        </div>
+                    </article>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+            <?php endif; ?>
 
             <div class="d-flex justify-content-end mb-3">
                 <button class="btn btn-warning btn-sm fw-semibold shadow-sm text-dark"
@@ -385,7 +576,8 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
                     <table class="table table-hover mb-0">
                         <thead class="table-dark small">
                             <tr>
-                                <th class="ps-3">Nom</th><th>Qté</th><th>Fournisseur</th>
+                                <th class="ps-3">Nom</th><th>Catégorie</th><th>Qté</th>
+                                <th>Fournisseur</th><th>Budget</th>
                                 <th>Date In</th><th>Date Out</th><th>Commentaire</th><th></th>
                             </tr>
                         </thead>
@@ -393,8 +585,18 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
                         <?php foreach ($materiel as $mat): ?>
                         <tr>
                             <td class="ps-3 fw-medium"><?= htmlspecialchars((string)$mat['nom'], ENT_QUOTES) ?></td>
+                            <td>
+                                <?php if (!empty($mat['categorie_achat'])): ?>
+                                <span class="badge bg-<?= $mat['categorie_achat'] === 'loue' ? 'warning text-dark' : 'primary' ?>">
+                                    <?= $mat['categorie_achat'] === 'loue' ? 'Loué' : 'Acheté' ?>
+                                </span>
+                                <?php else: ?>
+                                <span class="text-body-secondary small">—</span>
+                                <?php endif; ?>
+                            </td>
                             <td><?= htmlspecialchars((string)$mat['quantite'], ENT_QUOTES) ?></td>
                             <td class="text-body-secondary small"><?= htmlspecialchars((string)($mat['fournisseur']??'—'), ENT_QUOTES) ?></td>
+                            <td class="small fw-bold"><?= $mat['budget'] !== null ? number_format((float)$mat['budget'],2,',',' ').' €' : '—' ?></td>
                             <td class="small"><?= !empty($mat['date_in'])  ? date('d/m/Y', strtotime($mat['date_in']))  : '—' ?></td>
                             <td class="small"><?= !empty($mat['date_out']) ? date('d/m/Y', strtotime($mat['date_out'])) : '—' ?></td>
                             <td class="small text-body-secondary"><?= htmlspecialchars((string)($mat['commentaire']??''), ENT_QUOTES) ?></td>
@@ -402,8 +604,7 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
                                 <button class="btn btn-sm btn-outline-secondary py-0 px-2 me-1"
                                         onclick="openMaterielEdit(<?= htmlspecialchars(json_encode($mat), ENT_QUOTES) ?>)">
                                     <i class="bi bi-pencil"></i></button>
-                                <form method="POST" class="d-inline"
-                                      onsubmit="return confirm('Supprimer ce matériel ?')">
+                                <form method="POST" class="d-inline" onsubmit="return confirm('Supprimer ce matériel ?')">
                                     <?= opsForm($eventId, $projetId) ?>
                                     <input type="hidden" name="ops_action" value="materiel_delete">
                                     <input type="hidden" name="ligne_id" value="<?= (int)$mat['id'] ?>">
@@ -419,9 +620,9 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
             <?php endif; ?>
         </div>
 
-        <!-- ══════════════════════════════════════════════════
+        <!-- ══════════════════════════════════════════════
              ONGLET FACTURATION
-        ══════════════════════════════════════════════════ -->
+        ══════════════════════════════════════════════ -->
         <div class="tab-pane fade" id="pane-facturation" role="tabpanel">
 
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -452,23 +653,27 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
                                 <th class="text-end">P.U</th><th class="text-end">Qté</th>
                                 <th class="text-end">Total</th>
                                 <th class="text-center">Devis</th><th class="text-center">Facture</th>
-                                <th class="text-center">Virement</th><th></th>
+                                <th class="text-center">Virement</th><th class="text-center">Fichier</th><th></th>
                             </tr>
                         </thead>
                         <tbody>
                         <?php foreach ($facturation as $fac):
                             $tot = (float)$fac['prix_unitaire'] * (float)$fac['quantite'];
+                            // Afficher contact depuis contact lié ou champ texte
+                            $contactDisplay = !empty($fac['contact_nom']) ? $fac['contact_nom'] : ($fac['contact'] ?? '—');
+                            $telDisplay     = !empty($fac['contact_tel'])  ? $fac['contact_tel']  : ($fac['telephone'] ?? '—');
+                            $mailDisplay    = !empty($fac['contact_mail']) ? $fac['contact_mail'] : ($fac['mail'] ?? '');
                         ?>
                         <tr>
                             <td class="ps-3 small"><?= htmlspecialchars((string)($fac['categorie']??''), ENT_QUOTES) ?></td>
                             <td class="fw-medium small"><?= htmlspecialchars((string)($fac['poste']??''), ENT_QUOTES) ?></td>
                             <td class="small"><?= htmlspecialchars((string)($fac['prestataire']??''), ENT_QUOTES) ?></td>
-                            <td class="small"><?= htmlspecialchars((string)($fac['contact']??''), ENT_QUOTES) ?></td>
-                            <td class="small"><?= htmlspecialchars((string)($fac['telephone']??''), ENT_QUOTES) ?></td>
+                            <td class="small"><?= htmlspecialchars($contactDisplay, ENT_QUOTES) ?></td>
+                            <td class="small"><?= htmlspecialchars($telDisplay, ENT_QUOTES) ?></td>
                             <td class="small">
-                                <?php if (!empty($fac['mail'])): ?>
-                                <a href="mailto:<?= htmlspecialchars($fac['mail'], ENT_QUOTES) ?>" class="text-decoration-none text-primary">
-                                    <?= htmlspecialchars($fac['mail'], ENT_QUOTES) ?></a>
+                                <?php if (!empty($mailDisplay)): ?>
+                                <a href="mailto:<?= htmlspecialchars($mailDisplay, ENT_QUOTES) ?>" class="text-decoration-none text-primary">
+                                    <?= htmlspecialchars($mailDisplay, ENT_QUOTES) ?></a>
                                 <?php else: echo '—'; endif; ?>
                             </td>
                             <td class="text-end small"><?= number_format((float)$fac['prix_unitaire'],2,',',' ') ?> €</td>
@@ -483,12 +688,19 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
                             <td class="text-center">
                                 <?= $fac['statut_virement'] ? '<i class="bi bi-check-circle-fill text-success"></i>' : '<i class="bi bi-circle text-body-secondary"></i>' ?>
                             </td>
+                            <td class="text-center">
+                                <?php if (!empty($fac['fichier'])): ?>
+                                <a href="/<?= htmlspecialchars($fac['fichier'], ENT_QUOTES) ?>" target="_blank"
+                                   class="btn btn-sm btn-outline-secondary py-0 px-1" title="Voir le fichier">
+                                    <i class="bi bi-paperclip"></i>
+                                </a>
+                                <?php else: echo '<span class="text-body-secondary small">—</span>'; endif; ?>
+                            </td>
                             <td class="text-end pe-3">
                                 <button class="btn btn-sm btn-outline-secondary py-0 px-2 me-1"
                                         onclick="openFacturationEdit(<?= htmlspecialchars(json_encode($fac), ENT_QUOTES) ?>)">
                                     <i class="bi bi-pencil"></i></button>
-                                <form method="POST" class="d-inline"
-                                      onsubmit="return confirm('Supprimer cette ligne ?')">
+                                <form method="POST" class="d-inline" onsubmit="return confirm('Supprimer cette ligne ?')">
                                     <?= opsForm($eventId, $projetId) ?>
                                     <input type="hidden" name="ops_action" value="facturation_delete">
                                     <input type="hidden" name="ligne_id" value="<?= (int)$fac['id'] ?>">
@@ -502,11 +714,119 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
                             <tr>
                                 <td colspan="8" class="ps-3 text-end">TOTAL GÉNÉRAL</td>
                                 <td class="text-end"><?= number_format($totalFacturation,2,',',' ') ?> €</td>
-                                <td colspan="4"></td>
+                                <td colspan="5"></td>
                             </tr>
                         </tfoot>
                     </table>
                 </div>
+            </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- ══════════════════════════════════════════════
+             ONGLET PRÉ-PRODUCTION
+        ══════════════════════════════════════════════ -->
+        <div class="tab-pane fade" id="pane-preprod" role="tabpanel">
+
+            <?php if ($eventId > 0 && $eventData): ?>
+            <!-- Phases de production affichées depuis l'événement -->
+            <div class="row g-4 mb-4">
+                <?php
+                $phases = [
+                    ['deb'=>'date_preprod_debut',   'fin'=>'date_preprod_fin',   'label'=>'Pré-production',        'color'=>'warning', 'icon'=>'bi-hammer'],
+                    ['deb'=>'date_prod_debut',      'fin'=>'date_prod_fin',      'label'=>'Production/Installation','color'=>'primary', 'icon'=>'bi-gear-fill'],
+                    ['deb'=>'date_exploit_debut',   'fin'=>'date_exploit_fin',   'label'=>'Exploitation/Événement', 'color'=>'success', 'icon'=>'bi-play-circle-fill'],
+                    ['deb'=>'date_demontage_debut', 'fin'=>'date_demontage_fin', 'label'=>'Démontage',              'color'=>'danger',  'icon'=>'bi-trash3-fill'],
+                ];
+                foreach ($phases as $ph):
+                    $deb = $eventData[$ph['deb']] ?? null;
+                    $fin = $eventData[$ph['fin']] ?? null;
+                ?>
+                <div class="col-md-6 col-xl-3">
+                    <article class="card border-0 shadow-sm rounded-3 h-100">
+                        <div class="card-header bg-<?= $ph['color'] ?>-subtle border-0 rounded-top-3">
+                            <span class="fw-bold text-<?= $ph['color'] ?>">
+                                <i class="bi <?= $ph['icon'] ?> me-2"></i><?= $ph['label'] ?>
+                            </span>
+                        </div>
+                        <div class="card-body text-center py-3">
+                            <?php if ($deb || $fin): ?>
+                            <p class="mb-1 fw-semibold">
+                                <?= $deb ? date('d/m/Y', strtotime($deb)) : '?' ?>
+                                <i class="bi bi-arrow-right mx-1 small"></i>
+                                <?= $fin ? date('d/m/Y', strtotime($fin)) : '?' ?>
+                            </p>
+                            <?php if ($deb && $fin): ?>
+                            <?php
+                                $nbJours = (int)ceil((strtotime($fin) - strtotime($deb)) / 86400) + 1;
+                            ?>
+                            <span class="badge bg-<?= $ph['color'] ?> bg-opacity-75"><?= $nbJours ?> jour<?= $nbJours > 1 ? 's' : '' ?></span>
+                            <?php endif; ?>
+                            <?php else: ?>
+                            <p class="text-body-secondary small mb-0"><i class="bi bi-dash-circle me-1"></i>Non défini</p>
+                            <?php endif; ?>
+                        </div>
+                    </article>
+                </div>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- Lien pour modifier les dates dans gerer_event -->
+            <div class="alert alert-light border shadow-sm d-flex justify-content-between align-items-center">
+                <span class="small text-body-secondary"><i class="bi bi-info-circle me-2"></i>Modifiez les dates de phases depuis la fiche événement.</span>
+                <a href="/gerer_event?id=<?= $eventId ?>" class="btn btn-sm btn-outline-primary rounded-3">
+                    <i class="bi bi-pencil me-1"></i>Modifier l'événement
+                </a>
+            </div>
+
+            <!-- Timeline visuelle des phases -->
+            <?php
+            $allDates = [];
+            foreach ($phases as $ph) {
+                if (!empty($eventData[$ph['deb']])) $allDates[] = strtotime($eventData[$ph['deb']]);
+                if (!empty($eventData[$ph['fin']])) $allDates[] = strtotime($eventData[$ph['fin']]);
+            }
+            if (count($allDates) >= 2):
+                $minTs = min($allDates);
+                $maxTs = max($allDates);
+                $totalDays = max(1, ($maxTs - $minTs) / 86400);
+            ?>
+            <div class="card border-0 shadow-sm rounded-3 mt-4">
+                <div class="card-header fw-bold border-0">
+                    <i class="bi bi-bar-chart-steps me-2 text-primary"></i>Timeline des phases
+                </div>
+                <div class="card-body">
+                    <?php foreach ($phases as $ph):
+                        $deb = !empty($eventData[$ph['deb']]) ? strtotime($eventData[$ph['deb']]) : null;
+                        $fin = !empty($eventData[$ph['fin']]) ? strtotime($eventData[$ph['fin']]) : null;
+                        if (!$deb && !$fin) continue;
+                        $deb = $deb ?? $minTs;
+                        $fin = $fin ?? $maxTs;
+                        $left  = round(($deb - $minTs) / ($totalDays * 86400) * 100);
+                        $width = max(2, round(($fin - $deb) / ($totalDays * 86400) * 100));
+                    ?>
+                    <div class="d-flex align-items-center mb-2">
+                        <div style="width:180px;" class="small fw-medium text-truncate me-2">
+                            <i class="bi <?= $ph['icon'] ?> me-1 text-<?= $ph['color'] ?>"></i><?= $ph['label'] ?>
+                        </div>
+                        <div class="flex-grow-1 position-relative" style="height:28px;background:var(--bs-secondary-bg);border-radius:6px;overflow:hidden;">
+                            <div class="position-absolute h-100 bg-<?= $ph['color'] ?> bg-opacity-75 d-flex align-items-center justify-content-center"
+                                 style="left:<?= $left ?>%;width:<?= $width ?>%;border-radius:4px;">
+                                <small class="text-white fw-bold text-truncate px-1" style="font-size:.7rem;">
+                                    <?= date('d/m', $deb) ?>→<?= date('d/m', $fin) ?>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <?php else: ?>
+            <div class="alert alert-info border-0 shadow-sm">
+                <i class="bi bi-info-circle me-2"></i>
+                Sélectionne un événement pour voir les phases de production.
             </div>
             <?php endif; ?>
         </div>
@@ -519,19 +839,21 @@ $totalFacturation = array_sum(array_map(fn($f) => (float)$f['prix_unitaire'] * (
 
 <!-- ══════════════════════════════════════════════════════
      MODALS
-════════════════════════════════════════════════════════ -->
+══════════════════════════════════════════════════════ -->
 <?php
 $statuts_planning_opts = ['wip','en_cours','valide','maj','devis','visuels','bat','prod','annule'];
 $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé','maj'=>'Maj',
                           'devis'=>'Devis','visuels'=>'Visuels','bat'=>'BAT','prod'=>'Prod','annule'=>'Annulé'];
 ?>
 
-<!-- Modal Budget Create -->
+<!-- ── Modal Budget Create ─────────────────────────── -->
 <div class="modal fade" id="modalBudgetCreate" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content border-0 shadow-lg rounded-4">
-      <div class="modal-header border-0"><h5 class="modal-title fw-bold"><i class="bi bi-bar-chart-fill me-2 text-success"></i>Nouvelle ligne de budget</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-header border-0">
+        <h5 class="modal-title fw-bold"><i class="bi bi-bar-chart-fill me-2 text-success"></i>Nouvelle ligne de budget</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
       <div class="modal-body">
         <form method="POST">
           <?= opsForm($eventId, $projetId) ?>
@@ -550,7 +872,7 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
             </div>
             <div class="col-md-4">
               <label class="form-label fw-semibold">Sous-catégorie</label>
-              <input type="text" name="sous_categorie" class="form-control rounded-3" placeholder="ex: Logement">
+              <input type="text" name="sous_categorie" class="form-control rounded-3">
             </div>
             <div class="col-12">
               <label class="form-label fw-semibold">Libellé <span class="text-danger">*</span></label>
@@ -561,8 +883,16 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
               <input type="number" step="0.01" name="previsionnel" class="form-control rounded-3" value="0">
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Comparatif 2025 (€)</label>
+              <label class="form-label fw-semibold">Comparatif (€)</label>
               <input type="number" step="0.01" name="comparatif" class="form-control rounded-3" value="0">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold"><i class="bi bi-truck me-1"></i>Fournisseur</label>
+              <input type="text" name="fournisseur" class="form-control rounded-3" placeholder="Nom du fournisseur">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold"><i class="bi bi-star me-1 text-warning"></i>Sponsor</label>
+              <input type="text" name="sponsor" class="form-control rounded-3" placeholder="Nom du sponsor">
             </div>
             <div class="col-12">
               <label class="form-label fw-semibold">Note</label>
@@ -579,12 +909,14 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
   </div>
 </div>
 
-<!-- Modal Budget Edit -->
+<!-- ── Modal Budget Edit ──────────────────────────── -->
 <div class="modal fade" id="modalBudgetEdit" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content border-0 shadow-lg rounded-4">
-      <div class="modal-header border-0"><h5 class="modal-title fw-bold"><i class="bi bi-pencil me-2 text-primary"></i>Modifier la ligne</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-header border-0">
+        <h5 class="modal-title fw-bold"><i class="bi bi-pencil me-2 text-primary"></i>Modifier la ligne budget</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
       <div class="modal-body">
         <form method="POST">
           <?= opsForm($eventId, $projetId) ?>
@@ -615,8 +947,16 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
               <input type="number" step="0.01" name="previsionnel" id="be-prev" class="form-control rounded-3">
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Comparatif 2025 (€)</label>
+              <label class="form-label fw-semibold">Comparatif (€)</label>
               <input type="number" step="0.01" name="comparatif" id="be-comp" class="form-control rounded-3">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Fournisseur</label>
+              <input type="text" name="fournisseur" id="be-four" class="form-control rounded-3">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Sponsor</label>
+              <input type="text" name="sponsor" id="be-spon" class="form-control rounded-3">
             </div>
             <div class="col-12">
               <label class="form-label fw-semibold">Note</label>
@@ -633,12 +973,14 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
   </div>
 </div>
 
-<!-- Modal Planning Create -->
+<!-- ── Modal Planning Create ──────────────────────── -->
 <div class="modal fade" id="modalPlanningCreate" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow-lg rounded-4">
-      <div class="modal-header border-0"><h5 class="modal-title fw-bold"><i class="bi bi-calendar-plus me-2 text-primary"></i>Nouvelle tâche planning</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-header border-0">
+        <h5 class="modal-title fw-bold"><i class="bi bi-calendar-plus me-2 text-primary"></i>Nouvelle tâche planning</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
       <div class="modal-body">
         <form method="POST">
           <?= opsForm($eventId, $projetId) ?>
@@ -683,12 +1025,14 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
   </div>
 </div>
 
-<!-- Modal Planning Edit -->
+<!-- ── Modal Planning Edit ────────────────────────── -->
 <div class="modal fade" id="modalPlanningEdit" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow-lg rounded-4">
-      <div class="modal-header border-0"><h5 class="modal-title fw-bold"><i class="bi bi-pencil me-2 text-primary"></i>Modifier la tâche</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-header border-0">
+        <h5 class="modal-title fw-bold"><i class="bi bi-pencil me-2 text-primary"></i>Modifier la tâche</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
       <div class="modal-body">
         <form method="POST">
           <?= opsForm($eventId, $projetId) ?>
@@ -734,28 +1078,42 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
   </div>
 </div>
 
-<!-- Modal Matériel Create -->
+<!-- ── Modal Matériel Create ──────────────────────── -->
 <div class="modal fade" id="modalMaterielCreate" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content border-0 shadow-lg rounded-4">
-      <div class="modal-header border-0"><h5 class="modal-title fw-bold"><i class="bi bi-box-seam me-2 text-warning"></i>Nouveau matériel</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-header border-0">
+        <h5 class="modal-title fw-bold"><i class="bi bi-box-seam me-2 text-warning"></i>Nouveau matériel</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
       <div class="modal-body">
         <form method="POST">
           <?= opsForm($eventId, $projetId) ?>
           <input type="hidden" name="ops_action" value="materiel_create">
           <div class="row g-3">
-            <div class="col-md-8">
+            <div class="col-md-6">
               <label class="form-label fw-semibold">Nom <span class="text-danger">*</span></label>
               <input type="text" name="nom" class="form-control rounded-3" required>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
               <label class="form-label fw-semibold">Quantité</label>
               <input type="number" step="0.5" name="quantite" class="form-control rounded-3" value="1">
             </div>
-            <div class="col-12">
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Catégorie</label>
+              <select name="categorie_achat" class="form-select rounded-3">
+                <option value="">— Non défini —</option>
+                <option value="loue">Loué</option>
+                <option value="achete">Acheté</option>
+              </select>
+            </div>
+            <div class="col-md-6">
               <label class="form-label fw-semibold">Fournisseur</label>
               <input type="text" name="fournisseur" class="form-control rounded-3">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Budget (€)</label>
+              <input type="number" step="0.01" name="budget" class="form-control rounded-3" placeholder="0.00">
             </div>
             <div class="col-md-6">
               <label class="form-label fw-semibold">Date In</label>
@@ -780,29 +1138,43 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
   </div>
 </div>
 
-<!-- Modal Matériel Edit -->
+<!-- ── Modal Matériel Edit ────────────────────────── -->
 <div class="modal fade" id="modalMaterielEdit" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content border-0 shadow-lg rounded-4">
-      <div class="modal-header border-0"><h5 class="modal-title fw-bold"><i class="bi bi-pencil me-2 text-primary"></i>Modifier le matériel</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-header border-0">
+        <h5 class="modal-title fw-bold"><i class="bi bi-pencil me-2 text-primary"></i>Modifier le matériel</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
       <div class="modal-body">
         <form method="POST">
           <?= opsForm($eventId, $projetId) ?>
           <input type="hidden" name="ops_action" value="materiel_update">
           <input type="hidden" name="ligne_id" id="me-id">
           <div class="row g-3">
-            <div class="col-md-8">
+            <div class="col-md-6">
               <label class="form-label fw-semibold">Nom</label>
               <input type="text" name="nom" id="me-nom" class="form-control rounded-3" required>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
               <label class="form-label fw-semibold">Quantité</label>
               <input type="number" step="0.5" name="quantite" id="me-qte" class="form-control rounded-3">
             </div>
-            <div class="col-12">
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Catégorie</label>
+              <select name="categorie_achat" id="me-cat" class="form-select rounded-3">
+                <option value="">— Non défini —</option>
+                <option value="loue">Loué</option>
+                <option value="achete">Acheté</option>
+              </select>
+            </div>
+            <div class="col-md-6">
               <label class="form-label fw-semibold">Fournisseur</label>
               <input type="text" name="fournisseur" id="me-four" class="form-control rounded-3">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Budget (€)</label>
+              <input type="number" step="0.01" name="budget" id="me-budget" class="form-control rounded-3">
             </div>
             <div class="col-md-6">
               <label class="form-label fw-semibold">Date In</label>
@@ -827,17 +1199,37 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
   </div>
 </div>
 
-<!-- Modal Facturation Create -->
+<!-- ── Modal Facturation Create ───────────────────── -->
 <div class="modal fade" id="modalFacturationCreate" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-xl">
     <div class="modal-content border-0 shadow-lg rounded-4">
-      <div class="modal-header border-0"><h5 class="modal-title fw-bold"><i class="bi bi-receipt me-2 text-info"></i>Nouvelle ligne de facturation</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-header border-0">
+        <h5 class="modal-title fw-bold"><i class="bi bi-receipt me-2 text-info"></i>Nouvelle ligne de facturation</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
       <div class="modal-body">
-        <form method="POST">
+        <form method="POST" enctype="multipart/form-data">
           <?= opsForm($eventId, $projetId) ?>
           <input type="hidden" name="ops_action" value="facturation_create">
           <div class="row g-3">
+
+            <!-- Contact existant -->
+            <div class="col-12">
+              <label class="form-label fw-semibold"><i class="bi bi-person-lines-fill me-1 text-primary"></i>Contact existant (optionnel)</label>
+              <select name="contact_id" id="fc-contact-select" class="form-select rounded-3" onchange="fillContactFromSelect(this,'fc')">
+                <option value="">— Saisir manuellement —</option>
+                <?php foreach ($contacts as $ct): ?>
+                <option value="<?= (int)$ct['id'] ?>"
+                        data-nom="<?= htmlspecialchars((string)($ct['nom']??''), ENT_QUOTES) ?>"
+                        data-tel="<?= htmlspecialchars((string)($ct['telephone']??''), ENT_QUOTES) ?>"
+                        data-mail="<?= htmlspecialchars((string)($ct['mail']??''), ENT_QUOTES) ?>">
+                    <?= htmlspecialchars((string)$ct['nom'], ENT_QUOTES) ?>
+                    <?= !empty($ct['type']) ? ' ('.$ct['type'].')' : '' ?>
+                </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+
             <div class="col-md-4"><label class="form-label fw-semibold">Catégorie</label>
               <input type="text" name="categorie" class="form-control rounded-3" placeholder="ex: Hébergement"></div>
             <div class="col-md-4"><label class="form-label fw-semibold">Poste</label>
@@ -845,11 +1237,11 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
             <div class="col-md-4"><label class="form-label fw-semibold">Prestataire</label>
               <input type="text" name="prestataire" class="form-control rounded-3"></div>
             <div class="col-md-4"><label class="form-label fw-semibold">Contact</label>
-              <input type="text" name="contact" class="form-control rounded-3"></div>
+              <input type="text" name="contact" id="fc-contact" class="form-control rounded-3"></div>
             <div class="col-md-4"><label class="form-label fw-semibold">Téléphone</label>
-              <input type="text" name="telephone" class="form-control rounded-3"></div>
+              <input type="text" name="telephone" id="fc-tel" class="form-control rounded-3"></div>
             <div class="col-md-4"><label class="form-label fw-semibold">Mail</label>
-              <input type="email" name="mail" class="form-control rounded-3"></div>
+              <input type="email" name="mail" id="fc-mail" class="form-control rounded-3"></div>
             <div class="col-md-3"><label class="form-label fw-semibold">Prix unitaire (€)</label>
               <input type="number" step="0.01" name="prix_unitaire" class="form-control rounded-3" value="0" id="fc-pu" oninput="updateFcTotal()"></div>
             <div class="col-md-3"><label class="form-label fw-semibold">Quantité</label>
@@ -864,8 +1256,14 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
               <div class="form-check"><input class="form-check-input" type="checkbox" name="statut_virement" id="fc-virement">
                 <label class="form-check-label" for="fc-virement">Virement</label></div>
             </div>
-            <div class="col-12"><label class="form-label fw-semibold">Note</label>
+            <div class="col-md-8"><label class="form-label fw-semibold">Note</label>
               <input type="text" name="note" class="form-control rounded-3"></div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold"><i class="bi bi-paperclip me-1"></i>Fichier joint</label>
+              <input type="file" name="fichier_upload" class="form-control rounded-3"
+                     accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx">
+              <small class="text-body-secondary">PDF, image, Word, Excel</small>
+            </div>
           </div>
           <div class="d-flex justify-content-end gap-2 mt-4">
             <button type="button" class="btn btn-outline-secondary rounded-3" data-bs-dismiss="modal">Annuler</button>
@@ -877,18 +1275,39 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
   </div>
 </div>
 
-<!-- Modal Facturation Edit -->
+<!-- ── Modal Facturation Edit ─────────────────────── -->
 <div class="modal fade" id="modalFacturationEdit" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-xl">
     <div class="modal-content border-0 shadow-lg rounded-4">
-      <div class="modal-header border-0"><h5 class="modal-title fw-bold"><i class="bi bi-pencil me-2 text-primary"></i>Modifier la facturation</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-header border-0">
+        <h5 class="modal-title fw-bold"><i class="bi bi-pencil me-2 text-primary"></i>Modifier la facturation</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
       <div class="modal-body">
-        <form method="POST">
+        <form method="POST" enctype="multipart/form-data">
           <?= opsForm($eventId, $projetId) ?>
           <input type="hidden" name="ops_action" value="facturation_update">
           <input type="hidden" name="ligne_id" id="fe-id">
+          <input type="hidden" name="fichier_existing" id="fe-fichier-existing">
           <div class="row g-3">
+
+            <!-- Contact existant edit -->
+            <div class="col-12">
+              <label class="form-label fw-semibold"><i class="bi bi-person-lines-fill me-1 text-primary"></i>Contact existant</label>
+              <select name="contact_id" id="fe-contact-select" class="form-select rounded-3" onchange="fillContactFromSelect(this,'fe')">
+                <option value="">— Saisir manuellement —</option>
+                <?php foreach ($contacts as $ct): ?>
+                <option value="<?= (int)$ct['id'] ?>"
+                        data-nom="<?= htmlspecialchars((string)($ct['nom']??''), ENT_QUOTES) ?>"
+                        data-tel="<?= htmlspecialchars((string)($ct['telephone']??''), ENT_QUOTES) ?>"
+                        data-mail="<?= htmlspecialchars((string)($ct['mail']??''), ENT_QUOTES) ?>">
+                    <?= htmlspecialchars((string)$ct['nom'], ENT_QUOTES) ?>
+                    <?= !empty($ct['type']) ? ' ('.$ct['type'].')' : '' ?>
+                </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+
             <div class="col-md-4"><label class="form-label fw-semibold">Catégorie</label><input type="text" name="categorie"   id="fe-cat"  class="form-control rounded-3"></div>
             <div class="col-md-4"><label class="form-label fw-semibold">Poste</label><input type="text" name="poste"           id="fe-poste" class="form-control rounded-3"></div>
             <div class="col-md-4"><label class="form-label fw-semibold">Prestataire</label><input type="text" name="prestataire" id="fe-prest" class="form-control rounded-3"></div>
@@ -909,7 +1328,14 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
               <div class="form-check"><input class="form-check-input" type="checkbox" name="statut_virement" id="fe-virement">
                 <label class="form-check-label" for="fe-virement">Virement</label></div>
             </div>
-            <div class="col-12"><label class="form-label fw-semibold">Note</label><input type="text" name="note" id="fe-note" class="form-control rounded-3"></div>
+            <div class="col-md-8"><label class="form-label fw-semibold">Note</label><input type="text" name="note" id="fe-note" class="form-control rounded-3"></div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold"><i class="bi bi-paperclip me-1"></i>Fichier joint</label>
+              <div id="fe-fichier-current" class="mb-1 small text-body-secondary"></div>
+              <input type="file" name="fichier_upload" class="form-control rounded-3"
+                     accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx">
+              <small class="text-body-secondary">Laisser vide pour conserver le fichier existant</small>
+            </div>
           </div>
           <div class="d-flex justify-content-end gap-2 mt-4">
             <button type="button" class="btn btn-outline-secondary rounded-3" data-bs-dismiss="modal">Annuler</button>
@@ -920,3 +1346,51 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
     </div>
   </div>
 </div>
+
+<!-- ── Modal Drive / Maps ──────────────────────────── -->
+<?php if ($eventId > 0): ?>
+<div class="modal fade" id="modalDriveLinks" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <div class="modal-header border-0">
+        <h5 class="modal-title fw-bold"><i class="bi bi-google me-2 text-danger"></i>Liens Google Drive / Maps</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form method="POST">
+          <?= opsForm($eventId, $projetId) ?>
+          <input type="hidden" name="ops_action" value="event_drive_update">
+          <div class="mb-3">
+            <label class="form-label fw-semibold"><i class="bi bi-cloud me-1 text-primary"></i>Google Drive (dossier)</label>
+            <input type="url" name="drive_url" class="form-control rounded-3"
+                   value="<?= htmlspecialchars((string)($eventData['drive_url'] ?? ''), ENT_QUOTES) ?>"
+                   placeholder="https://drive.google.com/drive/folders/...">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold"><i class="bi bi-file-earmark-text me-1 text-success"></i>Google Doc / Sheet</label>
+            <input type="url" name="drive_doc_url" class="form-control rounded-3"
+                   value="<?= htmlspecialchars((string)($eventData['drive_doc_url'] ?? ''), ENT_QUOTES) ?>"
+                   placeholder="https://docs.google.com/...">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold"><i class="bi bi-geo-alt me-1 text-danger"></i>Google My Maps</label>
+            <input type="url" name="maps_url" class="form-control rounded-3"
+                   value="<?= htmlspecialchars((string)($eventData['maps_url'] ?? ''), ENT_QUOTES) ?>"
+                   placeholder="https://www.google.com/maps/...">
+          </div>
+          <div class="d-flex justify-content-end gap-2 mt-4">
+            <button type="button" class="btn btn-outline-secondary rounded-3" data-bs-dismiss="modal">Annuler</button>
+            <button type="submit" class="btn btn-danger rounded-3 fw-semibold"><i class="bi bi-save me-1"></i>Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
+
+<!-- Données Gantt injectées pour le JS -->
+<script>
+window.OPS_PLANNING_DATA = <?= json_encode(array_values($planningAvecDates), JSON_HEX_TAG) ?>;
+window.OPS_PLANNING_STATUTS = <?= json_encode($planningStatuts, JSON_HEX_TAG) ?>;
+</script>

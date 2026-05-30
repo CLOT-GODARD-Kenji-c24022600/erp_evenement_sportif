@@ -2,14 +2,8 @@
 
 /**
  * YES - Your Event Solution
- *
- * ERP évènementiel
- *
  * @file EventController.php
- * @author CELESTINE Samuel
- * @author CLOT-GODARD Kenji
- * @version 1.1
- * @since 2026
+ * @version 1.2  –  2026
  */
 
 declare(strict_types=1);
@@ -21,49 +15,23 @@ use Core\Router;
 use Core\Security;
 use Core\Session;
 
-/**
- * Contrôleur de gestion des événements.
- *
- * Gère la création, la mise à jour et la suppression des événements sportifs.
- */
 class EventController
 {
     private EventModel $eventModel;
 
-    /**
-     * @param EventModel $eventModel Modèle événements.
-     */
     public function __construct(EventModel $eventModel)
     {
         $this->eventModel = $eventModel;
     }
 
-    /**
-     * Crée un nouvel événement à partir des données POST.
-     *
-     * @return void
-     */
     public function create(): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             Router::redirect('/dashboard');
         }
 
-        $nom         = Security::sanitizeString($_POST['nom_event']    ?? '');
-        $sport       = Security::sanitizeString($_POST['type_sport']   ?? '');
-        $description = Security::sanitizeString($_POST['description']  ?? '');
-        $dateDebut   = Security::sanitizeString($_POST['date_debut']   ?? '');
-        $lieu        = Security::sanitizeString($_POST['lieu']         ?? '');
-        $dateFinRaw  = Security::sanitizeString($_POST['date_fin']     ?? '');
-        $dateFin     = $dateFinRaw !== '' ? $dateFinRaw : null;
-        $capacite    = isset($_POST['capacite']) && $_POST['capacite'] !== ''
-                       ? Security::sanitizeInt($_POST['capacite'])
-                       : null;
-        $projetId    = isset($_POST['projet_id']) && $_POST['projet_id'] !== ''
-                       ? Security::sanitizeInt($_POST['projet_id'])
-                       : null;
-
-        $erreurs = $this->validateEvent($nom, $dateDebut, $dateFin);
+        $data    = $this->collectPostData();
+        $erreurs = $this->validateEvent($data['nom'], $data['date_debut'], $data['date_fin']);
 
         if (!empty($erreurs)) {
             Session::set('error_msg', implode('<br>', $erreurs));
@@ -71,18 +39,8 @@ class EventController
         }
 
         try {
-            $this->eventModel->create([
-                'nom'         => $nom,
-                'sport'       => $sport,
-                'description' => $description,
-                'date_debut'  => $dateDebut,
-                'date_fin'    => $dateFin,
-                'lieu'        => $lieu,
-                'capacite'    => $capacite,
-                'projet_id'   => $projetId,
-            ]);
-
-            Session::set('success_msg', "L'événement '{$nom}' a été enregistré avec succès !");
+            $this->eventModel->create($data);
+            Session::set('success_msg', "L'événement '{$data['nom']}' a été enregistré avec succès !");
             Router::redirect('/dashboard');
         } catch (\Exception $e) {
             Session::set('error_msg', 'Erreur BDD : ' . $e->getMessage());
@@ -90,22 +48,11 @@ class EventController
         }
     }
 
-    /**
-     * Charge un événement par son identifiant pour l'édition.
-     *
-     * @param int $id Identifiant de l'événement.
-     * @return array|null Données de l'événement, ou null si introuvable.
-     */
     public function getForEdit(int $id): ?array
     {
         return $this->eventModel->findById($id);
     }
 
-    /**
-     * Met à jour ou supprime un événement selon l'action POST.
-     *
-     * @return void
-     */
     public function handleUpdate(): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -127,35 +74,16 @@ class EventController
             }
 
             if ($action === 'update') {
-                $nom         = Security::sanitizeString($_POST['nom_event']    ?? '');
-                $sport       = Security::sanitizeString($_POST['type_sport']   ?? '');
-                $description = Security::sanitizeString($_POST['description']  ?? '');
-                $dateDebut   = Security::sanitizeString($_POST['date_debut']   ?? '');
-                $lieu        = Security::sanitizeString($_POST['lieu']         ?? '');
-                $dateFinRaw  = Security::sanitizeString($_POST['date_fin']     ?? '');
-                $dateFin     = $dateFinRaw !== '' ? $dateFinRaw : null;
-                $capacite    = isset($_POST['capacite']) && $_POST['capacite'] !== ''
-                               ? Security::sanitizeInt($_POST['capacite'])
-                               : null;
-
-                $erreurs = $this->validateEvent($nom, $dateDebut, $dateFin);
+                $data    = $this->collectPostData();
+                $erreurs = $this->validateEvent($data['nom'], $data['date_debut'], $data['date_fin']);
 
                 if (!empty($erreurs)) {
                     Session::set('error_msg', implode('<br>', $erreurs));
                     Router::redirect("/gerer_event?id={$idEvent}");
                 }
 
-                $this->eventModel->update($idEvent, [
-                    'nom'         => $nom,
-                    'sport'       => $sport,
-                    'description' => $description,
-                    'date_debut'  => $dateDebut,
-                    'date_fin'    => $dateFin,
-                    'lieu'        => $lieu,
-                    'capacite'    => $capacite,
-                ]);
-
-                Session::set('success_msg', "L'événement '{$nom}' a été mis à jour avec succès !");
+                $this->eventModel->update($idEvent, $data);
+                Session::set('success_msg', "L'événement '{$data['nom']}' a été mis à jour avec succès !");
                 Router::redirect('/dashboard');
             }
         } catch (\Exception $e) {
@@ -166,14 +94,46 @@ class EventController
         Router::redirect('/dashboard');
     }
 
-    /**
-     * Valide les données d'un événement.
-     *
-     * @param string      $nom       Nom de l'événement.
-     * @param string      $dateDebut Date de début.
-     * @param string|null $dateFin   Date de fin (optionnelle).
-     * @return string[]              Liste des erreurs.
-     */
+    // ── Collecte des données POST ─────────────────────────────
+
+    private function collectPostData(): array
+    {
+        $dateFinRaw = Security::sanitizeString($_POST['date_fin'] ?? '');
+        $dateFin    = $dateFinRaw !== '' ? $dateFinRaw : null;
+        $capacite   = isset($_POST['capacite']) && $_POST['capacite'] !== ''
+                      ? Security::sanitizeInt($_POST['capacite'])
+                      : null;
+        $projetId   = isset($_POST['projet_id']) && $_POST['projet_id'] !== ''
+                      ? Security::sanitizeInt($_POST['projet_id'])
+                      : null;
+
+        return [
+            'nom'                  => Security::sanitizeString($_POST['nom_event']            ?? ''),
+            'sport'                => Security::sanitizeString($_POST['type_sport']           ?? ''),
+            'description'          => Security::sanitizeString($_POST['description']          ?? ''),
+            'date_debut'           => Security::sanitizeString($_POST['date_debut']           ?? ''),
+            'date_fin'             => $dateFin,
+            'lieu'                 => Security::sanitizeString($_POST['lieu']                 ?? ''),
+            'capacite'             => $capacite,
+            'projet_id'            => $projetId,
+            // Phases
+            'date_preprod_debut'   => Security::sanitizeString($_POST['date_preprod_debut']   ?? '') ?: null,
+            'date_preprod_fin'     => Security::sanitizeString($_POST['date_preprod_fin']     ?? '') ?: null,
+            'date_prod_debut'      => Security::sanitizeString($_POST['date_prod_debut']      ?? '') ?: null,
+            'date_prod_fin'        => Security::sanitizeString($_POST['date_prod_fin']        ?? '') ?: null,
+            'date_exploit_debut'   => Security::sanitizeString($_POST['date_exploit_debut']   ?? '') ?: null,
+            'date_exploit_fin'     => Security::sanitizeString($_POST['date_exploit_fin']     ?? '') ?: null,
+            'date_demontage_debut' => Security::sanitizeString($_POST['date_demontage_debut'] ?? '') ?: null,
+            'date_demontage_fin'   => Security::sanitizeString($_POST['date_demontage_fin']   ?? '') ?: null,
+            // Drive / Maps
+            'drive_url'            => Security::sanitizeString($_POST['drive_url']            ?? '') ?: null,
+            'drive_doc_url'        => Security::sanitizeString($_POST['drive_doc_url']        ?? '') ?: null,
+            'maps_url'             => Security::sanitizeString($_POST['maps_url']             ?? '') ?: null,
+        ];
+    }
+
+    // ── Validation ────────────────────────────────────────────
+
     private function validateEvent(string $nom, string $dateDebut, ?string $dateFin): array
     {
         $erreurs = [];

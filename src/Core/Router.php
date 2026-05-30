@@ -6,7 +6,7 @@
  * @file Router.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 2.0
+ * @version 2.1
  * @since 2026
  */
 
@@ -20,6 +20,7 @@ use App\Models\TodoModel;
 use App\Models\SearchModel;
 use App\Models\QuickCreateModel;
 use App\Models\ProjectModel;
+use App\Models\PlanningGlobalModel;
 use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
 use App\Controllers\EventController;
@@ -63,6 +64,9 @@ class Router
         'import_csv',
         'operationnel',
         '404',
+        'aide',
+        'mentions_legales',
+        'plan_du_site',
     ];
 
     public static function dispatch(): void
@@ -128,6 +132,9 @@ class Router
             'ajax_presence'   => 'ajax_presence',
             'change_lang'     => 'change_lang',
             'import_csv'      => 'import_csv',
+            'aide'             => 'aide',
+            'mentions_legales' => 'mentions_legales',
+            'plan_du_site'     => 'plan_du_site',
             'operationnel'    => 'operationnel',
         ];
 
@@ -356,9 +363,16 @@ class Router
                     self::redirect('/dashboard');
                 }
 
+                // Projets pour le select (si besoin futur)
+                $projetsSimple = [];
+                try {
+                    $projetsSimple = (new ProjectModel())->getAllSimple();
+                } catch (\Exception $e) {
+                }
+
                 Renderer::renderApp(
                     __DIR__ . '/../app/Views/events/gerer_event.php',
-                    array_merge($common, ['event' => $event])
+                    array_merge($common, ['event' => $event, 'projets' => $projetsSimple])
                 );
                 break;
 
@@ -473,6 +487,27 @@ class Router
                     array_merge($common, $data),
                     '<link rel="stylesheet" href="/assets/css/projects.css">',
                     '<script src="/assets/js/projects.js"></script>'
+                );
+                break;
+
+            case 'aide':
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/legal/aide.php',
+                    $common
+                );
+                break;
+
+            case 'mentions_legales':
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/legal/mentions_legales.php',
+                    $common
+                );
+                break;
+
+            case 'plan_du_site':
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/legal/plan_du_site.php',
+                    $common
                 );
                 break;
 

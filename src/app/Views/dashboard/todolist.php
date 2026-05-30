@@ -7,18 +7,10 @@
  * Incluse par dashboard.php.
  *
  * @file todolist.php
- * @author CELESTINE Samuel
- * @author CLOT-GODARD Kenji
- * @version 1.2
- * @since 2026
- *
- * Variables attendues (héritées du dashboard) :
- * @var array $todos        Liste complète des tâches.
- * @var array $todoStats    Statistiques des tâches.
- * @var array $utilisateurs Liste des utilisateurs pour le select.
- * @var array $evenements   Liste des événements pour le select.
- * @var array $projets      Liste des projets pour le select.
- * @var array $t            Traductions chargées.
+ * @version 1.3  –  2026
+ * CORRECTIONS :
+ *   - Suppression du display:none!important sur #todo-pagination (bloquait le JS)
+ *   - data-priority, data-due, data-title toujours présents sur chaque li
  */
 
 declare(strict_types=1);
@@ -94,13 +86,13 @@ $today = date('Y-m-d');
                   aria-label="<?= $percent ?>%"></progress>
     </figure>
 
-    <!-- Cartes stats cliquables pour filtrer par statut -->
+    <!-- Cartes stats cliquables -->
     <ul class="list-unstyled d-flex gap-3 mb-4 flex-wrap" id="todo-stat-filters">
         <?php foreach ([
-            ['val' => $total,      'color' => 'primary',   'label' => $t['todo_total'],       'filter' => 'all'],
-            ['val' => $en_attente, 'color' => 'secondary', 'label' => $t['todo_pending'],      'filter' => 'en_attente'],
-            ['val' => $en_cours,   'color' => 'primary',   'label' => $t['todo_in_progress'],  'filter' => 'en_cours'],
-            ['val' => $done,       'color' => 'success',   'label' => $t['todo_done'],         'filter' => 'termine'],
+            ['val' => $total,      'color' => 'primary',   'label' => $t['todo_total'],      'filter' => 'all'],
+            ['val' => $en_attente, 'color' => 'secondary', 'label' => $t['todo_pending'],     'filter' => 'en_attente'],
+            ['val' => $en_cours,   'color' => 'primary',   'label' => $t['todo_in_progress'], 'filter' => 'en_cours'],
+            ['val' => $done,       'color' => 'success',   'label' => $t['todo_done'],        'filter' => 'termine'],
         ] as $stat): ?>
         <li>
             <button type="button"
@@ -123,6 +115,7 @@ $today = date('Y-m-d');
             <input type="search" id="todo-search" class="form-control border-start-0 rounded-end-3"
                    placeholder="Rechercher une tâche…" aria-label="Rechercher une tâche">
         </div>
+        <!-- FIX : pas de style inline ici, le JS gère l'affichage -->
         <select id="todo-sort" class="form-select form-select-sm" style="width:auto;" aria-label="Trier les tâches">
             <option value="default">Ordre par défaut</option>
             <option value="priority-desc">Priorité (haute → basse)</option>
@@ -165,7 +158,6 @@ $today = date('Y-m-d');
         </p>
     <?php else: ?>
 
-        <!-- Message aucun résultat -->
         <p id="todo-no-results" class="text-body-secondary text-center py-4" style="display:none;">
             <i class="bi bi-search fs-2 d-block mb-2 opacity-50" aria-hidden="true"></i>
             Aucune tâche ne correspond à votre recherche.
@@ -183,13 +175,19 @@ $today = date('Y-m-d');
                     $isOverdue = !empty($todo['due_date'])
                               && $todo['status'] !== 'termine'
                               && $todo['due_date'] < $today;
+                    // Valeurs sûres pour les data-attributes
+                    $dataPriority = (int) ($todo['priority'] ?? 1);
+                    $dataDue      = htmlspecialchars((string) ($todo['due_date'] ?? ''), ENT_QUOTES);
+                    $dataTitle    = htmlspecialchars(strtolower((string) ($todo['title'] ?? '')), ENT_QUOTES);
+                    $dataCategory = htmlspecialchars((string) ($todo['category'] ?? 'general'), ENT_QUOTES);
+                    $dataStatus   = htmlspecialchars((string) ($todo['status'] ?? 'en_attente'), ENT_QUOTES);
                 ?>
                 <li class="list-group-item px-3 py-3 todo-item <?= $isOverdue ? 'todo-overdue' : '' ?>"
-                    data-category="<?= htmlspecialchars((string) $todo['category'], ENT_QUOTES) ?>"
-                    data-status="<?= htmlspecialchars((string) $todo['status'], ENT_QUOTES) ?>"
-                    data-priority="<?= (int) $todo['priority'] ?>"
-                    data-due="<?= htmlspecialchars((string) ($todo['due_date'] ?? ''), ENT_QUOTES) ?>"
-                    data-title="<?= htmlspecialchars(strtolower((string) $todo['title']), ENT_QUOTES) ?>">
+                    data-category="<?= $dataCategory ?>"
+                    data-status="<?= $dataStatus ?>"
+                    data-priority="<?= $dataPriority ?>"
+                    data-due="<?= $dataDue ?>"
+                    data-title="<?= $dataTitle ?>">
                     <article class="d-flex align-items-start gap-3">
 
                         <nav aria-label="Changer le statut" class="flex-shrink-0 mt-1 d-flex flex-column gap-1">
@@ -215,7 +213,7 @@ $today = date('Y-m-d');
                             <p class="mb-1 fw-semibold text-body lh-sm">
                                 <?= htmlspecialchars((string) $todo['title'], ENT_QUOTES) ?>
                                 <?php if ($isOverdue): ?>
-                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill ms-1" title="Tâche en retard">
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill ms-1">
                                         <i class="bi bi-exclamation-triangle-fill me-1" aria-hidden="true"></i>En retard
                                     </span>
                                 <?php endif; ?>
@@ -291,11 +289,20 @@ $today = date('Y-m-d');
                 <?php endforeach; ?>
             </ul>
 
-            <!-- Pagination -->
-            <nav id="todo-pagination" aria-label="Pagination des tâches" class="d-flex justify-content-between align-items-center mt-2" style="display:none!important;">
+            <!-- ═══════════════════════════════════════════
+                 PAGINATION
+                 FIX : style="display:none" sans !important
+                 Le JS fait paginationNav.style.display = 'flex'
+                 ce qui fonctionne UNIQUEMENT sans !important
+            ═══════════════════════════════════════════ -->
+            <nav id="todo-pagination"
+                 aria-label="Pagination des tâches"
+                 class="d-flex justify-content-between align-items-center mt-2"
+                 style="display:none;">
                 <p class="small text-body-secondary mb-0" id="todo-pagination-info"></p>
                 <ul class="pagination pagination-sm mb-0" id="todo-pagination-pages"></ul>
             </nav>
+
         </section>
         <?php endif; ?>
 
@@ -310,11 +317,11 @@ $today = date('Y-m-d');
                     $trans = $transitions['termine'] ?? [];
                 ?>
                 <li class="list-group-item px-3 py-2 opacity-60 todo-item todo-item-done"
-                    data-category="<?= htmlspecialchars((string) $todo['category'], ENT_QUOTES) ?>"
+                    data-category="<?= htmlspecialchars((string) ($todo['category'] ?? 'general'), ENT_QUOTES) ?>"
                     data-status="termine"
-                    data-priority="<?= (int) $todo['priority'] ?>"
+                    data-priority="<?= (int) ($todo['priority'] ?? 1) ?>"
                     data-due="<?= htmlspecialchars((string) ($todo['due_date'] ?? ''), ENT_QUOTES) ?>"
-                    data-title="<?= htmlspecialchars(strtolower((string) $todo['title']), ENT_QUOTES) ?>">
+                    data-title="<?= htmlspecialchars(strtolower((string) ($todo['title'] ?? '')), ENT_QUOTES) ?>">
                     <article class="d-flex align-items-center gap-3">
                         <?php foreach ($trans as $newStatus => $info): ?>
                         <form method="POST" action="/dashboard">

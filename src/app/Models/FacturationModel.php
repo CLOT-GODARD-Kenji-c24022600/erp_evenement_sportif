@@ -3,7 +3,7 @@
 /**
  * YES – Your Event Solution
  * @file FacturationModel.php
- * @version 1.0  –  2026
+ * @version 1.1  –  2026
  */
 
 declare(strict_types=1);
@@ -27,8 +27,11 @@ class FacturationModel
     {
         try {
             $stmt = $this->db->prepare(
-                'SELECT *, (prix_unitaire * quantite) AS total
-                 FROM facturation WHERE event_id = :id ORDER BY categorie ASC, id ASC'
+                'SELECT f.*, (f.prix_unitaire * f.quantite) AS total,
+                        c.nom AS contact_nom, c.mail AS contact_mail, c.telephone AS contact_tel
+                 FROM facturation f
+                 LEFT JOIN contacts c ON c.id = f.contact_id
+                 WHERE f.event_id = :id ORDER BY f.categorie ASC, f.id ASC'
             );
             $stmt->execute(['id' => $eventId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -41,8 +44,11 @@ class FacturationModel
     {
         try {
             $stmt = $this->db->prepare(
-                'SELECT *, (prix_unitaire * quantite) AS total
-                 FROM facturation WHERE projet_id = :id ORDER BY categorie ASC, id ASC'
+                'SELECT f.*, (f.prix_unitaire * f.quantite) AS total,
+                        c.nom AS contact_nom, c.mail AS contact_mail, c.telephone AS contact_tel
+                 FROM facturation f
+                 LEFT JOIN contacts c ON c.id = f.contact_id
+                 WHERE f.projet_id = :id ORDER BY f.categorie ASC, f.id ASC'
             );
             $stmt->execute(['id' => $projetId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -69,13 +75,13 @@ class FacturationModel
         try {
             $stmt = $this->db->prepare(
                 'INSERT INTO facturation
-                    (event_id, projet_id, categorie, poste, prestataire, contact,
+                    (event_id, projet_id, categorie, poste, prestataire, contact_id, contact,
                      telephone, mail, prix_unitaire, quantite,
-                     statut_devis, statut_facture, statut_virement, note)
+                     statut_devis, statut_facture, statut_virement, note, fichier)
                  VALUES
-                    (:event_id, :projet_id, :categorie, :poste, :prestataire, :contact,
+                    (:event_id, :projet_id, :categorie, :poste, :prestataire, :contact_id, :contact,
                      :telephone, :mail, :prix_unitaire, :quantite,
-                     :statut_devis, :statut_facture, :statut_virement, :note)'
+                     :statut_devis, :statut_facture, :statut_virement, :note, :fichier)'
             );
             return $stmt->execute([
                 'event_id'        => $d['event_id']      ?? null,
@@ -83,6 +89,7 @@ class FacturationModel
                 'categorie'       => $d['categorie']     ?? null,
                 'poste'           => $d['poste']         ?? null,
                 'prestataire'     => $d['prestataire']   ?? null,
+                'contact_id'      => $d['contact_id']    ? (int) $d['contact_id'] : null,
                 'contact'         => $d['contact']       ?? null,
                 'telephone'       => $d['telephone']     ?? null,
                 'mail'            => $d['mail']          ?? null,
@@ -92,6 +99,7 @@ class FacturationModel
                 'statut_facture'  => (int) ($d['statut_facture']  ?? 0),
                 'statut_virement' => (int) ($d['statut_virement'] ?? 0),
                 'note'            => $d['note']          ?? null,
+                'fichier'         => $d['fichier']       ?? null,
             ]);
         } catch (PDOException) {
             return false;
@@ -104,16 +112,17 @@ class FacturationModel
             $stmt = $this->db->prepare(
                 'UPDATE facturation SET
                     categorie=:categorie, poste=:poste, prestataire=:prestataire,
-                    contact=:contact, telephone=:telephone, mail=:mail,
+                    contact_id=:contact_id, contact=:contact, telephone=:telephone, mail=:mail,
                     prix_unitaire=:prix_unitaire, quantite=:quantite,
                     statut_devis=:statut_devis, statut_facture=:statut_facture,
-                    statut_virement=:statut_virement, note=:note
+                    statut_virement=:statut_virement, note=:note, fichier=:fichier
                  WHERE id=:id'
             );
             return $stmt->execute([
                 'categorie'       => $d['categorie']     ?? null,
                 'poste'           => $d['poste']         ?? null,
                 'prestataire'     => $d['prestataire']   ?? null,
+                'contact_id'      => $d['contact_id']    ? (int) $d['contact_id'] : null,
                 'contact'         => $d['contact']       ?? null,
                 'telephone'       => $d['telephone']     ?? null,
                 'mail'            => $d['mail']          ?? null,
@@ -123,6 +132,7 @@ class FacturationModel
                 'statut_facture'  => (int) ($d['statut_facture']  ?? 0),
                 'statut_virement' => (int) ($d['statut_virement'] ?? 0),
                 'note'            => $d['note']          ?? null,
+                'fichier'         => $d['fichier']       ?? null,
                 'id'              => $id,
             ]);
         } catch (PDOException) {
