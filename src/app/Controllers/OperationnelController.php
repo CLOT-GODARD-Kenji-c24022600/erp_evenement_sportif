@@ -19,6 +19,7 @@ use App\Models\ProjectModel;
 use App\Models\ContactModel;
 use Core\Security;
 
+
 class OperationnelController
 {
     private BudgetModel      $budget;
@@ -72,6 +73,7 @@ class OperationnelController
         $budgetTotaux    = [];
         $materielTotaux  = [];
         $eventData       = null;
+        $projetFinance   = [];
 
         try {
             if ($eventId > 0) {
@@ -89,6 +91,16 @@ class OperationnelController
                 $budget         = $this->budget->getByProjet($projetId);
                 $budgetTotaux   = $this->budget->getTotauxProjet($projetId);
                 $materielTotaux = $this->materiel->getBudgetTotauxProjet($projetId);
+                // Récap finance projet
+                $projetData = (new ProjectModel())->findById($projetId);
+                if ($projetData) {
+                    $projetFinance = [
+                        'budget'   => (float) ($projetData['budget']          ?? 0),
+                        'recettes' => (float) ($projetData['total_recettes']  ?? 0),
+                        'depenses' => (float) ($projetData['total_depenses']  ?? 0),
+                        'solde'    => (float) ($projetData['total_recettes']  ?? 0) - (float) ($projetData['total_depenses'] ?? 0),
+                    ];
+                }
             }
         } catch (\Exception $e) {
             $msg  = 'Tables non encore créées — lance migration_v2.sql d\'abord.';
@@ -113,6 +125,7 @@ class OperationnelController
             'budget'         => $budget,
             'budgetTotaux'   => $budgetTotaux,
             'materielTotaux' => $materielTotaux,
+            'projetFinance'  => $projetFinance,
             'opsMsg'         => $msg,
             'opsType'        => $type,
         ];

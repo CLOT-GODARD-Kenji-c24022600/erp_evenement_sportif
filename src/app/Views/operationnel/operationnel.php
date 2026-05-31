@@ -109,6 +109,43 @@ $planningAvecDates = array_filter($planning, fn($p) => !empty($p['date_debut']))
     </div>
     <?php else: ?>
 
+    <!-- ── Récap finance projet ──────────────────────────────── -->
+    <?php if ($projetId > 0 && !empty($projetFinance)): ?>
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-3 px-4">
+            <h2 class="fw-bold fs-6 mb-0">
+                <i class="bi bi-cash-coin me-2 text-success"></i>Finance du projet
+            </h2>
+            <a href="/projet_detail?id=<?= $projetId ?>" class="btn btn-sm btn-outline-secondary rounded-3">
+                <i class="bi bi-arrow-right me-1"></i>Voir le projet
+            </a>
+        </div>
+        <div class="card-body pt-2 pb-3">
+            <ul class="row row-cols-2 row-cols-md-4 g-3 list-unstyled mb-0">
+                <?php
+                $pfItems = [
+                    ['label'=>'Budget projet', 'val'=>(float)($projetFinance['budget']??0),   'color'=>'primary', 'icon'=>'bi-wallet2',          'show'=>($projetFinance['budget']??0)>0],
+                    ['label'=>'Recettes',       'val'=>(float)($projetFinance['recettes']??0),'color'=>'success', 'icon'=>'bi-arrow-up-circle',   'show'=>true],
+                    ['label'=>'Dépenses',       'val'=>(float)($projetFinance['depenses']??0),'color'=>'danger',  'icon'=>'bi-arrow-down-circle',  'show'=>true],
+                    ['label'=>'Solde',          'val'=>(float)($projetFinance['solde']??0),   'color'=>(($projetFinance['solde']??0)>=0?'success':'danger'), 'icon'=>'bi-calculator','show'=>true],
+                ];
+                foreach ($pfItems as $kpi): if (!$kpi['show']) continue;
+                ?>
+                <li class="col">
+                    <div class="text-center py-2">
+                        <i class="bi <?= $kpi['icon'] ?> text-<?= $kpi['color'] ?> fs-4 d-block mb-1"></i>
+                        <p class="text-body-secondary small mb-1"><?= $kpi['label'] ?></p>
+                        <p class="fw-bold fs-6 mb-0 text-<?= $kpi['color'] ?>">
+                            <?= ($kpi['label']==='Solde'&&$kpi['val']>=0?'+':'').number_format($kpi['val'],2,',',' ') ?> €
+                        </p>
+                    </div>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Liens Drive/Maps rapides si événement -->
     <?php if ($eventId > 0 && $eventData): ?>
     <?php $hasLinks = !empty($eventData['drive_url']) || !empty($eventData['drive_doc_url']) || !empty($eventData['maps_url']); ?>

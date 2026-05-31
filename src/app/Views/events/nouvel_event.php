@@ -10,7 +10,9 @@ declare(strict_types=1);
 
 $errorMsg = \Core\Session::flash('error_msg');
 ?>
-<section class="container mb-5" style="max-width: 900px;">
+<div class="container-fluid py-4">
+<div class="row g-4">
+<div class="col-12 col-xl-7">
 
     <header class="d-flex justify-content-between align-items-center mb-4 mt-4">
         <h1 class="fs-4 fw-bold mb-0 text-body"><?= htmlspecialchars($t['app_name'], ENT_QUOTES) ?></h1>
@@ -233,4 +235,35 @@ $errorMsg = \Core\Session::flash('error_msg');
             </form>
         </div>
     </article>
-</section>
+</div>
+
+<!-- Colonne droite : aide contextuelle -->
+<div class="col-12 col-xl-5 d-none d-xl-block">
+    <div class="card border-0 shadow-sm rounded-3 sticky-top" style="top:80px;">
+        <div class="card-header bg-primary text-white rounded-top-3 border-0">
+            <h2 class="fw-bold fs-6 mb-0"><i class="bi bi-lightbulb-fill me-2"></i>Guide de création</h2>
+        </div>
+        <div class="card-body p-4">
+            <ul class="list-unstyled mb-0">
+                <li class="mb-3 d-flex gap-3">
+                    <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:28px;height:28px;">1</span>
+                    <div><p class="fw-semibold mb-1 small">Informations générales</p><p class="text-body-secondary small mb-0">Nom, sport, lieu et capacité de votre événement.</p></div>
+                </li>
+                <li class="mb-3 d-flex gap-3">
+                    <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:28px;height:28px;">2</span>
+                    <div><p class="fw-semibold mb-1 small">Phases de production</p><p class="text-body-secondary small mb-0">Définissez les dates de pré-production, installation, exploitation et démontage.</p></div>
+                </li>
+                <li class="mb-3 d-flex gap-3">
+                    <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:28px;height:28px;">3</span>
+                    <div><p class="fw-semibold mb-1 small">Liens Google</p><p class="text-body-secondary small mb-0">Liez un dossier Drive, un document Google ou une carte My Maps à votre événement.</p></div>
+                </li>
+                <li class="d-flex gap-3">
+                    <span class="badge bg-success rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:28px;height:28px;"><i class="bi bi-check"></i></span>
+                    <div><p class="fw-semibold mb-1 small">Accès à l'opérationnel</p><p class="text-body-secondary small mb-0">Après création, gérez le budget, planning, matériel et facturation depuis la page Opérationnel.</p></div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+</div>
+</div>

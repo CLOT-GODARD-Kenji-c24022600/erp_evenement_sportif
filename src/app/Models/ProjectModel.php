@@ -143,7 +143,7 @@ class ProjectModel
                 'libelle'        => $data['libelle'],
                 'montant'        => (float) $data['montant'],
                 'date_operation' => $data['date_operation'] ?? date('Y-m-d'),
-                'note'           => $data['note']            ?? null,
+                'note'           => $data['note']           ?? null,
             ]);
         } catch (PDOException) {
             return false;
@@ -172,6 +172,46 @@ class ProjectModel
             );
             $stmt->execute(['id' => $projetId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException) {
+            return [];
+        }
+    }
+
+    /** Lier un événement existant à ce projet */
+    public function attachEvent(int $projetId, int $eventId): bool
+    {
+        try {
+            $stmt = $this->db->prepare(
+                'UPDATE evenements SET projet_id = :projet_id WHERE id = :id'
+            );
+            return $stmt->execute(['projet_id' => $projetId, 'id' => $eventId]);
+        } catch (PDOException) {
+            return false;
+        }
+    }
+
+    /** Détacher un événement du projet */
+    public function detachEvent(int $eventId): bool
+    {
+        try {
+            $stmt = $this->db->prepare(
+                'UPDATE evenements SET projet_id = NULL WHERE id = :id'
+            );
+            return $stmt->execute(['id' => $eventId]);
+        } catch (PDOException) {
+            return false;
+        }
+    }
+
+    /** Tous les événements non liés à un projet (pour le select) */
+    public function getUnlinkedEvents(): array
+    {
+        try {
+            return $this->db->query(
+                'SELECT id, nom, date_debut, lieu FROM evenements
+                 WHERE projet_id IS NULL
+                 ORDER BY date_debut DESC'
+            )->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException) {
             return [];
         }

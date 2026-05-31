@@ -15,6 +15,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const isMobile = () => window.innerWidth < 768;
 
+  // ── Retirer "collapsed" sur mobile (cookie desktop résiduel) ──
+  if (isMobile()) {
+    document.body.classList.remove('collapsed');
+  }
+
   // ── Hamburger (mobile) ─────────────────────────────
   const hamburgerBtn  = document.getElementById('hamburgerBtn');
   const sidebarOverlay = document.getElementById('sidebarOverlay');
