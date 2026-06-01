@@ -211,6 +211,13 @@ $planningAvecDates = array_filter($planning, fn($p) => !empty($p['date_debut']))
                 <i class="bi bi-hammer me-1 text-orange" style="color:#fd7e14"></i> Pré-production
             </button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-semibold" id="tab-contacts" data-bs-toggle="tab"
+                    data-bs-target="#pane-contacts-ops" type="button" role="tab">
+                <i class="bi bi-person-lines-fill me-1 text-secondary"></i> Contacts
+                <span class="badge bg-secondary ms-1"><?= count($contactsLies) ?></span>
+            </button>
+        </li>
     </ul>
 
     <div class="tab-content">
@@ -866,6 +873,90 @@ $planningAvecDates = array_filter($planning, fn($p) => !empty($p['date_debut']))
                 Sélectionne un événement pour voir les phases de production.
             </div>
             <?php endif; ?>
+        </div>
+
+        <!-- ══════ ONGLET CONTACTS ══════ -->
+        <div class="tab-pane fade" id="pane-contacts-ops" role="tabpanel">
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <p class="text-body-secondary small mb-0">
+                    Contacts et prestataires liés à <?= $eventId > 0 ? 'cet événement' : 'ce projet' ?>.
+                </p>
+                <a href="/annuaire" class="btn btn-sm btn-outline-secondary rounded-3">
+                    <i class="bi bi-person-plus me-1"></i>Gérer les contacts
+                </a>
+            </div>
+
+            <?php if (empty($contactsLies)): ?>
+            <div class="text-center py-5 text-body-secondary">
+                <i class="bi bi-person-lines-fill fs-2 d-block mb-2 opacity-50"></i>
+                <p>Aucun contact lié. Rendez-vous dans l'<a href="/annuaire">Annuaire</a> pour lier des contacts.</p>
+            </div>
+            <?php else: ?>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+                <?php foreach ($contactsLies as $cl): ?>
+                <div class="col">
+                    <article class="card border-0 shadow-sm rounded-3 h-100">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-start gap-3">
+                                <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0"
+                                     style="width:40px;height:40px;font-size:.9rem;">
+                                    <?= mb_strtoupper(mb_substr($cl['nom'], 0, 1)) ?>
+                                </div>
+                                <div class="flex-grow-1 min-width-0">
+                                    <p class="fw-bold mb-0 small"><?= htmlspecialchars((string)$cl['nom'], ENT_QUOTES) ?></p>
+                                    <?php if (!empty($cl['lien_role'])): ?>
+                                    <span class="badge bg-info-subtle text-info rounded-pill small">
+                                        <?= htmlspecialchars((string)$cl['lien_role'], ENT_QUOTES) ?>
+                                    </span>
+                                    <?php endif; ?>
+                                    <?php if (!empty($cl['societe'])): ?>
+                                    <p class="text-body-secondary small mb-0">
+                                        <i class="bi bi-building me-1"></i><?= htmlspecialchars((string)$cl['societe'], ENT_QUOTES) ?>
+                                    </p>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <ul class="list-unstyled small text-body-secondary mt-2 mb-0">
+                                <?php if (!empty($cl['telephone'])): ?>
+                                <li><i class="bi bi-telephone me-1 text-primary"></i>
+                                    <a href="tel:<?= htmlspecialchars($cl['telephone'], ENT_QUOTES) ?>" class="text-decoration-none">
+                                        <?= htmlspecialchars($cl['telephone'], ENT_QUOTES) ?>
+                                    </a>
+                                </li>
+                                <?php endif; ?>
+                                <?php if (!empty($cl['mail'])): ?>
+                                <li><i class="bi bi-envelope me-1 text-primary"></i>
+                                    <a href="mailto:<?= htmlspecialchars($cl['mail'], ENT_QUOTES) ?>" class="text-decoration-none">
+                                        <?= htmlspecialchars($cl['mail'], ENT_QUOTES) ?>
+                                    </a>
+                                </li>
+                                <?php endif; ?>
+                                <?php if (!empty($cl['lien_note'])): ?>
+                                <li class="fst-italic text-body-secondary">
+                                    <i class="bi bi-chat-left-text me-1"></i><?= htmlspecialchars((string)$cl['lien_note'], ENT_QUOTES) ?>
+                                </li>
+                                <?php endif; ?>
+                            </ul>
+                        </div>
+                        <footer class="card-footer bg-transparent border-top p-2 text-end">
+                            <form method="POST" class="d-inline"
+                                  onsubmit="return confirm('Détacher ce contact ?')">
+                                <?= opsForm($eventId, $projetId) ?>
+                                <input type="hidden" name="ops_action" value="contact_detach">
+                                <input type="hidden" name="lien_id"   value="<?= (int)$cl['lien_id'] ?>">
+                                <input type="hidden" name="lien_type" value="<?= $eventId > 0 ? 'event' : 'projet' ?>">
+                                <button class="btn btn-sm btn-outline-danger rounded-3 py-0 px-2">
+                                    <i class="bi bi-x-lg me-1"></i>Détacher
+                                </button>
+                            </form>
+                        </footer>
+                    </article>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+
         </div>
 
     </div><!-- /.tab-content -->

@@ -83,6 +83,7 @@ class ProjectController
             'delete_finance' => $this->deleteFinance(),
             'attach_event'   => $this->attachEvent(),
             'detach_event'   => $this->detachEvent(),
+            'detach_contact' => $this->detachContact(),
             default          => null,
         };
     }
@@ -173,6 +174,15 @@ class ProjectController
         if (!$eventId) return 'error:Données invalides.';
         return $this->model->detachEvent($eventId)
             ? 'success:Événement détaché du projet.'
+            : 'error:Erreur lors du détachement.';
+    }
+    private function detachContact(): string
+    {
+        $lienId = \Core\Security::sanitizeInt($_POST['lien_id'] ?? 0);
+        if (!$lienId) return 'error:ID invalide.';
+        $model = new \App\Models\ContactModel();
+        return $model->detachFromProjet($lienId)
+            ? 'success:Contact détaché du projet.'
             : 'error:Erreur lors du détachement.';
     }
 }

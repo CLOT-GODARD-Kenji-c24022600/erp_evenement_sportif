@@ -74,6 +74,7 @@ class OperationnelController
         $materielTotaux  = [];
         $eventData       = null;
         $projetFinance   = [];
+        $contactsLies    = [];
 
         try {
             if ($eventId > 0) {
@@ -84,6 +85,7 @@ class OperationnelController
                 $budgetTotaux   = $this->budget->getTotauxEvent($eventId);
                 $materielTotaux = $this->materiel->getBudgetTotauxEvent($eventId);
                 $eventData      = (new EventModel())->findById($eventId);
+                $contactsLies   = (new ContactModel())->getByEvent($eventId);
             } elseif ($projetId > 0) {
                 $planning       = $this->planning->getByProjet($projetId);
                 $materiel       = $this->materiel->getByProjet($projetId);
@@ -91,6 +93,7 @@ class OperationnelController
                 $budget         = $this->budget->getByProjet($projetId);
                 $budgetTotaux   = $this->budget->getTotauxProjet($projetId);
                 $materielTotaux = $this->materiel->getBudgetTotauxProjet($projetId);
+                $contactsLies   = (new ContactModel())->getByProjet($projetId);
                 // Récap finance projet
                 $projetData = (new ProjectModel())->findById($projetId);
                 if ($projetData) {
@@ -126,6 +129,7 @@ class OperationnelController
             'budgetTotaux'   => $budgetTotaux,
             'materielTotaux' => $materielTotaux,
             'projetFinance'  => $projetFinance,
+            'contactsLies'   => $contactsLies,
             'opsMsg'         => $msg,
             'opsType'        => $type,
         ];
@@ -173,6 +177,7 @@ class OperationnelController
             'budget_delete' => $this->budgetDelete(),
             // Événement — liaisons Google Drive / Maps
             'event_drive_update' => $this->eventDriveUpdate($eventId),
+            'contact_detach'     => $this->contactDetach(),
             default => 'error:Action inconnue.',
         };
 
@@ -461,5 +466,20 @@ class OperationnelController
         $id = Security::sanitizeInt($_POST['ligne_id'] ?? 0);
         return $id && $this->budget->delete($id)
             ? 'success:Ligne supprimée.' : 'error:Erreur suppression.';
+    }
+    // ── Contact détachement ──────────────────────────────
+
+    private function contactDetach(): string
+    {
+        $lienId   = \Core\Security::sanitizeInt($_POST['lien_id']   ?? 0);
+        $lienType = \Core\Security::sanitizeString($_POST['lien_type'] ?? '');
+        if (!$lienId) return 'error:ID invalide.';
+
+        $model = new ContactModel();
+        $ok = $lienType === 'event'
+            ? $model->detachFromEvent($lienId)
+            : $model->detachFromProjet($lienId);
+
+        return $ok ? 'success:Contact détaché.' : 'error:Erreur lors du détachement.';
     }
 }

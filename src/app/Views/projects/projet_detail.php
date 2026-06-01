@@ -313,6 +313,69 @@ $categories = ['Subvention','Sponsoring','Billetterie','Hébergement','Transport
         </aside>
     </div>
 
+    <!-- ── Contacts liés au projet ─────────────────────── -->
+    <section class="card border-0 shadow-sm rounded-3 mt-4">
+        <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-3 px-4">
+            <h2 class="fw-bold fs-5 mb-0">
+                <i class="bi bi-person-lines-fill me-2 text-secondary"></i>
+                Contacts liés
+            </h2>
+            <a href="/annuaire" class="btn btn-sm btn-outline-secondary rounded-3">
+                <i class="bi bi-person-plus me-1"></i>Gérer dans l'annuaire
+            </a>
+        </div>
+        <div class="card-body p-3">
+        <?php
+        $contactsProjet = [];
+        try { $contactsProjet = (new \App\Models\ContactModel())->getByProjet((int)$projet['id']); } catch (\Exception) {}
+        ?>
+        <?php if (empty($contactsProjet)): ?>
+            <p class="text-body-secondary small text-center py-3 mb-0">
+                <i class="bi bi-info-circle me-1"></i>
+                Aucun contact lié. Allez dans l'<a href="/annuaire">Annuaire</a> et utilisez le bouton
+                <strong><i class="bi bi-link-45deg"></i></strong> sur un contact pour le lier à ce projet.
+            </p>
+        <?php else: ?>
+            <ul class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 list-unstyled mb-0">
+                <?php foreach ($contactsProjet as $cl): ?>
+                <li class="col">
+                    <div class="d-flex align-items-center gap-3 p-2 rounded-3 bg-body-secondary">
+                        <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0"
+                             style="width:36px;height:36px;font-size:.85rem;">
+                            <?= mb_strtoupper(mb_substr($cl['nom'], 0, 1)) ?>
+                        </div>
+                        <div class="flex-grow-1 min-width-0">
+                            <p class="fw-semibold mb-0 small text-truncate"><?= htmlspecialchars((string)$cl['nom'], ENT_QUOTES) ?></p>
+                            <?php if (!empty($cl['lien_role'])): ?>
+                            <span class="badge bg-info-subtle text-info rounded-pill" style="font-size:.7rem;">
+                                <?= htmlspecialchars((string)$cl['lien_role'], ENT_QUOTES) ?>
+                            </span>
+                            <?php endif; ?>
+                            <?php if (!empty($cl['telephone'])): ?>
+                            <p class="text-body-secondary mb-0" style="font-size:.75rem;">
+                                <a href="tel:<?= htmlspecialchars($cl['telephone'], ENT_QUOTES) ?>" class="text-decoration-none">
+                                    <?= htmlspecialchars($cl['telephone'], ENT_QUOTES) ?>
+                                </a>
+                            </p>
+                            <?php endif; ?>
+                        </div>
+                        <form method="POST" action="" class="d-inline flex-shrink-0"
+                              onsubmit="return confirm('Détacher ce contact ?')">
+                            <input type="hidden" name="project_action" value="detach_contact">
+                            <input type="hidden" name="lien_id" value="<?= (int)$cl['lien_id'] ?>">
+                            <input type="hidden" name="projet_id" value="<?= (int)$projet['id'] ?>">
+                            <button class="btn btn-sm btn-outline-danger rounded-3 py-0 px-2">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </form>
+                    </div>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+        </div>
+    </section>
+
     <!-- ── Gantt des événements ───────────────────────── -->
     <?php if (!empty($ganttEvents)): ?>
     <section class="card border-0 shadow-sm rounded-3 mt-4">
