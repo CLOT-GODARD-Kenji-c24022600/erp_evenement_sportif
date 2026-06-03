@@ -179,7 +179,7 @@ class Router
             $q = Security::sanitizeString($_GET['q'] ?? '');
 
             if (strlen($q) < 2) {
-                echo json_encode(['projets' => [], 'events' => [], 'staff' => []]);
+                echo json_encode(['projets' => [], 'events' => [], 'staff' => [], 'todos' => [], 'budget' => [], 'contacts' => []]);
                 exit();
             }
 
@@ -204,6 +204,33 @@ class Router
                     'nom_famille' => $u['nom'],
                     'sub'         => $u['poste'] ?? '',
                 ], array_slice($model->searchStaff($q), 0, 4)),
+
+                'todos' => array_map(fn($t) => [
+                    'id'    => (int) $t['id'],
+                    'titre' => $t['title'],
+                    'sub'   => !empty($t['event_nom'])
+                               ? $t['event_nom']
+                               : (!empty($t['projet_nom']) ? $t['projet_nom'] : ucfirst($t['status'] ?? '')),
+                    'statut'=> $t['status'] ?? '',
+                ], $model->searchTodos($q)),
+
+                'budget' => array_map(fn($b) => [
+                    'id'      => (int) $b['id'],
+                    'libelle' => $b['libelle'],
+                    'type'    => $b['type'],
+                    'montant' => number_format((float)$b['previsionnel'], 2, ',', ' ') . ' €',
+                    'sub'     => !empty($b['event_nom']) ? $b['event_nom'] : ($b['projet_nom'] ?? ''),
+                    'event_id'  => $b['event_id']  ? (int)$b['event_id']  : null,
+                    'projet_id' => $b['projet_id'] ? (int)$b['projet_id'] : null,
+                ], $model->searchBudget($q)),
+
+                'contacts' => array_map(fn($c) => [
+                    'id'      => (int) $c['id'],
+                    'nom'     => $c['nom'],
+                    'sub'     => implode(' · ', array_filter([$c['societe'] ?? '', $c['poste'] ?? ''])),
+                    'tel'     => $c['telephone'] ?? '',
+                    'mail'    => $c['mail'] ?? '',
+                ], $model->searchContacts($q)),
             ], JSON_UNESCAPED_UNICODE);
 
             exit();
