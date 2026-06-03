@@ -21,6 +21,8 @@ use App\Models\SearchModel;
 use App\Models\QuickCreateModel;
 use App\Models\ProjectModel;
 use App\Models\PlanningGlobalModel;
+use App\Models\NotificationModel;
+use App\Controllers\NotificationController;
 use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
 use App\Controllers\EventController;
@@ -129,7 +131,11 @@ class Router
             'gerer_event'     => 'gerer_event',
             'projet_detail'   => 'projet_detail',
             'ajax_search'     => 'ajax_search',
-            'ajax_presence'   => 'ajax_presence',
+            'ajax_presence'       => 'ajax_presence',
+            'ajax_notif_get'      => 'ajax_notif_get',
+            'ajax_notif_read'     => 'ajax_notif_read',
+            'ajax_notif_read_all' => 'ajax_notif_read_all',
+            'ajax_notif_delete'   => 'ajax_notif_delete',
             'change_lang'     => 'change_lang',
             'import_csv'      => 'import_csv',
             'aide'             => 'aide',
@@ -203,6 +209,22 @@ class Router
             exit();
         }
 
+        if ($page === 'ajax_notif_get') {
+            if (!Session::has('user_id')) { http_response_code(401); echo json_encode(['error'=>'Unauthorized']); exit(); }
+            (new NotificationController())->ajaxGet((int) Session::get('user_id'));
+        }
+        if ($page === 'ajax_notif_read') {
+            if (!Session::has('user_id')) { http_response_code(401); echo json_encode(['error'=>'Unauthorized']); exit(); }
+            (new NotificationController())->ajaxMarkRead((int) Session::get('user_id'));
+        }
+        if ($page === 'ajax_notif_read_all') {
+            if (!Session::has('user_id')) { http_response_code(401); echo json_encode(['error'=>'Unauthorized']); exit(); }
+            (new NotificationController())->ajaxMarkAllRead((int) Session::get('user_id'));
+        }
+        if ($page === 'ajax_notif_delete') {
+            if (!Session::has('user_id')) { http_response_code(401); echo json_encode(['error'=>'Unauthorized']); exit(); }
+            (new NotificationController())->ajaxDelete((int) Session::get('user_id'));
+        }
         if ($page === 'ajax_presence') {
             if (!Session::has('user_id')) {
                 http_response_code(401);
@@ -307,11 +329,12 @@ class Router
             $dbStatus = 'offline';
         }
 
+        // Générer les notifications automatiques
+        try { (new NotificationModel())->generateAuto($userId); } catch (\Exception $e) {}
+
+        // Charger les notifs non lues pour le header
         $notifications = [];
-        try {
-            $notifications = (new EventModel())->getUpcoming(3);
-        } catch (\Exception $e) {
-        }
+        try { $notifications = (new NotificationModel())->getUnread($userId); } catch (\Exception $e) {}
 
         $qcResult = (new QuickCreateController(new QuickCreateModel()))->handle();
         $qcMsg    = $qcResult['msg']  ?? '';

@@ -126,6 +126,50 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // ── Swipe gauche pour fermer la sidebar (mobile) ───
+  const sidebar = document.getElementById('mobileSidebar');
+  if (sidebar) {
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    sidebar.addEventListener('touchstart', (e) => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    sidebar.addEventListener('touchend', (e) => {
+      if (!document.body.classList.contains('sidebar-open')) return;
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      // Swipe gauche (dx < -60) et plus horizontal que vertical
+      if (dx < -60 && Math.abs(dx) > Math.abs(dy)) {
+        closeMobileSidebar();
+      }
+    }, { passive: true });
+  }
+
+  // ── Swipe droit sur le bord gauche de l'écran pour ouvrir ──
+  document.addEventListener('touchstart', (e) => {
+    if (e.touches[0].clientX < 20) {
+      touchEdgeStart = e.touches[0].clientX;
+    } else {
+      touchEdgeStart = null;
+    }
+  }, { passive: true });
+
+  let touchEdgeStart = null;
+  document.addEventListener('touchend', (e) => {
+    if (touchEdgeStart === null) return;
+    const dx = e.changedTouches[0].clientX - touchEdgeStart;
+    if (dx > 60 && !document.body.classList.contains('sidebar-open')) {
+      openMobileSidebar();
+    }
+    touchEdgeStart = null;
+  }, { passive: true });
+
+  // ── Notifications ────────────────────────────────
+  initNotifications();
+
 });
 // ── Fix bfcache : forcer le rechargement si la page vient du cache ──
 // Quand l'utilisateur navigue en arrière/avant, le navigateur peut
@@ -137,3 +181,80 @@ window.addEventListener('pageshow', (event) => {
     window.location.reload();
   }
 });
+// ── Notifications ─────────────────────────────────────────────
+
+function initNotifications() {
+  // Marquer tout comme lu
+  const markAllBtn = document.getElementById('notif-mark-all-btn');
+  if (markAllBtn) {
+    markAllBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      try {
+        await fetch('/ajax_notif_read_all', { method: 'POST' });
+        // Mettre à jour l'UI
+        document.querySelectorAll('.notif-item').forEach(el => {
+          el.style.background = 'transparent';
+        });
+        updateNotifBadge(0);
+        markAllBtn.style.display = 'none';
+      } catch {}
+    });
+  }
+}
+
+// Clic sur une notification → marquer lue + naviguer
+window.notifClick = async function(id, lien) {
+  try {
+    const fd = new FormData();
+    fd.append('id', id);
+    await fetch('/ajax_notif_read', { method: 'POST', body: fd });
+    // Retirer le fond coloré
+    const item = document.querySelector(`.notif-item[data-id="${id}"]`);
+    if (item) item.style.background = 'transparent';
+    // Recalculer le badge
+    const unread = document.querySelectorAll('.notif-item[style*="primary-bg-subtle"]').length;
+    updateNotifBadge(unread);
+  } catch {}
+  // Naviguer si lien fourni
+  if (lien && lien !== '') {
+    // Fermer le dropdown
+    const dropdown = document.getElementById('notif-dropdown-wrapper');
+    if (dropdown) bootstrap.Dropdown.getOrCreateInstance(dropdown.querySelector('[data-bs-toggle="dropdown"]'))?.hide();
+    setTimeout(() => { window.location.href = lien; }, 150);
+  }
+};
+
+// Supprimer une notification
+window.notifDelete = async function(e, id) {
+  e.stopPropagation();
+  const item = document.querySelector(`.notif-item[data-id="${id}"]`);
+  if (!item) return;
+  try {
+    const fd = new FormData();
+    fd.append('id', id);
+    const res = await fetch('/ajax_notif_delete', { method: 'POST', body: fd });
+    const json = await res.json();
+    if (json.ok) {
+      item.style.opacity = '0';
+      item.style.transition = 'opacity .2s';
+      setTimeout(() => {
+        item.remove();
+        const remaining = document.querySelectorAll('.notif-item').length;
+        updateNotifBadge(remaining);
+        if (remaining === 0) {
+          const list = document.getElementById('notif-list');
+          if (list) list.innerHTML = '<li class="text-center text-muted small py-4"><i class="bi bi-bell-slash fs-3 d-block mb-2 opacity-50"></i>Aucune nouvelle notification</li>';
+        }
+      }, 200);
+    }
+  } catch {}
+};
+
+function updateNotifBadge(count) {
+  const badge  = document.getElementById('notif-badge');
+  const header = document.getElementById('notif-count-header');
+  const markAllBtn = document.getElementById('notif-mark-all-btn');
+  if (badge)  { badge.textContent  = count > 99 ? '99+' : count; badge.style.display  = count > 0 ? '' : 'none'; }
+  if (header) { header.textContent = count > 99 ? '99+' : count; header.style.display = count > 0 ? '' : 'none'; }
+  if (markAllBtn) markAllBtn.style.display = count > 0 ? '' : 'none';
+}
