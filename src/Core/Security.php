@@ -41,7 +41,7 @@ class Security
     }
 
     /**
-     * Génère un token CSRF et le stocke en session.
+     * Génère un token CSRF et le stocke en session (ou réutilise l'existant).
      *
      * @return string Token CSRF hexadécimal.
      */
@@ -51,6 +51,14 @@ class Security
             session_start();
         }
 
+        // NOUVEAU : Si un token est déjà en session et qu'il n'est pas expiré, on le réutilise !
+        if (isset($_SESSION['csrf_token']) && isset($_SESSION['csrf_token_time'])) {
+            if ((time() - $_SESSION['csrf_token_time']) <= self::CSRF_TTL) {
+                return $_SESSION['csrf_token'];
+            }
+        }
+
+        // Sinon, on en crée un nouveau
         $token = bin2hex(random_bytes(32));
         $_SESSION['csrf_token']      = $token;
         $_SESSION['csrf_token_time'] = time();
@@ -73,16 +81,15 @@ class Security
         $stored  = $_SESSION['csrf_token']      ?? '';
         $created = $_SESSION['csrf_token_time'] ?? 0;
 
+        // Vérification du jeton
         if (empty($stored) || !hash_equals($stored, $submittedToken)) {
             return false;
         }
 
+        // Vérification de la durée de vie
         if ((time() - $created) > self::CSRF_TTL) {
             return false;
         }
-
-        // Rotation du token après validation
-        unset($_SESSION['csrf_token'], $_SESSION['csrf_token_time']);
 
         return true;
     }
