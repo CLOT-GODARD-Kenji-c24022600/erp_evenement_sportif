@@ -66,7 +66,7 @@ class Router
         '404',
         'aide',
         'mentions_legales',
-        'plan_du_site',
+        'plan-du-site',
     ];
 
     public static function dispatch(): void
@@ -134,7 +134,7 @@ class Router
             'import_csv'      => 'import_csv',
             'aide'             => 'aide',
             'mentions_legales' => 'mentions_legales',
-            'plan_du_site'     => 'plan_du_site',
+            'plan-du-site'     => 'plan-du-site',
             'operationnel'    => 'operationnel',
         ];
 
@@ -504,9 +504,9 @@ class Router
                 );
                 break;
 
-            case 'plan_du_site':
+            case 'plan-du-site':
                 Renderer::renderApp(
-                    __DIR__ . '/../app/Views/legal/plan_du_site.php',
+                    __DIR__ . '/../app/Views/pages/plan-du-site.php',
                     $common
                 );
                 break;
