@@ -58,7 +58,7 @@ ssh erp-evenement-sportif_[prenom]@ssh-erp-evenement-sportif.alwaysdata.net
 ### HTTPS
 
 L'application est accessible en ligne :
-https://erp-evenement-sportif-[prenom].alwaysdata.net
+https://erp-evenement.alwaysdata.net
 
 ---
 *Projet développé dans le cadre d'un stage ERP événementiel - 2026*

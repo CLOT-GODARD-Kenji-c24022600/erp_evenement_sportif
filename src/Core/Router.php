@@ -6,7 +6,7 @@
  * @file Router.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 2.0
+ * @version 2.1
  * @since 2026
  */
 
@@ -20,6 +20,7 @@ use App\Models\TodoModel;
 use App\Models\SearchModel;
 use App\Models\QuickCreateModel;
 use App\Models\ProjectModel;
+use App\Models\PlanningGlobalModel;
 use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
 use App\Controllers\EventController;
@@ -362,9 +363,16 @@ class Router
                     self::redirect('/dashboard');
                 }
 
+                // Projets pour le select (si besoin futur)
+                $projetsSimple = [];
+                try {
+                    $projetsSimple = (new ProjectModel())->getAllSimple();
+                } catch (\Exception $e) {
+                }
+
                 Renderer::renderApp(
                     __DIR__ . '/../app/Views/events/gerer_event.php',
-                    array_merge($common, ['event' => $event])
+                    array_merge($common, ['event' => $event, 'projets' => $projetsSimple])
                 );
                 break;
 
