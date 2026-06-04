@@ -172,4 +172,32 @@ class ProfileController
 
         return ['Avatar mis à jour avec succès.', 'success'];
     }
+
+    /**
+     * Supprime le compte de l'utilisateur connecté.
+     */
+    public function deleteAccount(): void
+    {
+        // 1. On récupère l'ID via ta classe Session (déjà importée en haut)
+        $userId = Session::get('user_id');
+
+        // Sécurité : on vérifie qu'il y a bien un utilisateur connecté
+        if (!$userId) {
+            \Core\Router::redirect('/login');
+            return;
+        }
+
+        // 2. On utilise le modèle déjà chargé dans le constructeur !
+        $deleted = $this->userModel->delete($userId);
+
+        if ($deleted) {
+            // 3. Déconnexion
+            Session::destroy();
+            
+            // 4. Redirection
+            \Core\Router::redirect('/inscription');
+        } else {
+            \Core\Router::redirect('/profil');
+        }
+    }
 }
