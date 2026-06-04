@@ -152,4 +152,31 @@ class EventController
 
         return $erreurs;
     }
+    public function duplicate(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            \Core\Router::redirect('/dashboard');
+        }
+
+        $sourceId   = \Core\Security::sanitizeInt($_POST['source_id']    ?? 0);
+        $nouveauNom = \Core\Security::sanitizeString($_POST['nouveau_nom'] ?? '');
+
+        if (!$sourceId || $nouveauNom === '') {
+            \Core\Session::set('error_msg', 'Nom obligatoire pour la duplication.');
+            \Core\Router::redirect('/dashboard');
+        }
+
+        try {
+            $ok = $this->eventModel->duplicate($sourceId, $nouveauNom);
+            if ($ok) {
+                \Core\Session::set('success_msg', "Événement « {$nouveauNom} » créé par duplication !");
+            } else {
+                \Core\Session::set('error_msg', 'Erreur lors de la duplication.');
+            }
+        } catch (\Exception $e) {
+            \Core\Session::set('error_msg', 'Erreur BDD : ' . $e->getMessage());
+        }
+
+        \Core\Router::redirect('/dashboard');
+    }
 }

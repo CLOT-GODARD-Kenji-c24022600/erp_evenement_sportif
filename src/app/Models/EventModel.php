@@ -156,4 +156,45 @@ class EventModel
         $stmt = $this->db->prepare('DELETE FROM evenements WHERE id = :id');
         return $stmt->execute(['id' => $id]);
     }
+    public function duplicate(int $sourceId, string $nouveauNom): bool
+    {
+        $source = $this->findById($sourceId);
+        if (!$source) return false;
+
+        $stmt = $this->db->prepare(
+            'INSERT INTO evenements
+                (projet_id, nom, sport, date_debut, date_fin, lieu, capacite, description,
+                 date_preprod_debut, date_preprod_fin, date_prod_debut, date_prod_fin,
+                 date_exploit_debut, date_exploit_fin, date_demontage_debut, date_demontage_fin,
+                 drive_url, drive_doc_url, maps_url, source_event_id)
+             VALUES
+                (:projet_id, :nom, :sport, :date_debut, :date_fin, :lieu, :capacite, :description,
+                 :date_preprod_debut, :date_preprod_fin, :date_prod_debut, :date_prod_fin,
+                 :date_exploit_debut, :date_exploit_fin, :date_demontage_debut, :date_demontage_fin,
+                 :drive_url, :drive_doc_url, :maps_url, :source_event_id)'
+        );
+
+        return $stmt->execute([
+            'projet_id'            => $source['projet_id']            ?? null,
+            'nom'                  => $nouveauNom,
+            'sport'                => $source['sport']                ?? null,
+            'date_debut'           => $source['date_debut'],
+            'date_fin'             => $source['date_fin']             ?? null,
+            'lieu'                 => $source['lieu']                 ?? null,
+            'capacite'             => $source['capacite']             ?? null,
+            'description'          => $source['description']          ?? null,
+            'date_preprod_debut'   => $source['date_preprod_debut']   ?? null,
+            'date_preprod_fin'     => $source['date_preprod_fin']     ?? null,
+            'date_prod_debut'      => $source['date_prod_debut']      ?? null,
+            'date_prod_fin'        => $source['date_prod_fin']        ?? null,
+            'date_exploit_debut'   => $source['date_exploit_debut']   ?? null,
+            'date_exploit_fin'     => $source['date_exploit_fin']     ?? null,
+            'date_demontage_debut' => $source['date_demontage_debut'] ?? null,
+            'date_demontage_fin'   => $source['date_demontage_fin']   ?? null,
+            'drive_url'            => $source['drive_url']            ?? null,
+            'drive_doc_url'        => $source['drive_doc_url']        ?? null,
+            'maps_url'             => $source['maps_url']             ?? null,
+            'source_event_id'      => $sourceId,
+        ]);
+    }
 }

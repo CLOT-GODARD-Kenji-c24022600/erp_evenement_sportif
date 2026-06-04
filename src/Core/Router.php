@@ -65,6 +65,7 @@ class Router
         'ajax_presence',
         'import_csv',
         'operationnel',
+        'duplicate_event',
         '404',
         'aide',
         'mentions_legales',
@@ -141,7 +142,8 @@ class Router
             'aide'             => 'aide',
             'mentions_legales' => 'mentions_legales',
             'plan_du_site'     => 'plan_du_site',
-            'operationnel'    => 'operationnel',
+            'operationnel'        => 'operationnel',
+            'duplicate_event'     => 'duplicate_event',
         ];
 
         if (isset($uriMap[$uri])) {
@@ -435,6 +437,11 @@ class Router
                     '',
                     '<script src="/assets/js/annuaire.js"></script>'
                 );
+                break;
+
+            case 'duplicate_event':
+                $ctrl = new EventController(new EventModel());
+                $ctrl->duplicate();
                 break;
 
             case 'operationnel':

@@ -154,6 +154,11 @@ $totalEvents = count($evenements);
                                        title="<?= htmlspecialchars($t['dash_manage_btn'], ENT_QUOTES) ?>">
                                         <i class="bi bi-pencil"></i>
                                     </a>
+                                    <button class="btn btn-sm btn-outline-info rounded-3 py-0 px-2"
+                                            onclick="openDuplicateModal(<?= (int)$ev['id'] ?>, '<?= htmlspecialchars((string)$ev['nom'], ENT_QUOTES) ?>')"
+                                            title="Dupliquer">
+                                        <i class="bi bi-copy"></i>
+                                    </button>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -462,6 +467,55 @@ $totalEvents = count($evenements);
     </div>
   </div>
 </div>
+
+<!-- ════ Modal : Dupliquer un événement ════ -->
+<div class="modal fade" id="modalDuplicateEvent" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <div class="modal-header border-0">
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-copy me-2 text-info"></i>Dupliquer l'événement
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form method="POST" action="/duplicate_event">
+          <input type="hidden" name="source_id" id="dup-source-id">
+          <p class="text-body-secondary small mb-3">
+            Copie de : <strong id="dup-source-nom"></strong>
+          </p>
+          <div class="mb-4">
+            <label for="dup-nouveau-nom" class="form-label fw-semibold">
+              Nom du nouvel événement <span class="text-danger">*</span>
+            </label>
+            <input type="text" id="dup-nouveau-nom" name="nouveau_nom"
+                   class="form-control rounded-3" required
+                   placeholder="Ex : Festival Été 2027">
+            <div class="form-text text-body-secondary">
+              Toutes les informations (lieu, dates, phases, liens) seront copiées.
+              Le budget, planning et matériel ne sont pas copiés.
+            </div>
+          </div>
+          <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-outline-secondary rounded-3" data-bs-dismiss="modal">Annuler</button>
+            <button type="submit" class="btn btn-info text-white fw-bold rounded-3">
+              <i class="bi bi-copy me-1"></i>Dupliquer
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+window.openDuplicateModal = function(id, nom) {
+  document.getElementById('dup-source-id').value = id;
+  document.getElementById('dup-source-nom').textContent = nom;
+  document.getElementById('dup-nouveau-nom').value = nom + ' (copie)';
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDuplicateEvent')).show();
+};
+</script>
 
 <script>
 window.PG_DATA = <?= json_encode($pgWithDates, JSON_HEX_TAG) ?>;
