@@ -74,10 +74,20 @@ declare(strict_types=1);
 
                     <hr class="my-4">
 
+                    <!-- Bouton de déconnexion -->
                     <a href="/logout" class="btn btn-danger btn-sm w-100 fw-bold shadow-sm">
                         <i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>
                         <?= htmlspecialchars($t['profile_btn_logout'], ENT_QUOTES) ?>
                     </a>
+
+                    <!-- Bouton de suppression de compte -->
+                    <form action="/profil/supprimer" method="POST" class="mt-2" onsubmit="return confirm('⚠️ ATTENTION ! Êtes-vous sûr de vouloir supprimer définitivement votre compte ? Toutes vos données seront perdues et cette action est irréversible.');">
+                        <button type="submit" class="btn btn-outline-danger btn-sm w-100 fw-bold shadow-sm">
+                            <i class="bi bi-trash me-1" aria-hidden="true"></i>
+                            Supprimer mon compte
+                        </button>
+                    </form>
+
                 </section>
             </article>
         </aside>

@@ -52,6 +52,7 @@ class Router
         'forgot_password',
         'reset_password',
         'profil',
+        'profil_supprimer',
         'staff',
         'recherche',
         'change_lang',
@@ -118,6 +119,7 @@ class Router
             'projets'         => 'projets',
             'annuaire'        => 'annuaire',
             'profil'          => 'profil',
+            'profil/supprimer' => 'profil_supprimer',
             'utilisateurs'    => 'utilisateurs',
             'nouvel_event'    => 'nouvel_event',
             'recherche'       => 'recherche',
@@ -428,6 +430,16 @@ class Router
                     '<link rel="stylesheet" href="/assets/css/staff.css">',
                     '<script src="/assets/js/profile.js"></script>'
                 );
+                break;
+
+            case 'profil_supprimer':
+                // On vérifie que c'est bien une requête POST (clic sur le bouton) pour la sécurité
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    $ctrl = new ProfileController($userModel, new AuthController($userModel));
+                    $ctrl->deleteAccount();
+                } else {
+                    self::redirect('/profil');
+                }
                 break;
 
             case 'utilisateurs':
