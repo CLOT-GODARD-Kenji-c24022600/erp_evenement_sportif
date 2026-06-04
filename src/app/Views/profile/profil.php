@@ -59,7 +59,10 @@ declare(strict_types=1);
                     </p>
 
                     <form action="" method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
+                        
                         <fieldset class="mb-3 border-0 p-0">
+                            <!-- Champ de téléchargement d'avatar -->
                             <label for="avatar-upload" class="form-label visually-hidden">
                                 <?= htmlspecialchars($t['profile_btn_avatar'], ENT_QUOTES) ?>
                             </label>
@@ -82,6 +85,8 @@ declare(strict_types=1);
 
                     <!-- Bouton de suppression de compte -->
                     <form action="/profil/supprimer" method="POST" class="mt-2" onsubmit="return confirm('⚠️ ATTENTION ! Êtes-vous sûr de vouloir supprimer définitivement votre compte ? Toutes vos données seront perdues et cette action est irréversible.');">
+                        <input type="hidden" name="csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
+                        
                         <button type="submit" class="btn btn-outline-danger btn-sm w-100 fw-bold shadow-sm">
                             <i class="bi bi-trash me-1" aria-hidden="true"></i>
                             Supprimer mon compte
@@ -102,6 +107,7 @@ declare(strict_types=1);
                 </header>
                 <section class="card-body p-4">
                     <form action="" method="POST" novalidate>
+                        <input type="hidden" name="csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
                         <section class="row mb-3">
                             <fieldset class="col-md-6 border-0 p-0 px-2">
                                 <label for="prenom" class="form-label small fw-bold">
@@ -181,6 +187,7 @@ declare(strict_types=1);
                 </header>
                 <section class="card-body p-4">
                     <form action="" method="POST" novalidate>
+                        <input type="hidden" name="csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
                         <fieldset class="mb-3 border-0 p-0">
                             <label for="old_password" class="form-label small fw-bold">
                                 <?= htmlspecialchars($t['profile_field_old_pwd'], ENT_QUOTES) ?>
