@@ -122,45 +122,99 @@ declare(strict_types=1);
 
             <!-- Notifications (visible partout) -->
             <div class="dropdown flex-shrink-0">
+<?php
+$notifCount = count($notifications ?? []);
+$notifIcons = [
+    'todo_retard'       => ['icon' => 'bi-clock-history',        'color' => 'danger'],
+    'budget_depasse'    => ['icon' => 'bi-exclamation-triangle', 'color' => 'warning'],
+    'event_proche'      => ['icon' => 'bi-calendar-event',       'color' => 'primary'],
+    'facture_manquante' => ['icon' => 'bi-receipt',              'color' => 'info'],
+    'tache_assignee'    => ['icon' => 'bi-person-check',         'color' => 'success'],
+    'projet_statut'     => ['icon' => 'bi-kanban',               'color' => 'secondary'],
+    'info'              => ['icon' => 'bi-info-circle',          'color' => 'secondary'],
+];
+function notif_time_ago(string $dt): string {
+    $d = time() - strtotime($dt);
+    if ($d < 60)     return "À l'instant";
+    if ($d < 3600)   return floor($d/60).' min';
+    if ($d < 86400)  return floor($d/3600).'h';
+    if ($d < 604800) return floor($d/86400).'j';
+    return date('d/m/Y', strtotime($dt));
+}
+?>
                 <button class="btn btn-link text-body p-0 fs-5 position-relative shadow-none"
                         type="button"
                         data-bs-toggle="dropdown"
+                        data-bs-auto-close="outside"
                         aria-expanded="false"
-                        aria-label="<?= htmlspecialchars($t['notif_title'], ENT_QUOTES) ?>">
-                    <i class="bi bi-bell" aria-hidden="true"></i>
-                    <?php if (count($notifications) > 0): ?>
-                        <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle notif-dot"
-                              aria-hidden="true"></span>
-                    <?php endif; ?>
+                        aria-label="Notifications">
+                    <i class="bi bi-bell" id="notif-bell-icon" aria-hidden="true"></i>
+                    <span id="notif-badge"
+                          class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                          style="font-size:.6rem;min-width:18px;<?= $notifCount === 0 ? 'display:none;' : '' ?>">
+                        <?= $notifCount > 99 ? '99+' : $notifCount ?>
+                    </span>
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end notif-dropdown shadow" role="menu">
-                    <li role="none">
-                        <h6 class="dropdown-header text-primary fw-bold">
-                            <?= htmlspecialchars($t['notif_title'], ENT_QUOTES) ?>
+                <ul class="dropdown-menu dropdown-menu-end notif-dropdown shadow p-0" role="menu"
+                    style="min-width:340px;max-height:460px;overflow-y:auto;">
+                    <!-- En-tête -->
+                    <li class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom sticky-top bg-body" role="none">
+                        <h6 class="mb-0 fw-bold text-primary">
+                            <i class="bi bi-bell me-1"></i><?= htmlspecialchars($t['notif_title'], ENT_QUOTES) ?>
+                            <?php if ($notifCount > 0): ?>
+                            <span id="notif-count-header" class="badge bg-danger ms-1"><?= $notifCount ?></span>
+                            <?php endif; ?>
                         </h6>
+                        <?php if ($notifCount > 0): ?>
+                        <button class="btn btn-link btn-sm text-muted p-0 text-decoration-none"
+                                id="notif-mark-all-btn">
+                            <i class="bi bi-check2-all me-1"></i><small>Tout lire</small>
+                        </button>
+                        <?php endif; ?>
                     </li>
-                    <?php if (count($notifications) > 0): ?>
-                        <?php foreach ($notifications as $notif): ?>
-                            <li role="none">
-                                <a class="dropdown-item d-flex flex-column py-2" href="#" role="menuitem">
-                                    <span class="fw-bold fs-6 text-truncate">
-                                        <?= htmlspecialchars((string) $notif['nom'], ENT_QUOTES) ?>
-                                    </span>
-                                    <small class="text-muted">
-                                        <i class="bi bi-calendar-event me-1" aria-hidden="true"></i>
-                                        <time datetime="<?= htmlspecialchars((string) $notif['date_debut'], ENT_QUOTES) ?>">
-                                            <?= date('d/m/Y', strtotime((string) $notif['date_debut'])) ?>
-                                        </time>
-                                    </small>
-                                </a>
-                            </li>
-                        <?php endforeach; ?>
+                    <!-- Notifications -->
+                    <?php if ($notifCount === 0): ?>
+                    <li role="none">
+                        <span class="dropdown-item text-muted small py-4 text-center d-block" role="menuitem">
+                            <i class="bi bi-bell-slash fs-3 d-block mb-2 opacity-50"></i>
+                            <?= htmlspecialchars($t['notif_empty'], ENT_QUOTES) ?>
+                        </span>
+                    </li>
                     <?php else: ?>
-                        <li role="none">
-                            <span class="dropdown-item text-muted small py-3 text-center" role="menuitem">
-                                <?= htmlspecialchars($t['notif_empty'], ENT_QUOTES) ?>
+                    <?php foreach ($notifications as $notif):
+                        $ni = $notifIcons[$notif['type'] ?? 'info'] ?? $notifIcons['info'];
+                    ?>
+                    <li class="notif-item border-bottom"
+                        data-id="<?= (int)$notif['id'] ?>"
+                        role="none"
+                        style="background:<?= $notif['lu'] ? 'transparent' : 'var(--bs-primary-bg-subtle)' ?>;">
+                        <div class="d-flex gap-2 px-3 py-2 align-items-start"
+                             style="cursor:pointer;"
+                             onclick="notifClick(<?= (int)$notif['id'] ?>, '<?= htmlspecialchars($notif['lien'] ?? '', ENT_QUOTES) ?>')">
+                            <span class="badge bg-<?= $ni['color'] ?>-subtle text-<?= $ni['color'] ?> rounded-circle p-2 flex-shrink-0 mt-1">
+                                <i class="bi <?= $ni['icon'] ?>"></i>
                             </span>
-                        </li>
+                            <div class="flex-grow-1 overflow-hidden">
+                                <p class="fw-semibold mb-0 small text-truncate">
+                                    <?= htmlspecialchars((string)$notif['titre'], ENT_QUOTES) ?>
+                                </p>
+                                <?php if (!empty($notif['message'])): ?>
+                                <p class="text-body-secondary mb-0" style="font-size:.78rem;">
+                                    <?= htmlspecialchars((string)$notif['message'], ENT_QUOTES) ?>
+                                </p>
+                                <?php endif; ?>
+                                <p class="text-muted mb-0" style="font-size:.72rem;">
+                                    <i class="bi bi-clock me-1"></i><?= notif_time_ago((string)$notif['created_at']) ?>
+                                </p>
+                            </div>
+                            <button class="btn btn-link p-0 text-muted flex-shrink-0"
+                                    onclick="notifDelete(event, <?= (int)$notif['id'] ?>)"
+                                    title="Supprimer">
+                                <i class="bi bi-x-lg" style="font-size:.75rem;"></i>
+                            </button>
+                        </div>
+                    </li>
+                    <?php endforeach; ?>
                     <?php endif; ?>
                 </ul>
             </div>

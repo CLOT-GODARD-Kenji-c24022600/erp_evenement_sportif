@@ -6,7 +6,7 @@
  * @file Router.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 2.0
+ * @version 2.1
  * @since 2026
  */
 
@@ -20,6 +20,9 @@ use App\Models\TodoModel;
 use App\Models\SearchModel;
 use App\Models\QuickCreateModel;
 use App\Models\ProjectModel;
+use App\Models\PlanningGlobalModel;
+use App\Models\NotificationModel;
+use App\Controllers\NotificationController;
 use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
 use App\Controllers\EventController;
@@ -31,6 +34,7 @@ use App\Controllers\QuickCreateController;
 use App\Controllers\ProjectController;
 use App\Controllers\ContactController;
 use App\Controllers\OperationnelController;
+use App\Controllers\ExportController;
 
 class Router
 {
@@ -51,6 +55,7 @@ class Router
         'forgot_password',
         'reset_password',
         'profil',
+        'profil_supprimer',
         'staff',
         'recherche',
         'change_lang',
@@ -62,10 +67,12 @@ class Router
         'ajax_presence',
         'import_csv',
         'operationnel',
+        'duplicate_event',
+        'export',
         '404',
         'aide',
         'mentions_legales',
-        'plan_du_site',
+        'plan-du-site',
     ];
 
     public static function dispatch(): void
@@ -117,6 +124,7 @@ class Router
             'projets'         => 'projets',
             'annuaire'        => 'annuaire',
             'profil'          => 'profil',
+            'profil/supprimer' => 'profil_supprimer',
             'utilisateurs'    => 'utilisateurs',
             'nouvel_event'    => 'nouvel_event',
             'recherche'       => 'recherche',
@@ -128,13 +136,19 @@ class Router
             'gerer_event'     => 'gerer_event',
             'projet_detail'   => 'projet_detail',
             'ajax_search'     => 'ajax_search',
-            'ajax_presence'   => 'ajax_presence',
+            'ajax_presence'       => 'ajax_presence',
+            'ajax_notif_get'      => 'ajax_notif_get',
+            'ajax_notif_read'     => 'ajax_notif_read',
+            'ajax_notif_read_all' => 'ajax_notif_read_all',
+            'ajax_notif_delete'   => 'ajax_notif_delete',
             'change_lang'     => 'change_lang',
             'import_csv'      => 'import_csv',
             'aide'             => 'aide',
             'mentions_legales' => 'mentions_legales',
-            'plan_du_site'     => 'plan_du_site',
-            'operationnel'    => 'operationnel',
+            'plan-du-site'     => 'plan-du-site',
+            'operationnel'        => 'operationnel',
+            'duplicate_event'     => 'duplicate_event',
+            'export'              => 'export',
         ];
 
         if (isset($uriMap[$uri])) {
@@ -172,7 +186,7 @@ class Router
             $q = Security::sanitizeString($_GET['q'] ?? '');
 
             if (strlen($q) < 2) {
-                echo json_encode(['projets' => [], 'events' => [], 'staff' => []]);
+                echo json_encode(['projets' => [], 'events' => [], 'staff' => [], 'todos' => [], 'budget' => [], 'contacts' => []]);
                 exit();
             }
 
@@ -197,11 +211,54 @@ class Router
                     'nom_famille' => $u['nom'],
                     'sub'         => $u['poste'] ?? '',
                 ], array_slice($model->searchStaff($q), 0, 4)),
+
+                'todos' => array_map(fn($t) => [
+                    'id'    => (int) $t['id'],
+                    'titre' => $t['title'],
+                    'sub'   => !empty($t['event_nom'])
+                               ? $t['event_nom']
+                               : (!empty($t['projet_nom']) ? $t['projet_nom'] : ucfirst($t['status'] ?? '')),
+                    'statut'=> $t['status'] ?? '',
+                ], $model->searchTodos($q)),
+
+                'budget' => array_map(fn($b) => [
+                    'id'      => (int) $b['id'],
+                    'libelle' => $b['libelle'],
+                    'type'    => $b['type'],
+                    'montant' => number_format((float)$b['previsionnel'], 2, ',', ' ') . ' €',
+                    'sub'     => !empty($b['event_nom']) ? $b['event_nom'] : ($b['projet_nom'] ?? ''),
+                    'event_id'  => $b['event_id']  ? (int)$b['event_id']  : null,
+                    'projet_id' => $b['projet_id'] ? (int)$b['projet_id'] : null,
+                ], $model->searchBudget($q)),
+
+                'contacts' => array_map(fn($c) => [
+                    'id'      => (int) $c['id'],
+                    'nom'     => $c['nom'],
+                    'sub'     => implode(' · ', array_filter([$c['societe'] ?? '', $c['poste'] ?? ''])),
+                    'tel'     => $c['telephone'] ?? '',
+                    'mail'    => $c['mail'] ?? '',
+                ], $model->searchContacts($q)),
             ], JSON_UNESCAPED_UNICODE);
 
             exit();
         }
 
+        if ($page === 'ajax_notif_get') {
+            if (!Session::has('user_id')) { http_response_code(401); echo json_encode(['error'=>'Unauthorized']); exit(); }
+            (new NotificationController())->ajaxGet((int) Session::get('user_id'));
+        }
+        if ($page === 'ajax_notif_read') {
+            if (!Session::has('user_id')) { http_response_code(401); echo json_encode(['error'=>'Unauthorized']); exit(); }
+            (new NotificationController())->ajaxMarkRead((int) Session::get('user_id'));
+        }
+        if ($page === 'ajax_notif_read_all') {
+            if (!Session::has('user_id')) { http_response_code(401); echo json_encode(['error'=>'Unauthorized']); exit(); }
+            (new NotificationController())->ajaxMarkAllRead((int) Session::get('user_id'));
+        }
+        if ($page === 'ajax_notif_delete') {
+            if (!Session::has('user_id')) { http_response_code(401); echo json_encode(['error'=>'Unauthorized']); exit(); }
+            (new NotificationController())->ajaxDelete((int) Session::get('user_id'));
+        }
         if ($page === 'ajax_presence') {
             if (!Session::has('user_id')) {
                 http_response_code(401);
@@ -306,11 +363,12 @@ class Router
             $dbStatus = 'offline';
         }
 
+        // Générer les notifications automatiques
+        try { (new NotificationModel())->generateAuto($userId); } catch (\Exception $e) {}
+
+        // Charger les notifs non lues pour le header
         $notifications = [];
-        try {
-            $notifications = (new EventModel())->getUpcoming(3);
-        } catch (\Exception $e) {
-        }
+        try { $notifications = (new NotificationModel())->getUnread($userId); } catch (\Exception $e) {}
 
         $qcResult = (new QuickCreateController(new QuickCreateModel()))->handle();
         $qcMsg    = $qcResult['msg']  ?? '';
@@ -362,9 +420,16 @@ class Router
                     self::redirect('/dashboard');
                 }
 
+                // Projets pour le select (si besoin futur)
+                $projetsSimple = [];
+                try {
+                    $projetsSimple = (new ProjectModel())->getAllSimple();
+                } catch (\Exception $e) {
+                }
+
                 Renderer::renderApp(
                     __DIR__ . '/../app/Views/events/gerer_event.php',
-                    array_merge($common, ['event' => $event])
+                    array_merge($common, ['event' => $event, 'projets' => $projetsSimple])
                 );
                 break;
 
@@ -377,6 +442,15 @@ class Router
                     '',
                     '<script src="/assets/js/annuaire.js"></script>'
                 );
+                break;
+
+            case 'export':
+                (new ExportController())->handle();
+                break;
+
+            case 'duplicate_event':
+                $ctrl = new EventController(new EventModel());
+                $ctrl->duplicate();
                 break;
 
             case 'operationnel':
@@ -420,6 +494,16 @@ class Router
                     '<link rel="stylesheet" href="/assets/css/staff.css">',
                     '<script src="/assets/js/profile.js"></script>'
                 );
+                break;
+
+            case 'profil_supprimer':
+                // On vérifie que c'est bien une requête POST (clic sur le bouton) pour la sécurité
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    $ctrl = new ProfileController($userModel, new AuthController($userModel));
+                    $ctrl->deleteAccount();
+                } else {
+                    self::redirect('/profil');
+                }
                 break;
 
             case 'utilisateurs':
@@ -496,9 +580,9 @@ class Router
                 );
                 break;
 
-            case 'plan_du_site':
+            case 'plan-du-site':
                 Renderer::renderApp(
-                    __DIR__ . '/../app/Views/legal/plan_du_site.php',
+                    __DIR__ . '/../app/Views/pages/plan-du-site.php',
                     $common
                 );
                 break;

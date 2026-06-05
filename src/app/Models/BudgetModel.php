@@ -3,7 +3,7 @@
 /**
  * YES – Your Event Solution
  * @file BudgetModel.php
- * @version 1.0  –  2026
+ * @version 1.1  –  2026
  */
 
 declare(strict_types=1);
@@ -51,13 +51,11 @@ class BudgetModel
         }
     }
 
-    /** Résumé (totaux) pour un projet */
     public function getTotauxProjet(int $projetId): array
     {
         return $this->getTotaux('projet_id', $projetId);
     }
 
-    /** Résumé (totaux) pour un event */
     public function getTotauxEvent(int $eventId): array
     {
         return $this->getTotaux('event_id', $eventId);
@@ -102,20 +100,24 @@ class BudgetModel
         try {
             $stmt = $this->db->prepare(
                 'INSERT INTO budget_lignes
-                    (projet_id, event_id, type, categorie, sous_categorie, libelle, previsionnel, comparatif, note)
+                    (projet_id, event_id, type, categorie, sous_categorie, libelle,
+                     previsionnel, comparatif, note, fournisseur, sponsor)
                  VALUES
-                    (:projet_id, :event_id, :type, :categorie, :sous_categorie, :libelle, :previsionnel, :comparatif, :note)'
+                    (:projet_id, :event_id, :type, :categorie, :sous_categorie, :libelle,
+                     :previsionnel, :comparatif, :note, :fournisseur, :sponsor)'
             );
             return $stmt->execute([
-                'projet_id'     => $d['projet_id']     ?? null,
-                'event_id'      => $d['event_id']      ?? null,
-                'type'          => in_array($d['type'] ?? '', ['produit','charge'], true) ? $d['type'] : 'charge',
-                'categorie'     => $d['categorie']     ?? '',
-                'sous_categorie'=> $d['sous_categorie'] ?? '',
-                'libelle'       => $d['libelle']       ?? '',
-                'previsionnel'  => (float) ($d['previsionnel'] ?? 0),
-                'comparatif'    => (float) ($d['comparatif']   ?? 0),
-                'note'          => $d['note']          ?? null,
+                'projet_id'      => $d['projet_id']      ?? null,
+                'event_id'       => $d['event_id']       ?? null,
+                'type'           => in_array($d['type'] ?? '', ['produit','charge'], true) ? $d['type'] : 'charge',
+                'categorie'      => $d['categorie']      ?? '',
+                'sous_categorie' => $d['sous_categorie'] ?? '',
+                'libelle'        => $d['libelle']        ?? '',
+                'previsionnel'   => (float) ($d['previsionnel'] ?? 0),
+                'comparatif'     => (float) ($d['comparatif']   ?? 0),
+                'note'           => $d['note']           ?? null,
+                'fournisseur'    => $d['fournisseur']    ?? null,
+                'sponsor'        => $d['sponsor']        ?? null,
             ]);
         } catch (PDOException) {
             return false;
@@ -128,18 +130,21 @@ class BudgetModel
             $stmt = $this->db->prepare(
                 'UPDATE budget_lignes SET
                     type=:type, categorie=:categorie, sous_categorie=:sous_categorie,
-                    libelle=:libelle, previsionnel=:previsionnel, comparatif=:comparatif, note=:note
+                    libelle=:libelle, previsionnel=:previsionnel, comparatif=:comparatif,
+                    note=:note, fournisseur=:fournisseur, sponsor=:sponsor
                  WHERE id=:id'
             );
             return $stmt->execute([
-                'type'          => in_array($d['type'] ?? '', ['produit','charge'], true) ? $d['type'] : 'charge',
-                'categorie'     => $d['categorie']     ?? '',
-                'sous_categorie'=> $d['sous_categorie'] ?? '',
-                'libelle'       => $d['libelle']       ?? '',
-                'previsionnel'  => (float) ($d['previsionnel'] ?? 0),
-                'comparatif'    => (float) ($d['comparatif']   ?? 0),
-                'note'          => $d['note']          ?? null,
-                'id'            => $id,
+                'type'           => in_array($d['type'] ?? '', ['produit','charge'], true) ? $d['type'] : 'charge',
+                'categorie'      => $d['categorie']      ?? '',
+                'sous_categorie' => $d['sous_categorie'] ?? '',
+                'libelle'        => $d['libelle']        ?? '',
+                'previsionnel'   => (float) ($d['previsionnel'] ?? 0),
+                'comparatif'     => (float) ($d['comparatif']   ?? 0),
+                'note'           => $d['note']           ?? null,
+                'fournisseur'    => $d['fournisseur']    ?? null,
+                'sponsor'        => $d['sponsor']        ?? null,
+                'id'             => $id,
             ]);
         } catch (PDOException) {
             return false;

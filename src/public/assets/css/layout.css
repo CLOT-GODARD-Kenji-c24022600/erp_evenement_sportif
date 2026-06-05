@@ -40,6 +40,11 @@ html, body {
   height: 100%;
 }
 
+/* Ensure the root elements take full height so 100vh calculations work reliably */
+html, body {
+  height: 100%;
+}
+
 /* ─── Dark mode overrides ───────────────────────────── */
 [data-bs-theme="dark"] {
   --bs-body-bg: #0f172a;
@@ -264,9 +269,10 @@ body.collapsed .main-content {
 
 /* ─── Notifications ─────────────────────────────────── */
 .notif-dropdown {
-  width: 300px;
-  max-height: 400px;
+  width: 340px;
+  max-height: 460px;
   overflow-y: auto;
+  overflow-x: hidden;
   z-index: 1080 !important;
 }
 

@@ -2,14 +2,9 @@
 
 /**
  * YES - Your Event Solution
- *
- * ERP évènementiel
- *
  * @file SearchModel.php
- * @author CELESTINE Samuel
- * @author CLOT-GODARD Kenji
- * @version 1.0
- * @since 2026
+ * @version 2.0  –  2026
+ * AJOUTS : recherche dans todos, budget, contacts
  */
 
 declare(strict_types=1);
@@ -20,11 +15,6 @@ use Core\Database;
 use PDO;
 use PDOException;
 
-/**
- * Modèle de recherche globale.
- *
- * Effectue des recherches dans le staff, les événements et les projets.
- */
 class SearchModel
 {
     private PDO $db;
@@ -34,12 +24,6 @@ class SearchModel
         $this->db = Database::getConnection();
     }
 
-    /**
-     * Recherche dans les membres du staff.
-     *
-     * @param string $term Terme de recherche.
-     * @return array[]
-     */
     public function searchStaff(string $term): array
     {
         try {
@@ -50,19 +34,12 @@ class SearchModel
                  AND statut = 'approuve'"
             );
             $stmt->execute(['n' => $like, 'p' => $like, 'po' => $like]);
-
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
+        } catch (PDOException) {
             return [];
         }
     }
 
-    /**
-     * Recherche dans les événements.
-     *
-     * @param string $term Terme de recherche.
-     * @return array[]
-     */
     public function searchEvents(string $term): array
     {
         try {
@@ -72,19 +49,12 @@ class SearchModel
                  WHERE nom LIKE :n OR lieu LIKE :l OR description LIKE :d'
             );
             $stmt->execute(['n' => $like, 'l' => $like, 'd' => $like]);
-
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
+        } catch (PDOException) {
             return [];
         }
     }
 
-    /**
-     * Recherche dans les projets.
-     *
-     * @param string $term Terme de recherche.
-     * @return array[]
-     */
     public function searchProjets(string $term): array
     {
         try {
@@ -93,9 +63,69 @@ class SearchModel
                 'SELECT * FROM projets WHERE nom LIKE :n OR description LIKE :d'
             );
             $stmt->execute(['n' => $like, 'd' => $like]);
-
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
+        } catch (PDOException) {
+            return [];
+        }
+    }
+
+    // ── NOUVEAUX ─────────────────────────────────────────────
+
+    public function searchTodos(string $term): array
+    {
+        try {
+            $like = '%' . $term . '%';
+            $stmt = $this->db->prepare(
+                "SELECT t.id, t.title, t.status, t.category, t.due_date,
+                        e.nom AS event_nom, p.nom AS projet_nom
+                 FROM todos t
+                 LEFT JOIN evenements e ON e.id = t.event_id
+                 LEFT JOIN projets    p ON p.id = t.projet_id
+                 WHERE t.title LIKE :n OR t.description LIKE :d
+                 ORDER BY t.due_date ASC
+                 LIMIT 5"
+            );
+            $stmt->execute(['n' => $like, 'd' => $like]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException) {
+            return [];
+        }
+    }
+
+    public function searchBudget(string $term): array
+    {
+        try {
+            $like = '%' . $term . '%';
+            $stmt = $this->db->prepare(
+                "SELECT b.id, b.libelle, b.type, b.previsionnel, b.categorie,
+                        e.nom AS event_nom, e.id AS event_id,
+                        p.nom AS projet_nom, p.id AS projet_id
+                 FROM budget_lignes b
+                 LEFT JOIN evenements e ON e.id = b.event_id
+                 LEFT JOIN projets    p ON p.id = b.projet_id
+                 WHERE b.libelle LIKE :n OR b.categorie LIKE :c OR b.fournisseur LIKE :f
+                 LIMIT 5"
+            );
+            $stmt->execute(['n' => $like, 'c' => $like, 'f' => $like]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException) {
+            return [];
+        }
+    }
+
+    public function searchContacts(string $term): array
+    {
+        try {
+            $like = '%' . $term . '%';
+            $stmt = $this->db->prepare(
+                'SELECT id, nom, telephone, mail, societe, poste, type
+                 FROM contacts
+                 WHERE nom LIKE :n OR societe LIKE :s OR mail LIKE :m OR telephone LIKE :t
+                 LIMIT 5'
+            );
+            $stmt->execute(['n' => $like, 's' => $like, 'm' => $like, 't' => $like]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException) {
             return [];
         }
     }

@@ -3,7 +3,8 @@
 /**
  * YES – Your Event Solution
  * @file ContactController.php
- * @version 1.0  –  2026
+ * @version 2.0  –  2026
+ * AJOUTS : attach/detach événement et projet
  */
 
 declare(strict_types=1);
@@ -11,6 +12,8 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Models\ContactModel;
+use App\Models\EventModel;
+use App\Models\ProjectModel;
 use Core\Security;
 
 class ContactController
@@ -31,11 +34,19 @@ class ContactController
             [$type, $msg] = explode(':', $this->handlePost(), 2);
         }
 
+        // Événements et projets pour les modals de liaison
+        $evenements = [];
+        $projets    = [];
+        try { $evenements = (new EventModel())->getAll(); }        catch (\Exception) {}
+        try { $projets    = (new ProjectModel())->getAllSimple(); } catch (\Exception) {}
+
         return [
-            'contacts'    => $this->model->getAll(),
-            'usersInterne'=> $this->model->getAllUsers(),
-            'contactMsg'  => $msg,
-            'contactType' => $type,
+            'contacts'     => $this->model->getAll(),
+            'usersInterne' => $this->model->getAllUsers(),
+            'evenements'   => $evenements,
+            'projets'      => $projets,
+            'contactMsg'   => $msg,
+            'contactType'  => $type,
         ];
     }
 
@@ -44,14 +55,20 @@ class ContactController
         $action = Security::sanitizeString($_POST['contact_action'] ?? '');
 
         return match ($action) {
-            'create'       => $this->create(),
-            'update'       => $this->update(),
-            'delete'       => $this->delete(),
-            'update_user'    => $this->updateUser(),
-            'transfer_user'  => $this->transferUser(),
-            default        => 'error:Action inconnue.',
+            'create'           => $this->create(),
+            'update'           => $this->update(),
+            'delete'           => $this->delete(),
+            'update_user'      => $this->updateUser(),
+            'transfer_user'    => $this->transferUser(),
+            'attach_event'     => $this->attachEvent(),
+            'detach_event'     => $this->detachEvent(),
+            'attach_projet'    => $this->attachProjet(),
+            'detach_projet'    => $this->detachProjet(),
+            default            => 'error:Action inconnue.',
         };
     }
+
+    // ── CRUD Contact ─────────────────────────────────────────
 
     private function create(): string
     {
@@ -76,18 +93,62 @@ class ContactController
             ? 'success:Contact supprimé.' : 'error:Erreur suppression.';
     }
 
+    // ── Liaisons Contact ↔ Événement ─────────────────────────
+
+    private function attachEvent(): string
+    {
+        $contactId = Security::sanitizeInt($_POST['contact_id'] ?? 0);
+        $eventId   = Security::sanitizeInt($_POST['event_id']   ?? 0);
+        if (!$contactId || !$eventId) return 'error:Données invalides.';
+        $role = Security::sanitizeString($_POST['role'] ?? '');
+        $note = Security::sanitizeString($_POST['note'] ?? '');
+        return $this->model->attachToEvent($contactId, $eventId, $role, $note)
+            ? 'success:Contact lié à l\'événement.'
+            : 'error:Erreur lors de la liaison.';
+    }
+
+    private function detachEvent(): string
+    {
+        $lienId = Security::sanitizeInt($_POST['lien_id'] ?? 0);
+        return $lienId && $this->model->detachFromEvent($lienId)
+            ? 'success:Contact détaché de l\'événement.'
+            : 'error:Erreur suppression.';
+    }
+
+    // ── Liaisons Contact ↔ Projet ────────────────────────────
+
+    private function attachProjet(): string
+    {
+        $contactId = Security::sanitizeInt($_POST['contact_id'] ?? 0);
+        $projetId  = Security::sanitizeInt($_POST['projet_id']  ?? 0);
+        if (!$contactId || !$projetId) return 'error:Données invalides.';
+        $role = Security::sanitizeString($_POST['role'] ?? '');
+        $note = Security::sanitizeString($_POST['note'] ?? '');
+        return $this->model->attachToProjet($contactId, $projetId, $role, $note)
+            ? 'success:Contact lié au projet.'
+            : 'error:Erreur lors de la liaison.';
+    }
+
+    private function detachProjet(): string
+    {
+        $lienId = Security::sanitizeInt($_POST['lien_id'] ?? 0);
+        return $lienId && $this->model->detachFromProjet($lienId)
+            ? 'success:Contact détaché du projet.'
+            : 'error:Erreur suppression.';
+    }
+
+    // ── Utilisateurs internes ────────────────────────────────
+
     private function transferUser(): string
     {
         $userId = Security::sanitizeInt($_POST['transfer_user_id'] ?? 0);
         if (!$userId) return 'error:ID invalide.';
-
         $users = $this->model->getAllUsers();
         $u     = null;
         foreach ($users as $row) {
             if ((int)$row['id'] === $userId) { $u = $row; break; }
         }
         if (!$u) return 'error:Membre introuvable.';
-
         $ok = $this->model->create([
             'nom'              => trim(($u['prenom'] ?? '') . ' ' . ($u['nom'] ?? '')),
             'infos'            => $u['poste']            ?? null,
@@ -126,7 +187,7 @@ class ContactController
             'tshirt'           => Security::sanitizeString($_POST['tshirt']           ?? ''),
             'pointure'         => Security::sanitizeString($_POST['pointure']         ?? ''),
             'telephone_modele' => Security::sanitizeString($_POST['telephone_modele'] ?? ''),
-            'poids'            => $_POST['poids']    ?? null,
+            'poids'            => $_POST['poids'] ?? null,
             'pieces_ok'        => isset($_POST['pieces_ok']) ? 1 : 0,
         ]);
         return $ok ? 'success:Membre mis à jour.' : 'error:Erreur mise à jour.';
@@ -145,10 +206,15 @@ class ContactController
             'tshirt'           => Security::sanitizeString($_POST['tshirt']           ?? ''),
             'pointure'         => Security::sanitizeString($_POST['pointure']         ?? ''),
             'telephone_modele' => Security::sanitizeString($_POST['telephone_modele'] ?? ''),
-            'poids'            => $_POST['poids']    ?? null,
+            'poids'            => $_POST['poids'] ?? null,
             'pieces_ok'        => isset($_POST['pieces_ok']) ? 1 : 0,
             'type'             => in_array($_POST['type'] ?? '', ['contact','staff'], true)
                                   ? $_POST['type'] : 'contact',
+            'societe'          => Security::sanitizeString($_POST['societe']  ?? ''),
+            'poste'            => Security::sanitizeString($_POST['poste']    ?? ''),
+            'site_web'         => Security::sanitizeString($_POST['site_web'] ?? ''),
+            'adresse'          => Security::sanitizeString($_POST['adresse']  ?? ''),
+            'notes'            => Security::sanitizeString($_POST['notes']    ?? ''),
         ];
     }
 }

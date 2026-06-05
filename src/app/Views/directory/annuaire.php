@@ -239,7 +239,12 @@ declare(strict_types=1);
                         <tr class="annuaire-row"
                             data-search="<?= htmlspecialchars(strtolower(($c['nom']??'').' '.($c['infos']??'').' '.($c['telephone']??'').' '.($c['mail']??'')), ENT_QUOTES) ?>">
                             <td class="ps-3 fw-medium"><?= htmlspecialchars((string)$c['nom'], ENT_QUOTES) ?></td>
-                            <td class="small text-body-secondary"><?= htmlspecialchars((string)($c['infos']??'—'), ENT_QUOTES) ?></td>
+                            <td class="small text-body-secondary">
+                                <?= htmlspecialchars((string)($c['infos']??'—'), ENT_QUOTES) ?>
+                                <?php if (!empty($c['societe'])): ?>
+                                <br><span class="text-body-secondary fst-italic"><?= htmlspecialchars((string)$c['societe'], ENT_QUOTES) ?></span>
+                                <?php endif; ?>
+                            </td>
                             <td class="small">
                                 <?php if (!empty($c['telephone'])): ?>
                                 <a href="tel:<?= htmlspecialchars($c['telephone'], ENT_QUOTES) ?>" class="text-decoration-none">
@@ -275,6 +280,11 @@ declare(strict_types=1);
                                 <?= htmlspecialchars((string)($c['comm']??''), ENT_QUOTES) ?>
                             </td>
                             <td class="text-end pe-3">
+                                <button class="btn btn-sm btn-outline-info py-0 px-2 me-1"
+                                        onclick="openContactLier(<?= (int)$c['id'] ?>, <?= htmlspecialchars(json_encode($c['nom']), ENT_QUOTES) ?>)"
+                                        title="Lier à un événement ou projet">
+                                    <i class="bi bi-link-45deg"></i>
+                                </button>
                                 <button class="btn btn-sm btn-outline-secondary py-0 px-2 me-1"
                                         onclick="openContactEdit(<?= htmlspecialchars(json_encode($c), ENT_QUOTES) ?>)">
                                     <i class="bi bi-pencil"></i>
@@ -348,6 +358,26 @@ declare(strict_types=1);
             <div class="col-md-6">
               <label class="form-label fw-semibold">Commentaire (Comm)</label>
               <input type="text" name="comm" id="ce-comm" class="form-control rounded-3">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold"><i class="bi bi-building me-1"></i>Société</label>
+              <input type="text" name="societe" id="ce-societe" class="form-control rounded-3">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Poste / Fonction</label>
+              <input type="text" name="poste" id="ce-poste" class="form-control rounded-3">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold"><i class="bi bi-globe me-1"></i>Site web</label>
+              <input type="url" name="site_web" id="ce-site" class="form-control rounded-3" placeholder="https://...">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Adresse</label>
+              <input type="text" name="adresse" id="ce-adresse" class="form-control rounded-3">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Notes internes</label>
+              <textarea name="notes" id="ce-notes" class="form-control rounded-3" rows="2"></textarea>
             </div>
             <div class="col-12"><hr class="my-1"><p class="small fw-semibold text-body-secondary mb-2"><i class="bi bi-shield-exclamation me-1"></i>Contact d'urgence</p></div>
             <div class="col-md-6">
@@ -525,6 +555,22 @@ declare(strict_types=1);
               <label class="form-label fw-semibold">Commentaire (Comm)</label>
               <input type="text" name="comm" class="form-control rounded-3">
             </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold"><i class="bi bi-building me-1"></i>Société</label>
+              <input type="text" name="societe" class="form-control rounded-3">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Poste / Fonction</label>
+              <input type="text" name="poste" class="form-control rounded-3">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold"><i class="bi bi-globe me-1"></i>Site web</label>
+              <input type="url" name="site_web" class="form-control rounded-3" placeholder="https://...">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Notes internes</label>
+              <textarea name="notes" class="form-control rounded-3" rows="2"></textarea>
+            </div>
             <div class="col-12"><hr class="my-1"><p class="small fw-semibold text-body-secondary mb-2"><i class="bi bi-shield-exclamation me-1"></i>Contact d'urgence</p></div>
             <div class="col-md-6">
               <label class="form-label fw-semibold">Nom contact urgence</label>
@@ -568,6 +614,112 @@ declare(strict_types=1);
             <button type="submit" class="btn btn-primary rounded-3 fw-semibold"><i class="bi bi-plus-lg me-1"></i>Ajouter</button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ Modal : Lier contact à un événement / projet ════ -->
+<div class="modal fade" id="modalLierContact" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <div class="modal-header border-0">
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-link-45deg me-2 text-info"></i>
+          Lier <strong id="lier-contact-nom"></strong>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+
+        <!-- Onglets Événement / Projet -->
+        <ul class="nav nav-pills gap-2 mb-4" role="tablist">
+          <li class="nav-item">
+            <button class="nav-link active fw-semibold" data-bs-toggle="tab"
+                    data-bs-target="#lier-pane-event" type="button">
+              <i class="bi bi-calendar-event me-1"></i>Événement
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link fw-semibold" data-bs-toggle="tab"
+                    data-bs-target="#lier-pane-projet" type="button">
+              <i class="bi bi-kanban me-1"></i>Projet
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content">
+
+          <!-- Lier à un événement -->
+          <div class="tab-pane fade show active" id="lier-pane-event">
+            <form method="POST" action="/annuaire">
+              <input type="hidden" name="contact_action" value="attach_event">
+              <input type="hidden" name="contact_id" id="lier-contact-id-ev">
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Événement <span class="text-danger">*</span></label>
+                <select name="event_id" class="form-select rounded-3" required>
+                  <option value="">— Choisir un événement —</option>
+                  <?php foreach ($evenements as $ev): ?>
+                  <option value="<?= (int)$ev['id'] ?>">
+                    <?= htmlspecialchars((string)$ev['nom'], ENT_QUOTES) ?>
+                    <?= !empty($ev['date_debut']) ? ' — '.date('d/m/Y', strtotime($ev['date_debut'])) : '' ?>
+                  </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Rôle sur cet événement</label>
+                <input type="text" name="role" class="form-control rounded-3"
+                       placeholder="ex: Régie son, Sécurité, Logistique…">
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Note</label>
+                <textarea name="note" class="form-control rounded-3" rows="2"></textarea>
+              </div>
+              <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-outline-secondary rounded-3" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn btn-info text-white rounded-3 fw-semibold">
+                  <i class="bi bi-link-45deg me-1"></i>Lier à l'événement
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Lier à un projet -->
+          <div class="tab-pane fade" id="lier-pane-projet">
+            <form method="POST" action="/annuaire">
+              <input type="hidden" name="contact_action" value="attach_projet">
+              <input type="hidden" name="contact_id" id="lier-contact-id-pr">
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Projet <span class="text-danger">*</span></label>
+                <select name="projet_id" class="form-select rounded-3" required>
+                  <option value="">— Choisir un projet —</option>
+                  <?php foreach ($projets as $pr): ?>
+                  <option value="<?= (int)$pr['id'] ?>">
+                    <?= htmlspecialchars((string)$pr['nom'], ENT_QUOTES) ?>
+                  </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Rôle sur ce projet</label>
+                <input type="text" name="role" class="form-control rounded-3"
+                       placeholder="ex: Chef de projet, Prestataire…">
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Note</label>
+                <textarea name="note" class="form-control rounded-3" rows="2"></textarea>
+              </div>
+              <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-outline-secondary rounded-3" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn btn-info text-white rounded-3 fw-semibold">
+                  <i class="bi bi-link-45deg me-1"></i>Lier au projet
+                </button>
+              </div>
+            </form>
+          </div>
+
+        </div>
       </div>
     </div>
   </div>

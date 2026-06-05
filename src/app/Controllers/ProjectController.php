@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Models\ProjectModel;
+use App\Models\EventModel;
 use Core\Security;
 
 class ProjectController
@@ -48,16 +49,25 @@ class ProjectController
         }
 
         $projet = $this->model->findById($id);
-        if ($projet === null) {
-            return null;
-        }
+        if ($projet === null) return null;
+
+        // Événements non encore liés (pour le select "lier un événement")
+        $allEvents     = (new EventModel())->getAll();
+        $linkedIds     = array_column($this->model->getEvents($id), 'id');
+        $unlinkedEvents = array_filter($allEvents, fn($e) => !in_array((int)$e['id'], $linkedIds, true));
+
+        // Gantt : événements liés avec dates
+        $evenements = $this->model->getEvents($id);
+        $ganttEvents = array_filter($evenements, fn($e) => !empty($e['date_debut']));
 
         return [
-            'projet'     => $projet,
-            'finance'    => $this->model->getFinance($id),
-            'evenements' => $this->model->getEvents($id),
-            'projetMsg'  => $msg,
-            'projetType' => $type,
+            'projet'         => $projet,
+            'finance'        => $this->model->getFinance($id),
+            'evenements'     => $evenements,
+            'ganttEvents'    => array_values($ganttEvents),
+            'unlinkedEvents' => array_values($unlinkedEvents),
+            'projetMsg'      => $msg,
+            'projetType'     => $type,
         ];
     }
 
@@ -71,6 +81,9 @@ class ProjectController
             'delete'         => $this->delete(),
             'add_finance'    => $this->addFinance(),
             'delete_finance' => $this->deleteFinance(),
+            'attach_event'   => $this->attachEvent(),
+            'detach_event'   => $this->detachEvent(),
+            'detach_contact' => $this->detachContact(),
             default          => null,
         };
     }
@@ -78,9 +91,7 @@ class ProjectController
     private function create(): string
     {
         $nom = Security::sanitizeString($_POST['nom'] ?? '');
-        if ($nom === '') {
-            return 'error:Le nom du projet est obligatoire.';
-        }
+        if ($nom === '') return 'error:Le nom du projet est obligatoire.';
         $ok = $this->model->create([
             'nom'         => $nom,
             'description' => Security::sanitizeString($_POST['description'] ?? ''),
@@ -96,9 +107,7 @@ class ProjectController
     {
         $id  = Security::sanitizeInt($_POST['projet_id'] ?? 0);
         $nom = Security::sanitizeString($_POST['nom'] ?? '');
-        if (!$id || $nom === '') {
-            return 'error:Données invalides.';
-        }
+        if (!$id || $nom === '') return 'error:Données invalides.';
         $ok = $this->model->update($id, [
             'nom'         => $nom,
             'description' => Security::sanitizeString($_POST['description'] ?? ''),
@@ -113,9 +122,7 @@ class ProjectController
     private function delete(): string
     {
         $id = Security::sanitizeInt($_POST['projet_id'] ?? 0);
-        if (!$id) {
-            return 'error:Identifiant invalide.';
-        }
+        if (!$id) return 'error:Identifiant invalide.';
         return $this->model->delete($id) ? 'success:Projet supprimé.' : 'error:Erreur lors de la suppression.';
     }
 
@@ -145,11 +152,37 @@ class ProjectController
     {
         $id       = Security::sanitizeInt($_POST['finance_id'] ?? 0);
         $projetId = Security::sanitizeInt($_POST['projet_id']  ?? 0);
-        if (!$id || !$projetId) {
-            return 'error:Identifiant invalide.';
-        }
+        if (!$id || !$projetId) return 'error:Identifiant invalide.';
         return $this->model->deleteFinanceLine($id, $projetId)
             ? 'success:Ligne supprimée.'
             : 'error:Erreur lors de la suppression.';
+    }
+
+    private function attachEvent(): string
+    {
+        $projetId = Security::sanitizeInt($_POST['projet_id'] ?? 0);
+        $eventId  = Security::sanitizeInt($_POST['event_id']  ?? 0);
+        if (!$projetId || !$eventId) return 'error:Données invalides.';
+        return $this->model->attachEvent($projetId, $eventId)
+            ? 'success:Événement lié au projet.'
+            : 'error:Erreur lors de la liaison.';
+    }
+
+    private function detachEvent(): string
+    {
+        $eventId = Security::sanitizeInt($_POST['event_id'] ?? 0);
+        if (!$eventId) return 'error:Données invalides.';
+        return $this->model->detachEvent($eventId)
+            ? 'success:Événement détaché du projet.'
+            : 'error:Erreur lors du détachement.';
+    }
+    private function detachContact(): string
+    {
+        $lienId = \Core\Security::sanitizeInt($_POST['lien_id'] ?? 0);
+        if (!$lienId) return 'error:ID invalide.';
+        $model = new \App\Models\ContactModel();
+        return $model->detachFromProjet($lienId)
+            ? 'success:Contact détaché du projet.'
+            : 'error:Erreur lors du détachement.';
     }
 }
