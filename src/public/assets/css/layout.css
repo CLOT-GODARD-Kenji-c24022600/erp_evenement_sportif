@@ -40,6 +40,11 @@ html, body {
   height: 100%;
 }
 
+/* Ensure the root elements take full height so 100vh calculations work reliably */
+html, body {
+  height: 100%;
+}
+
 /* ─── Dark mode overrides ───────────────────────────── */
 [data-bs-theme="dark"] {
   --bs-body-bg: #0f172a;

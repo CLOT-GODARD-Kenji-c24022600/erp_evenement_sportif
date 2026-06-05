@@ -53,7 +53,7 @@ class Renderer
             <link rel="icon" type="image/png" href="assets/img/YES-Your-Event-Solution.png">
             <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
             <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-            <link rel="stylesheet" href="assets/css/auth.css">
+            <link rel="stylesheet" href="/assets/css/auth.css">
             <style>body { visibility: hidden; }</style>
             <script>
                 (function () {
@@ -124,7 +124,7 @@ class Renderer
 
             <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
             <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-            <link rel="stylesheet" href="assets/css/layout.css">
+            <link rel="stylesheet" href="/assets/css/layout.css">
 
             <?php if ($extraCss !== '') echo $extraCss . "\n"; ?>
 
@@ -151,13 +151,16 @@ class Renderer
         <div id="spa-content">
         <?php
         include $viewFile;
-        include $layoutDir . 'footer.php';
-
         if ($extraJs !== '') {
             echo $extraJs . "\n";
         }
         ?>
         </div>
+
+        <?php
+        // Footer is rendered once outside of #spa-content to avoid duplication
+        include $layoutDir . 'footer.php';
+        ?>
 
         </body>
         </html>
@@ -184,10 +187,9 @@ class Renderer
 
         $layoutDir = __DIR__ . '/../app/Views/layouts/';
 
-        // Capture le HTML de la vue + footer
+        // Capture le HTML de la vue (sans footer) — SPA injecte uniquement la vue
         ob_start();
         include $viewFile;
-        include $layoutDir . 'footer.php';
         $html = ob_get_clean();
 
         header('Content-Type: application/json; charset=UTF-8');

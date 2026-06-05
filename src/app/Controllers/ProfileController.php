@@ -48,8 +48,8 @@ class ProfileController
         $this->authController = $authController;
     }
 
-    /**
-     * Charge les données du profil et traite les actions POST.
+/**
+     * Charge les données du profil et traite les actions POST avec protection CSRF.
      *
      * @param int $userId Identifiant de l'utilisateur connecté.
      * @return array{user: array, msg: string, msgType: string}
@@ -60,12 +60,22 @@ class ProfileController
         $msgType = '';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (isset($_POST['update_info'])) {
-                [$msg, $msgType] = $this->updateInfo($userId);
-            } elseif (isset($_POST['update_password'])) {
-                [$msg, $msgType] = $this->updatePassword($userId);
-            } elseif (isset($_POST['update_avatar'])) {
-                [$msg, $msgType] = $this->updateAvatar($userId);
+            // SÉCURITÉ CSRF : On récupère et on valide le token
+            $submittedToken = $_POST['csrf_token'] ?? '';
+
+            if (!\Core\Security::validateCsrfToken($submittedToken)) {
+                // Si le token est faux ou expiré, on bloque l'action et on prévient l'utilisateur
+                $msg     = 'Erreur de sécurité : session expirée ou requête invalide. Veuillez réessayer.';
+                $msgType = 'danger';
+            } else {
+                // Si le token est bon, on traite la demande normalement
+                if (isset($_POST['update_info'])) {
+                    [$msg, $msgType] = $this->updateInfo($userId);
+                } elseif (isset($_POST['update_password'])) {
+                    [$msg, $msgType] = $this->updatePassword($userId);
+                } elseif (isset($_POST['update_avatar'])) {
+                    [$msg, $msgType] = $this->updateAvatar($userId);
+                }
             }
         }
 
@@ -171,5 +181,42 @@ class ProfileController
         Session::set('user_avatar', $newFileName);
 
         return ['Avatar mis à jour avec succès.', 'success'];
+    }
+
+    /**
+     * Supprime le compte de l'utilisateur connecté (Protégé contre CSRF).
+     */
+    public function deleteAccount(): void
+    {
+        // On s'assure que c'est bien une requête POST
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            \Core\Router::redirect('/profil');
+            return;
+        }
+
+        // SÉCURITÉ CSRF
+        $submittedToken = $_POST['csrf_token'] ?? '';
+        if (!\Core\Security::validateCsrfToken($submittedToken)) {
+            \Core\Router::redirect('/profil');
+            return;
+        }
+
+        // On récupère l'ID via Session
+        $userId = \Core\Session::get('user_id');
+
+        if (!$userId) {
+            \Core\Router::redirect('/login');
+            return;
+        }
+
+        // Suppression et déconnexion
+        $deleted = $this->userModel->delete($userId);
+
+        if ($deleted) {
+            \Core\Session::destroy();
+            \Core\Router::redirect('/inscription');
+        } else {
+            \Core\Router::redirect('/profil');
+        }
     }
 }

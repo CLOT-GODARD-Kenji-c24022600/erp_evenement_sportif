@@ -38,7 +38,7 @@ declare(strict_types=1);
                             </a>
                         </li>
                         <li class="border-start ps-3">
-                            <a href="/plan_du_site" class="text-decoration-none text-reset">
+                            <a href="/plan-du-site" class="text-decoration-none text-reset">
                                 Plan du site
                             </a>
                         </li>
