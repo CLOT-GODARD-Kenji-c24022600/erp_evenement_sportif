@@ -145,7 +145,7 @@ class Router
             'import_csv'      => 'import_csv',
             'aide'             => 'aide',
             'mentions_legales' => 'mentions_legales',
-            'plan_du_site'     => 'plan_du_site',
+            'plan-du-site'     => 'plan-du-site',
             'operationnel'        => 'operationnel',
             'duplicate_event'     => 'duplicate_event',
             'export'              => 'export',
