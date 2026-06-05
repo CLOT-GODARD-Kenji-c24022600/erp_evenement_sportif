@@ -94,7 +94,15 @@ $planningAvecDates = array_filter($planning, fn($p) => !empty($p['date_debut']))
         </form>
     </header>
 
-    <?php if ($opsMsg): ?>
+    <?php
+function exportUrl(string $type, int $eventId, int $projetId, string $format): string {
+    $base = "/export?type={$type}&format={$format}";
+    if ($eventId  > 0) $base .= "&event_id={$eventId}";
+    if ($projetId > 0) $base .= "&projet_id={$projetId}";
+    return $base;
+}
+?>
+<?php if ($opsMsg): ?>
     <aside class="alert alert-<?= $opsType === 'success' ? 'success' : 'danger' ?> alert-dismissible fade show shadow-sm mb-4" role="alert">
         <i class="bi bi-<?= $opsType === 'success' ? 'check-circle-fill' : 'exclamation-triangle-fill' ?> me-2"></i>
         <?= htmlspecialchars((string)$opsMsg, ENT_QUOTES) ?>
@@ -255,7 +263,18 @@ $planningAvecDates = array_filter($planning, fn($p) => !empty($p['date_debut']))
                 <span class="fw-bold fs-5"><?= number_format($totalFacturation, 2, ',', ' ') ?> €</span>
             </div>
 
-            <div class="d-flex justify-content-end mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex gap-2">
+                    <a href="<?= exportUrl('budget', $eventId, $projetId, 'csv') ?>"
+                       class="btn btn-sm btn-outline-success rounded-3" title="Exporter en Excel/CSV">
+                        <i class="bi bi-file-earmark-excel me-1"></i>Excel
+                    </a>
+                    <a href="<?= exportUrl('budget', $eventId, $projetId, 'pdf') ?>"
+                       class="btn btn-sm btn-outline-danger rounded-3" title="Exporter en PDF"
+                       target="_blank">
+                        <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+                    </a>
+                </div>
                 <button class="btn btn-primary btn-sm fw-semibold shadow-sm"
                         data-bs-toggle="modal" data-bs-target="#modalBudgetCreate">
                     <i class="bi bi-plus-lg me-1"></i> Ajouter une ligne
@@ -471,10 +490,21 @@ $planningAvecDates = array_filter($planning, fn($p) => !empty($p['date_debut']))
                         <i class="bi bi-bar-chart-steps me-1"></i>Gantt
                     </button>
                 </div>
-                <button class="btn btn-primary btn-sm fw-semibold shadow-sm"
-                        data-bs-toggle="modal" data-bs-target="#modalPlanningCreate">
-                    <i class="bi bi-plus-lg me-1"></i> Ajouter une tâche
-                </button>
+                <div class="d-flex gap-2">
+                    <a href="<?= exportUrl('planning', $eventId, $projetId, 'csv') ?>"
+                       class="btn btn-sm btn-outline-success rounded-3" title="Exporter en Excel/CSV">
+                        <i class="bi bi-file-earmark-excel me-1"></i>Excel
+                    </a>
+                    <a href="<?= exportUrl('planning', $eventId, $projetId, 'pdf') ?>"
+                       class="btn btn-sm btn-outline-danger rounded-3" title="Exporter en PDF"
+                       target="_blank">
+                        <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+                    </a>
+                    <button class="btn btn-primary btn-sm fw-semibold shadow-sm"
+                            data-bs-toggle="modal" data-bs-target="#modalPlanningCreate">
+                        <i class="bi bi-plus-lg me-1"></i> Ajouter une tâche
+                    </button>
+                </div>
             </div>
 
             <!-- Vue liste -->
@@ -669,17 +699,28 @@ $planningAvecDates = array_filter($planning, fn($p) => !empty($p['date_debut']))
         ══════════════════════════════════════════════ -->
         <div class="tab-pane fade" id="pane-facturation" role="tabpanel">
 
-            <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                 <div class="fw-bold text-body-secondary">
                     Total général :
                     <span class="text-primary fs-5 fw-bold ms-1">
                         <?= number_format($totalFacturation, 2, ',', ' ') ?> €
                     </span>
                 </div>
-                <button class="btn btn-info btn-sm fw-semibold shadow-sm text-white"
-                        data-bs-toggle="modal" data-bs-target="#modalFacturationCreate">
-                    <i class="bi bi-plus-lg me-1"></i> Ajouter une ligne
-                </button>
+                <div class="d-flex gap-2">
+                    <a href="<?= exportUrl('facturation', $eventId, $projetId, 'csv') ?>"
+                       class="btn btn-sm btn-outline-success rounded-3" title="Exporter en Excel/CSV">
+                        <i class="bi bi-file-earmark-excel me-1"></i>Excel
+                    </a>
+                    <a href="<?= exportUrl('facturation', $eventId, $projetId, 'pdf') ?>"
+                       class="btn btn-sm btn-outline-danger rounded-3" title="Exporter en PDF"
+                       target="_blank">
+                        <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+                    </a>
+                    <button class="btn btn-info btn-sm fw-semibold shadow-sm text-white"
+                            data-bs-toggle="modal" data-bs-target="#modalFacturationCreate">
+                        <i class="bi bi-plus-lg me-1"></i> Ajouter une ligne
+                    </button>
+                </div>
             </div>
 
             <?php if (empty($facturation)): ?>

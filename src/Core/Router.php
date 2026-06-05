@@ -34,6 +34,7 @@ use App\Controllers\QuickCreateController;
 use App\Controllers\ProjectController;
 use App\Controllers\ContactController;
 use App\Controllers\OperationnelController;
+use App\Controllers\ExportController;
 
 class Router
 {
@@ -66,6 +67,7 @@ class Router
         'import_csv',
         'operationnel',
         'duplicate_event',
+        'export',
         '404',
         'aide',
         'mentions_legales',
@@ -144,6 +146,7 @@ class Router
             'plan_du_site'     => 'plan_du_site',
             'operationnel'        => 'operationnel',
             'duplicate_event'     => 'duplicate_event',
+            'export'              => 'export',
         ];
 
         if (isset($uriMap[$uri])) {
@@ -437,6 +440,10 @@ class Router
                     '',
                     '<script src="/assets/js/annuaire.js"></script>'
                 );
+                break;
+
+            case 'export':
+                (new ExportController())->handle();
                 break;
 
             case 'duplicate_event':
