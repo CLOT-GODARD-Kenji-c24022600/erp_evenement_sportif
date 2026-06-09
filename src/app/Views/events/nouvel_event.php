@@ -3,7 +3,7 @@
 /**
  * YES - Your Event Solution
  * @file nouvel_event.php
- * @version 1.2  –  2026
+ * @version 1.3  –  2026
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ $errorMsg = \Core\Session::flash('error_msg');
                 </aside>
             <?php endif; ?>
 
-            <form action="/traitement_event.php" method="POST" class="needs-validation" novalidate>
+            <form action="/nouvel_event" method="POST" class="needs-validation" novalidate>
 
                 <!-- ── Informations générales ─────────────────── -->
                 <fieldset class="mb-4 border-0 p-0">

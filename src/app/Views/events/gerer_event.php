@@ -3,7 +3,7 @@
 /**
  * YES - Your Event Solution
  * @file gerer_event.php
- * @version 1.2  –  2026
+ * @version 1.3  –  2026
  */
 
 declare(strict_types=1);
@@ -112,10 +112,10 @@ $successMsg = \Core\Session::flash('success_msg');
 
                 <?php
                 $phases = [
-                    ['key' => 'preprod',   'label' => 'Pré-production',       'color' => 'warning', 'icon' => 'bi-hammer'],
+                    ['key' => 'preprod',   'label' => 'Pré-production',        'color' => 'warning', 'icon' => 'bi-hammer'],
                     ['key' => 'prod',      'label' => 'Production/Installation','color' => 'primary', 'icon' => 'bi-gear-fill'],
-                    ['key' => 'exploit',   'label' => 'Exploitation/Événement','color' => 'success', 'icon' => 'bi-play-circle-fill'],
-                    ['key' => 'demontage', 'label' => 'Démontage',             'color' => 'danger',  'icon' => 'bi-trash3-fill'],
+                    ['key' => 'exploit',   'label' => 'Exploitation/Événement', 'color' => 'success', 'icon' => 'bi-play-circle-fill'],
+                    ['key' => 'demontage', 'label' => 'Démontage',              'color' => 'danger',  'icon' => 'bi-trash3-fill'],
                 ];
                 foreach ($phases as $ph):
                     $dKey = 'date_' . $ph['key'] . '_debut';
@@ -195,48 +195,50 @@ $successMsg = \Core\Session::flash('success_msg');
                     </div>
                 </footer>
 
-<!-- Modal duplication -->
-<div class="modal fade" id="modalDuplicateEvent" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg rounded-4">
-      <div class="modal-header border-0">
-        <h5 class="modal-title fw-bold"><i class="bi bi-copy me-2 text-info"></i>Dupliquer l'événement</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <form method="POST" action="/duplicate_event">
-          <input type="hidden" name="source_id" id="dup-source-id">
-          <p class="text-body-secondary small mb-3">Copie de : <strong id="dup-source-nom"></strong></p>
-          <div class="mb-4">
-            <label for="dup-nouveau-nom" class="form-label fw-semibold">
-              Nom du nouvel événement <span class="text-danger">*</span>
-            </label>
-            <input type="text" id="dup-nouveau-nom" name="nouveau_nom"
-                   class="form-control rounded-3" required
-                   placeholder="Ex : Festival Été 2027">
-            <div class="form-text">Lieu, dates, phases et liens seront copiés. Budget, planning et matériel non.</div>
-          </div>
-          <div class="d-flex justify-content-end gap-2">
-            <button type="button" class="btn btn-outline-secondary rounded-3" data-bs-dismiss="modal">Annuler</button>
-            <button type="submit" class="btn btn-info text-white fw-bold rounded-3">
-              <i class="bi bi-copy me-1"></i>Dupliquer
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
-<script>
-window.openDuplicateModal = function(id, nom) {
-  document.getElementById('dup-source-id').value = id;
-  document.getElementById('dup-source-nom').textContent = nom;
-  document.getElementById('dup-nouveau-nom').value = nom + ' (copie)';
-  bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDuplicateEvent')).show();
-};
-</script>
-
             </form>
         </div>
     </article>
+
+    <!-- Modal duplication -->
+    <div class="modal fade" id="modalDuplicateEvent" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-copy me-2 text-info"></i>Dupliquer l'événement</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" action="/duplicate_event">
+                        <input type="hidden" name="source_id" id="dup-source-id">
+                        <p class="text-body-secondary small mb-3">Copie de : <strong id="dup-source-nom"></strong></p>
+                        <div class="mb-4">
+                            <label for="dup-nouveau-nom" class="form-label fw-semibold">
+                                Nom du nouvel événement <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" id="dup-nouveau-nom" name="nouveau_nom"
+                                   class="form-control rounded-3" required
+                                   placeholder="Ex : Festival Été 2027">
+                            <div class="form-text">Lieu, dates, phases et liens seront copiés. Budget, planning et matériel non.</div>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-outline-secondary rounded-3" data-bs-dismiss="modal">Annuler</button>
+                            <button type="submit" class="btn btn-info text-white fw-bold rounded-3">
+                                <i class="bi bi-copy me-1"></i>Dupliquer
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    window.openDuplicateModal = function(id, nom) {
+        document.getElementById('dup-source-id').value = id;
+        document.getElementById('dup-source-nom').textContent = nom;
+        document.getElementById('dup-nouveau-nom').value = nom + ' (copie)';
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDuplicateEvent')).show();
+    };
+    </script>
+
 </section>
