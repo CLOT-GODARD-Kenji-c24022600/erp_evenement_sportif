@@ -3,208 +3,612 @@
 /**
  * YES - Your Event Solution
  *
- * Layout : Sidebar de navigation.
- *
- * @file sidebar.php
+ * @file Router.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 2.0
+ * @version 2.1
  * @since 2026
  */
 
 declare(strict_types=1);
 
-$isProjectPage = in_array($page, ['projets', 'projet_detail'], true);
-?>
+namespace Core;
 
-<!-- ── Bouton hamburger (mobile uniquement) ── -->
-<button id="hamburgerBtn"
-        class="hamburger-btn d-flex d-md-none align-items-center justify-content-center"
-        aria-label="Ouvrir le menu"
-        aria-expanded="false"
-        aria-controls="mobileSidebar">
-    <i class="bi bi-list fs-4" aria-hidden="true"></i>
-</button>
+use App\Models\UserModel;
+use App\Models\EventModel;
+use App\Models\TodoModel;
+use App\Models\SearchModel;
+use App\Models\QuickCreateModel;
+use App\Models\ProjectModel;
+use App\Models\PlanningGlobalModel;
+use App\Models\NotificationModel;
+use App\Controllers\NotificationController;
+use App\Controllers\AuthController;
+use App\Controllers\DashboardController;
+use App\Controllers\EventController;
+use App\Controllers\TodoController;
+use App\Controllers\ProfileController;
+use App\Controllers\UserController;
+use App\Controllers\SearchController;
+use App\Controllers\QuickCreateController;
+use App\Controllers\ProjectController;
+use App\Controllers\ContactController;
+use App\Controllers\OperationnelController;
+use App\Controllers\ExportController;
+use App\Controllers\HistoriqueController;
 
-<!-- ── Overlay (mobile) ── -->
-<div id="sidebarOverlay" class="sidebar-overlay" aria-hidden="true"></div>
+class Router
+{
+    private const PUBLIC_PAGES = [
+        'login',
+        'inscription',
+        'forgot_password',
+        'reset_password',
+    ];
 
-<!-- ── Sidebar ── -->
-<nav class="sidebar d-flex flex-column flex-shrink-0 text-white shadow" id="mobileSidebar" aria-label="Navigation principale">
+    private const ALLOWED_PAGES = [
+        'login',
+        'inscription',
+        'dashboard',
+        'nouvel_event',
+        'annuaire',
+        'utilisateurs',
+        'forgot_password',
+        'reset_password',
+        'profil',
+        'profil_supprimer',
+        'staff',
+        'recherche',
+        'change_lang',
+        'gerer_event',
+        'logout',
+        'projets',
+        'projet_detail',
+        'ajax_search',
+        'ajax_presence',
+        'import_csv',
+        'operationnel',
+        'duplicate_event',
+        'export',
+        '404',
+        'aide',
+        'mentions_legales',
+        'plan-du-site',
+        'historique',
+    ];
 
-    <header class="d-flex align-items-center sidebar-header p-4 mb-2 position-relative">
-        <a href="/dashboard" class="text-white text-decoration-none d-flex align-items-center logo-link"
-           aria-label="Accueil – <?= htmlspecialchars($t['app_name'], ENT_QUOTES) ?>">
-            <figure class="bg-white rounded-2 d-flex align-items-center justify-content-center flex-shrink-0 overflow-hidden shadow-sm logo-box mb-0">
-                <img src="assets/img/YES-Your-Event-Solution.png" alt="Logo YES" width="35" height="35"
-                     style="object-fit: contain;">
-            </figure>
-            <span class="fs-5 fw-bold ms-2 sb-text" style="letter-spacing: 1px;">YES</span>
-        </a>
-        <button id="sidebarToggle" class="btn btn-link text-white p-0 toggle-btn"
-                aria-label="Réduire / Agrandir la sidebar">
-            <i class="bi bi-chevron-left" id="toggleIcon" aria-hidden="true"></i>
-        </button>
-    </header>
+    public static function dispatch(): void
+    {
+        $page  = self::resolvePage();
+        $lang  = Bootstrap::getLang();
+        $theme = Bootstrap::getTheme();
+        $t     = Bootstrap::loadTranslations($lang);
 
-    <ul class="nav nav-pills flex-column mb-auto px-2" role="menubar">
+        if ($page === '404') {
+            http_response_code(404);
+            Renderer::renderPublic(
+                __DIR__ . '/../app/Views/errors/404.php',
+                compact('t'),
+                $theme
+            );
+            return;
+        }
 
-        <!-- Dashboard -->
-        <li class="nav-item mb-1" role="none">
-            <a href="/dashboard"
-               class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'dashboard' ? 'active bg-primary' : 'opacity-75' ?>"
-               role="menuitem"
-               <?= $page === 'dashboard' ? 'aria-current="page"' : '' ?>>
-                <i class="bi bi-grid-1x2-fill fs-5 mx-2" aria-hidden="true"></i>
-                <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_dashboard'], ENT_QUOTES) ?></span>
-            </a>
-        </li>
+        self::handleSpecialRoutes($page, $lang);
 
-        <!-- Projets -->
-        <li class="nav-item mb-1" role="none">
-            <a href="/projets"
-               class="nav-link text-white d-flex align-items-center py-3 <?= $isProjectPage ? 'active bg-primary' : 'opacity-75' ?>"
-               role="menuitem"
-               <?= $isProjectPage ? 'aria-current="page"' : '' ?>>
-                <i class="bi bi-kanban-fill fs-5 mx-2" aria-hidden="true"></i>
-                <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_projects'], ENT_QUOTES) ?></span>
-            </a>
-        </li>
+        if (in_array($page, self::PUBLIC_PAGES, true)) {
+            self::dispatchPublic($page, $t, $theme);
+            return;
+        }
 
-        <!-- Opérationnel (Planning · Matériel · Facturation · Budget) -->
-        <li class="nav-item mb-1" role="none">
-            <a href="/operationnel"
-               class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'operationnel' ? 'active bg-primary' : 'opacity-75' ?>"
-               role="menuitem"
-               <?= $page === 'operationnel' ? 'aria-current="page"' : '' ?>>
-                <i class="bi bi-clipboard2-data-fill fs-5 mx-2" aria-hidden="true"></i>
-                <span class="ms-2 sb-text">Opérationnel</span>
-            </a>
-        </li>
+        if (!Session::has('user_id')) {
+            self::redirect('/login');
+        }
 
-        <!-- Annuaire -->
-        <li class="nav-item mb-1" role="none">
-            <a href="/annuaire"
-               class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'annuaire' ? 'active bg-primary' : 'opacity-75' ?>"
-               role="menuitem"
-               <?= $page === 'annuaire' ? 'aria-current="page"' : '' ?>>
-                <i class="bi bi-people-fill fs-5 mx-2" aria-hidden="true"></i>
-                <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_directory'], ENT_QUOTES) ?></span>
-            </a>
-        </li>
+        self::dispatchApp($page, $t, $lang, $theme);
+    }
 
-        <!-- Nouvel Événement -->
-        <li class="nav-item mb-1" role="none">
-            <a href="/nouvel_event"
-               class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'nouvel_event' ? 'active bg-primary' : 'opacity-75' ?>"
-               role="menuitem"
-               <?= $page === 'nouvel_event' ? 'aria-current="page"' : '' ?>>
-                <i class="bi bi-calendar-event-fill fs-5 mx-2" aria-hidden="true"></i>
-                <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_new_event'], ENT_QUOTES) ?></span>
-            </a>
-        </li>
+    public static function redirect(string $url): never
+    {
+        header('Location: ' . $url);
+        exit();
+    }
 
-        <!-- Staff -->
-        <li class="nav-item mb-1" role="none">
-            <a href="/staff"
-               class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'staff' ? 'active bg-primary' : 'opacity-75' ?>"
-               role="menuitem"
-               <?= $page === 'staff' ? 'aria-current="page"' : '' ?>>
-                <i class="bi bi-person-badge-fill fs-5 mx-2" aria-hidden="true"></i>
-                <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_staff'], ENT_QUOTES) ?></span>
-            </a>
-        </li>
+    private static function resolvePage(): string
+    {
+        $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+        $uri = trim($uri, '/');
 
-        <?php if ($isAdmin): ?>
-        <li class="nav-item mb-1 border-top border-secondary mt-3 pt-3" role="none">
-            <small class="text-white-50 text-uppercase px-3 sb-text d-block mb-1"
-                   style="font-size: 0.7rem;">Administration</small>
-            <a href="/utilisateurs"
-               class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'utilisateurs' ? 'active bg-primary' : 'opacity-75' ?>"
-               role="menuitem"
-               <?= $page === 'utilisateurs' ? 'aria-current="page"' : '' ?>>
-                <i class="bi bi-gear-fill fs-5 mx-2" aria-hidden="true"></i>
-                <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_settings'], ENT_QUOTES) ?></span>
-            </a>
-        </li>
-        <?php endif; ?>
-    </ul>
+        $uriMap = [
+            ''                => 'dashboard',
+            'dashboard'       => 'dashboard',
+            'staff'           => 'staff',
+            'projets'         => 'projets',
+            'annuaire'        => 'annuaire',
+            'profil'          => 'profil',
+            'profil/supprimer' => 'profil_supprimer',
+            'utilisateurs'    => 'utilisateurs',
+            'nouvel_event'    => 'nouvel_event',
+            'recherche'       => 'recherche',
+            'login'           => 'login',
+            'inscription'     => 'inscription',
+            'logout'          => 'logout',
+            'forgot_password' => 'forgot_password',
+            'reset_password'  => 'reset_password',
+            'gerer_event'     => 'gerer_event',
+            'projet_detail'   => 'projet_detail',
+            'ajax_search'     => 'ajax_search',
+            'ajax_presence'       => 'ajax_presence',
+            'ajax_notif_get'      => 'ajax_notif_get',
+            'ajax_notif_read'     => 'ajax_notif_read',
+            'ajax_notif_read_all' => 'ajax_notif_read_all',
+            'ajax_notif_delete'   => 'ajax_notif_delete',
+            'change_lang'     => 'change_lang',
+            'import_csv'      => 'import_csv',
+            'aide'             => 'aide',
+            'mentions_legales' => 'mentions_legales',
+            'plan-du-site'     => 'plan-du-site',
+            'operationnel'        => 'operationnel',
+            'duplicate_event'     => 'duplicate_event',
+            'export'              => 'export',
+            'historique'          => 'historique',
+        ];
 
-    <!-- ── Section mobile : actions du header ── -->
-    <div class="d-flex d-md-none flex-column px-3 py-2 border-top border-secondary mx-2 mobile-header-actions">
-        <div class="dropdown mb-2">
-            <button class="btn btn-primary btn-sm w-100 fw-bold dropdown-toggle"
-                    type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <?= htmlspecialchars($t['qc_btn_add'], ENT_QUOTES) ?>
-            </button>
-            <ul class="dropdown-menu shadow border-0 mt-2 w-100" role="menu">
-                <li role="none">
-                    <a class="dropdown-item py-2" href="#" role="menuitem"
-                       data-bs-toggle="modal" data-bs-target="#modalEvent">
-                        <i class="bi bi-calendar-event me-2 text-success" aria-hidden="true"></i>
-                        <?= htmlspecialchars($t['qc_event_title'], ENT_QUOTES) ?>
-                    </a>
-                </li>
-                <li role="none">
-                    <a class="dropdown-item py-2" href="#" role="menuitem"
-                       data-bs-toggle="modal" data-bs-target="#modalProjet">
-                        <i class="bi bi-folder me-2 text-warning" aria-hidden="true"></i>
-                        <?= htmlspecialchars($t['qc_projet_title'], ENT_QUOTES) ?>
-                    </a>
-                </li>
-                <?php if ($isAdmin): ?>
-                    <li role="none"><hr class="dropdown-divider"></li>
-                    <li role="none">
-                        <a class="dropdown-item py-2" href="#" role="menuitem"
-                           data-bs-toggle="modal" data-bs-target="#modalUser">
-                            <i class="bi bi-person-plus me-2 text-primary" aria-hidden="true"></i>
-                            <?= htmlspecialchars($t['qc_user_title'], ENT_QUOTES) ?>
-                        </a>
-                    </li>
-                <?php endif; ?>
-            </ul>
-        </div>
-        <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
-            <nav class="btn-group border border-secondary rounded-pill overflow-hidden" role="group" aria-label="Langue">
-                <a href="/change_lang?lang=fr&return=<?= htmlspecialchars($page, ENT_QUOTES) ?>"
-                   class="btn btn-xs py-1 px-3 <?= $lang === 'fr' ? 'bg-body-secondary fw-bold text-dark' : 'text-white opacity-75' ?>"
-                   hreflang="fr" lang="fr">FR</a>
-                <a href="/change_lang?lang=en&return=<?= htmlspecialchars($page, ENT_QUOTES) ?>"
-                   class="btn btn-xs py-1 px-3 <?= $lang === 'en' ? 'bg-body-secondary fw-bold text-dark' : 'text-white opacity-75' ?>"
-                   hreflang="en" lang="en">EN</a>
-            </nav>
-            <button id="darkModeToggleMobile" class="btn btn-link text-white p-0 fs-5 shadow-none"
-                    aria-label="Basculer entre mode clair et sombre">
-                <?php if ($theme === 'dark'): ?>
-                    <i class="bi bi-moon-stars-fill text-warning" aria-hidden="true"></i>
-                <?php else: ?>
-                    <i class="bi bi-sun-fill text-warning" aria-hidden="true"></i>
-                <?php endif; ?>
-            </button>
-        </div>
-    </div>
+        if (isset($uriMap[$uri])) {
+            return $uriMap[$uri];
+        }
 
-    <footer class="p-3 border-top border-secondary mx-2 mb-3">
-        <a href="/profil" class="d-flex align-items-center user-block text-decoration-none text-white"
-           aria-label="<?= htmlspecialchars($t['nav_profile'], ENT_QUOTES) ?>">
-            <figure class="bg-primary rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0 shadow-sm overflow-hidden mb-0 avatar-circle">
-                <?php if ($sidebarAvatar): ?>
-                    <img src="uploads/avatars/<?= htmlspecialchars($sidebarAvatar, ENT_QUOTES) ?>"
-                         alt="Avatar de <?= htmlspecialchars($sidebarNom, ENT_QUOTES) ?>"
-                         style="width: 100%; height: 100%; object-fit: cover;">
-                <?php else: ?>
-                    <?= strtoupper(substr($sidebarNom, 0, 1)) ?>
-                <?php endif; ?>
-            </figure>
-            <section class="ms-3 sb-text">
-                <p class="fw-bold text-truncate mb-0" style="font-size: 0.85rem;">
-                    <?= htmlspecialchars($sidebarNom, ENT_QUOTES) ?>
-                </p>
-                <p class="text-white-50 small text-capitalize fw-semibold mb-0">
-                    <?= htmlspecialchars((string) $_SESSION['user_role'], ENT_QUOTES) ?>
-                </p>
-            </section>
-        </a>
-    </footer>
+        return '404';
+    }
 
-</nav>
+    private static function handleSpecialRoutes(string $page, string $lang): void
+    {
+        if ($page === 'logout') {
+            Session::destroy();
+            self::redirect('/login');
+        }
+
+        if ($page === 'change_lang') {
+            $newLang = in_array($_GET['lang'] ?? '', ['fr', 'en'], true)
+                ? $_GET['lang']
+                : 'fr';
+            $return = Security::sanitizeString($_GET['return'] ?? 'dashboard');
+            Session::set('lang', $newLang);
+            self::redirect("/{$return}");
+        }
+
+        if ($page === 'ajax_search') {
+            if (!Session::has('user_id')) {
+                http_response_code(401);
+                echo json_encode(['error' => 'Unauthorized']);
+                exit();
+            }
+
+            header('Content-Type: application/json; charset=UTF-8');
+
+            $q = Security::sanitizeString($_GET['q'] ?? '');
+
+            if (strlen($q) < 2) {
+                echo json_encode(['projets' => [], 'events' => [], 'staff' => [], 'todos' => [], 'budget' => [], 'contacts' => []]);
+                exit();
+            }
+
+            $model = new SearchModel();
+
+            echo json_encode([
+                'projets' => array_map(fn($p) => [
+                    'id'  => (int) $p['id'],
+                    'nom' => $p['nom'],
+                    'sub' => ucfirst(str_replace('_', ' ', $p['statut'] ?? '')),
+                ], array_slice($model->searchProjets($q), 0, 5)),
+
+                'events' => array_map(fn($e) => [
+                    'id'  => (int) $e['id'],
+                    'nom' => $e['nom'],
+                    'sub' => !empty($e['date_debut']) ? date('d/m/Y', strtotime($e['date_debut'])) : '',
+                ], array_slice($model->searchEvents($q), 0, 5)),
+
+                'staff' => array_map(fn($u) => [
+                    'nom'         => $u['nom'],
+                    'prenom'      => $u['prenom'] ?? '',
+                    'nom_famille' => $u['nom'],
+                    'sub'         => $u['poste'] ?? '',
+                ], array_slice($model->searchStaff($q), 0, 4)),
+
+                'todos' => array_map(fn($t) => [
+                    'id'    => (int) $t['id'],
+                    'titre' => $t['title'],
+                    'sub'   => !empty($t['event_nom'])
+                               ? $t['event_nom']
+                               : (!empty($t['projet_nom']) ? $t['projet_nom'] : ucfirst($t['status'] ?? '')),
+                    'statut'=> $t['status'] ?? '',
+                ], $model->searchTodos($q)),
+
+                'budget' => array_map(fn($b) => [
+                    'id'      => (int) $b['id'],
+                    'libelle' => $b['libelle'],
+                    'type'    => $b['type'],
+                    'montant' => number_format((float)$b['previsionnel'], 2, ',', ' ') . ' €',
+                    'sub'     => !empty($b['event_nom']) ? $b['event_nom'] : ($b['projet_nom'] ?? ''),
+                    'event_id'  => $b['event_id']  ? (int)$b['event_id']  : null,
+                    'projet_id' => $b['projet_id'] ? (int)$b['projet_id'] : null,
+                ], $model->searchBudget($q)),
+
+                'contacts' => array_map(fn($c) => [
+                    'id'      => (int) $c['id'],
+                    'nom'     => $c['nom'],
+                    'sub'     => implode(' · ', array_filter([$c['societe'] ?? '', $c['poste'] ?? ''])),
+                    'tel'     => $c['telephone'] ?? '',
+                    'mail'    => $c['mail'] ?? '',
+                ], $model->searchContacts($q)),
+            ], JSON_UNESCAPED_UNICODE);
+
+            exit();
+        }
+
+        if ($page === 'ajax_notif_get') {
+            if (!Session::has('user_id')) { http_response_code(401); echo json_encode(['error'=>'Unauthorized']); exit(); }
+            (new NotificationController())->ajaxGet((int) Session::get('user_id'));
+        }
+        if ($page === 'ajax_notif_read') {
+            if (!Session::has('user_id')) { http_response_code(401); echo json_encode(['error'=>'Unauthorized']); exit(); }
+            (new NotificationController())->ajaxMarkRead((int) Session::get('user_id'));
+        }
+        if ($page === 'ajax_notif_read_all') {
+            if (!Session::has('user_id')) { http_response_code(401); echo json_encode(['error'=>'Unauthorized']); exit(); }
+            (new NotificationController())->ajaxMarkAllRead((int) Session::get('user_id'));
+        }
+        if ($page === 'ajax_notif_delete') {
+            if (!Session::has('user_id')) { http_response_code(401); echo json_encode(['error'=>'Unauthorized']); exit(); }
+            (new NotificationController())->ajaxDelete((int) Session::get('user_id'));
+        }
+        if ($page === 'ajax_presence') {
+            if (!Session::has('user_id')) {
+                http_response_code(401);
+                echo json_encode(['error' => 'Unauthorized']);
+                exit();
+            }
+
+            header('Content-Type: application/json; charset=UTF-8');
+            echo json_encode((new UserModel())->getPresence(), JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+    }
+
+    private static function dispatchPublic(string $page, array $t, string $theme): void
+    {
+        $authController = new AuthController(new UserModel());
+
+        $message = '';
+        $type    = '';
+        $erreur  = '';
+        $token   = Security::sanitizeString($_GET['token'] ?? '');
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            switch ($page) {
+                case 'login':
+                    $erreur = $authController->login(
+                        (string) ($_POST['email']    ?? ''),
+                        (string) ($_POST['password'] ?? '')
+                    ) ?? '';
+                    break;
+
+                case 'inscription':
+                    $result  = $authController->register(
+                        (string) ($_POST['nom']              ?? ''),
+                        (string) ($_POST['prenom']           ?? ''),
+                        (string) ($_POST['email']            ?? ''),
+                        (string) ($_POST['password']         ?? ''),
+                        (string) ($_POST['confirm_password'] ?? '')
+                    );
+                    $message = $result['message'];
+                    $type    = $result['status'] === 'success' ? 'success' : 'danger';
+                    break;
+
+                case 'forgot_password':
+                    $result  = $authController->requestReset((string) ($_POST['email'] ?? ''));
+                    $message = $result['message'];
+                    $type    = $result['status'] === 'success' ? 'success' : 'danger';
+                    break;
+
+                case 'reset_password':
+                    $result  = $authController->resetPassword(
+                        $token,
+                        (string) ($_POST['password']         ?? ''),
+                        (string) ($_POST['confirm_password'] ?? '')
+                    );
+                    $message = $result['message'];
+                    $type    = $result['status'] === 'success' ? 'success' : 'danger';
+                    break;
+            }
+        }
+
+        $viewMap = [
+            'login'           => __DIR__ . '/../app/Views/auth/login.php',
+            'inscription'     => __DIR__ . '/../app/Views/auth/inscription.php',
+            'forgot_password' => __DIR__ . '/../app/Views/auth/forgot_password.php',
+            'reset_password'  => __DIR__ . '/../app/Views/auth/reset_password.php',
+        ];
+
+        Renderer::renderPublic(
+            $viewMap[$page],
+            compact('message', 'type', 'erreur', 'token', 't'),
+            $theme,
+            '<script src="/assets/js/auth.js"></script>'
+        );
+    }
+
+    private static function dispatchApp(string $page, array $t, string $lang, string $theme): void
+    {
+        $userModel = new UserModel();
+        $userId    = (int) Session::get('user_id');
+        $isAdmin   = Session::get('user_role') === 'admin';
+
+        try {
+            $userModel->updateLastActivity($userId);
+
+            $statut = $userModel->getStatut($userId);
+            if ($statut === null || $statut === 'rejete') {
+                Session::destroy();
+                self::redirect('/login');
+            }
+        } catch (\Exception $e) {
+        }
+
+        $currentUser   = $userModel->findById($userId);
+        $sidebarNom    = Session::get('user_nom', 'Utilisateur');
+        $sidebarAvatar = $currentUser['avatar'] ?? null;
+        $dbStatus      = 'online';
+
+        try {
+            Database::getConnection();
+        } catch (\Exception $e) {
+            $dbStatus = 'offline';
+        }
+
+        try { (new NotificationModel())->generateAuto($userId); } catch (\Exception $e) {}
+
+        $notifications = [];
+        try { $notifications = (new NotificationModel())->getUnread($userId); } catch (\Exception $e) {}
+
+        $qcResult = (new QuickCreateController(new QuickCreateModel()))->handle();
+        $qcMsg    = $qcResult['msg']  ?? '';
+        $qcType   = $qcResult['type'] ?? 'success';
+
+        $common = compact(
+            'page', 't', 'lang', 'theme', 'isAdmin',
+            'sidebarNom', 'sidebarAvatar', 'dbStatus',
+            'notifications', 'qcMsg', 'qcType'
+        );
+
+        switch ($page) {
+
+            case 'dashboard':
+                $ctrl     = new DashboardController(
+                    new EventModel(),
+                    new TodoModel(),
+                    new TodoController(new TodoModel())
+                );
+                $viewData = $ctrl->index();
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/dashboard/dashboard.php',
+                    array_merge($common, $viewData),
+                    '<link rel="stylesheet" href="/assets/css/dashboard.css">',
+                    '<script src="/assets/js/dashboard.js"></script>'
+                );
+                break;
+
+            case 'nouvel_event':
+                $projetsSimple = [];
+                try {
+                    $projetsSimple = (new ProjectModel())->getAllSimple();
+                } catch (\Exception $e) {
+                }
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/events/nouvel_event.php',
+                    array_merge($common, ['projets' => $projetsSimple]),
+                    '',
+                    '<script src="/assets/js/event.js"></script>'
+                );
+                break;
+
+            case 'gerer_event':
+                $ctrl  = new EventController(new EventModel());
+                $id    = Security::sanitizeInt($_GET['id'] ?? 0);
+                $event = $ctrl->getForEdit($id);
+
+                if ($event === null) {
+                    self::redirect('/dashboard');
+                }
+
+                $projetsSimple = [];
+                try {
+                    $projetsSimple = (new ProjectModel())->getAllSimple();
+                } catch (\Exception $e) {
+                }
+
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/events/gerer_event.php',
+                    array_merge($common, ['event' => $event, 'projets' => $projetsSimple])
+                );
+                break;
+
+            case 'annuaire':
+                $ctrl     = new ContactController();
+                $viewData = $ctrl->index();
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/directory/annuaire.php',
+                    array_merge($common, $viewData),
+                    '',
+                    '<script src="/assets/js/annuaire.js"></script>'
+                );
+                break;
+
+            case 'export':
+                (new ExportController())->handle();
+                break;
+
+            case 'duplicate_event':
+                $ctrl = new EventController(new EventModel());
+                $ctrl->duplicate();
+                break;
+
+            case 'operationnel':
+                $ctrl     = new OperationnelController();
+                $viewData = $ctrl->index();
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/operationnel/operationnel.php',
+                    array_merge($common, $viewData),
+                    '<link rel="stylesheet" href="/assets/css/operationnel.css">',
+                    '<script src="/assets/js/operationnel.js"></script>'
+                );
+                break;
+
+            case 'staff':
+                $staffMembers = [];
+                try {
+                    $staffMembers = $userModel->getAllApproved();
+                } catch (\Exception $e) {
+                }
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/staff/staff.php',
+                    array_merge($common, ['staffMembers' => $staffMembers]),
+                    '<link rel="stylesheet" href="/assets/css/staff.css">',
+                    '<script src="/assets/js/staff.js"></script>'
+                );
+                break;
+
+            case 'import_csv':
+                if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['dbFile'])) {
+                    // Import CSV désactivé
+                }
+                self::redirect('/annuaire');
+                break;
+
+            case 'profil':
+                $ctrl     = new ProfileController($userModel, new AuthController($userModel));
+                $viewData = $ctrl->index($userId);
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/profile/profil.php',
+                    array_merge($common, $viewData),
+                    '<link rel="stylesheet" href="/assets/css/staff.css">',
+                    '<script src="/assets/js/profile.js"></script>'
+                );
+                break;
+
+            case 'profil_supprimer':
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    $ctrl = new ProfileController($userModel, new AuthController($userModel));
+                    $ctrl->deleteAccount();
+                } else {
+                    self::redirect('/profil');
+                }
+                break;
+
+            case 'utilisateurs':
+                if (!$isAdmin) {
+                    self::redirect('/dashboard');
+                }
+                $ctrl = new UserController($userModel);
+
+                if ($_SERVER['REQUEST_METHOD'] === 'POST'
+                    && isset($_POST['action'], $_POST['user_id'])
+                ) {
+                    $ctrl->handleAction(
+                        Security::sanitizeInt($_POST['user_id']),
+                        Security::sanitizeString($_POST['action'])
+                    );
+                    self::redirect('/utilisateurs');
+                }
+
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/users/utilisateurs.php',
+                    array_merge($common, ['users' => $ctrl->getAll()])
+                );
+                break;
+
+            case 'recherche':
+                $ctrl     = new SearchController(new SearchModel());
+                $viewData = $ctrl->search($_GET['q'] ?? '');
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/search/recherche.php',
+                    array_merge($common, $viewData),
+                    '<link rel="stylesheet" href="/assets/css/staff.css">'
+                );
+                break;
+
+            case 'projets':
+                $ctrl     = new ProjectController(new ProjectModel());
+                $viewData = $ctrl->index();
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/projects/projets.php',
+                    array_merge($common, $viewData),
+                    '<link rel="stylesheet" href="/assets/css/projects.css">',
+                    '<script src="/assets/js/projects.js"></script>'
+                );
+                break;
+
+            case 'projet_detail':
+                $ctrl = new ProjectController(new ProjectModel());
+                $id   = Security::sanitizeInt($_GET['id'] ?? 0);
+                $data = $ctrl->detail($id);
+
+                if ($data === null) {
+                    self::redirect('/projets');
+                }
+
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/projects/projet_detail.php',
+                    array_merge($common, $data),
+                    '<link rel="stylesheet" href="/assets/css/projects.css">',
+                    '<script src="/assets/js/projects.js"></script>'
+                );
+                break;
+
+            case 'aide':
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/legal/aide.php',
+                    $common
+                );
+                break;
+
+            case 'mentions_legales':
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/legal/mentions_legales.php',
+                    $common
+                );
+                break;
+
+            case 'plan-du-site':
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/pages/plan-du-site.php',
+                    $common
+                );
+                break;
+
+            case 'historique':
+                if (!$isAdmin) {
+                    self::redirect('/dashboard');
+                }
+                $ctrl     = new HistoriqueController();
+                $viewData = $ctrl->index();
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/historique/historique.php',
+                    array_merge($common, $viewData)
+                );
+                break;
+
+            case '404':
+                http_response_code(404);
+                Renderer::renderPublic(
+                    __DIR__ . '/../app/Views/errors/404.php',
+                    compact('t'),
+                    $theme
+                );
+                break;
+
+            default:
+                self::redirect('/dashboard');
+        }
+    }
+}

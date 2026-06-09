@@ -9,7 +9,7 @@
  * @file traitement_gerer_event.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.0
+ * @version 1.1
  * @since 2026
  */
 
@@ -28,12 +28,23 @@ if (!Session::has('user_id')) {
     Router::redirect('/login');
 }
 
-$envFile = __DIR__ . '/../../../.env';
-if (file_exists($envFile)) {
-    foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
-        if (str_starts_with(trim($line), '#')) continue;
-        [$key, $value] = array_map('trim', explode('=', $line, 2)) + ['', ''];
-        putenv("{$key}={$value}");
+// Cherche le .env en remontant jusqu'à 4 niveaux
+$envLoaded = false;
+$dir = __DIR__;
+for ($i = 0; $i < 4; $i++) {
+    $dir = dirname($dir);
+    $envFile = $dir . '/.env';
+    if (file_exists($envFile)) {
+        foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+            if (str_starts_with(trim($line), '#')) continue;
+            $parts = explode('=', $line, 2);
+            if (count($parts) === 2) {
+                [$key, $value] = array_map('trim', $parts);
+                if ($key !== '') putenv("{$key}={$value}");
+            }
+        }
+        $envLoaded = true;
+        break;
     }
 }
 

@@ -1,11 +1,22 @@
 <?php
 
+/**
+ * YES - Your Event Solution
+ * 
+ * @file ProjectController.php
+ * @author CELESTINE Samuel
+ * @author CLOT-GODARD Kenji
+ * @version 2.1
+ * @since 2026
+ */
+
 declare(strict_types=1);
 
 namespace App\Controllers;
 
 use App\Models\ProjectModel;
 use App\Models\EventModel;
+use App\Models\HistoriqueModel;
 use Core\Security;
 
 class ProjectController
@@ -51,13 +62,11 @@ class ProjectController
         $projet = $this->model->findById($id);
         if ($projet === null) return null;
 
-        // Événements non encore liés (pour le select "lier un événement")
-        $allEvents     = (new EventModel())->getAll();
-        $linkedIds     = array_column($this->model->getEvents($id), 'id');
+        $allEvents      = (new EventModel())->getAll();
+        $linkedIds      = array_column($this->model->getEvents($id), 'id');
         $unlinkedEvents = array_filter($allEvents, fn($e) => !in_array((int)$e['id'], $linkedIds, true));
 
-        // Gantt : événements liés avec dates
-        $evenements = $this->model->getEvents($id);
+        $evenements  = $this->model->getEvents($id);
         $ganttEvents = array_filter($evenements, fn($e) => !empty($e['date_debut']));
 
         return [
@@ -92,14 +101,28 @@ class ProjectController
     {
         $nom = Security::sanitizeString($_POST['nom'] ?? '');
         if ($nom === '') return 'error:Le nom du projet est obligatoire.';
-        $ok = $this->model->create([
+
+        $data = [
             'nom'         => $nom,
             'description' => Security::sanitizeString($_POST['description'] ?? ''),
             'statut'      => $_POST['statut']     ?? 'en_cours',
             'budget'      => $_POST['budget']     ?? null,
             'date_debut'  => $_POST['date_debut'] ?? null,
             'date_fin'    => $_POST['date_fin']   ?? null,
-        ]);
+        ];
+
+        $ok = $this->model->create($data);
+
+        if ($ok) {
+            try {
+                $last = (int) \Core\Database::getConnection()->lastInsertId();
+                HistoriqueModel::log('create', 'projet', $last, $nom, [
+                    'nom'    => $nom,
+                    'statut' => $data['statut'],
+                ]);
+            } catch (\Throwable) {}
+        }
+
         return $ok ? 'success:Projet créé avec succès !' : 'error:Erreur lors de la création.';
     }
 
@@ -108,14 +131,27 @@ class ProjectController
         $id  = Security::sanitizeInt($_POST['projet_id'] ?? 0);
         $nom = Security::sanitizeString($_POST['nom'] ?? '');
         if (!$id || $nom === '') return 'error:Données invalides.';
-        $ok = $this->model->update($id, [
+
+        $before = $this->model->findById($id);
+
+        $data = [
             'nom'         => $nom,
             'description' => Security::sanitizeString($_POST['description'] ?? ''),
             'statut'      => $_POST['statut']     ?? 'en_cours',
             'budget'      => $_POST['budget']     ?? null,
             'date_debut'  => $_POST['date_debut'] ?? null,
             'date_fin'    => $_POST['date_fin']   ?? null,
-        ]);
+        ];
+
+        $ok = $this->model->update($id, $data);
+
+        if ($ok) {
+            HistoriqueModel::log('update', 'projet', $id, $nom, [
+                'before' => array_intersect_key($before ?? [], array_flip(['nom', 'statut', 'budget', 'date_debut', 'date_fin'])),
+                'after'  => array_intersect_key($data,         array_flip(['nom', 'statut', 'budget', 'date_debut', 'date_fin'])),
+            ]);
+        }
+
         return $ok ? 'success:Projet modifié.' : 'error:Erreur lors de la modification.';
     }
 
@@ -123,7 +159,17 @@ class ProjectController
     {
         $id = Security::sanitizeInt($_POST['projet_id'] ?? 0);
         if (!$id) return 'error:Identifiant invalide.';
-        return $this->model->delete($id) ? 'success:Projet supprimé.' : 'error:Erreur lors de la suppression.';
+
+        $projet = $this->model->findById($id);
+        $nom    = $projet['nom'] ?? "#{$id}";
+
+        $ok = $this->model->delete($id);
+
+        if ($ok) {
+            HistoriqueModel::log('delete', 'projet', $id, $nom, ['nom' => $nom]);
+        }
+
+        return $ok ? 'success:Projet supprimé.' : 'error:Erreur lors de la suppression.';
     }
 
     private function addFinance(): string
@@ -136,7 +182,8 @@ class ProjectController
         if (!$projetId || $libelle === '' || $montant <= 0 || $type === null) {
             return 'error:Données financières invalides.';
         }
-        $ok = $this->model->addFinanceLine([
+
+        $lineData = [
             'projet_id'      => $projetId,
             'type'           => $type,
             'categorie'      => Security::sanitizeString($_POST['categorie'] ?? ''),
@@ -144,7 +191,18 @@ class ProjectController
             'montant'        => $montant,
             'date_operation' => !empty($_POST['date_operation']) ? $_POST['date_operation'] : date('Y-m-d'),
             'note'           => Security::sanitizeString($_POST['note'] ?? ''),
-        ]);
+        ];
+
+        $ok = $this->model->addFinanceLine($lineData);
+
+        if ($ok) {
+            HistoriqueModel::log('create', 'budget', $projetId, $libelle, [
+                'type'    => $type,
+                'montant' => $montant,
+                'libelle' => $libelle,
+            ]);
+        }
+
         return $ok ? 'success:Ligne financière ajoutée.' : 'error:Erreur lors de l\'ajout.';
     }
 
@@ -153,9 +211,17 @@ class ProjectController
         $id       = Security::sanitizeInt($_POST['finance_id'] ?? 0);
         $projetId = Security::sanitizeInt($_POST['projet_id']  ?? 0);
         if (!$id || !$projetId) return 'error:Identifiant invalide.';
-        return $this->model->deleteFinanceLine($id, $projetId)
-            ? 'success:Ligne supprimée.'
-            : 'error:Erreur lors de la suppression.';
+
+        $ok = $this->model->deleteFinanceLine($id, $projetId);
+
+        if ($ok) {
+            HistoriqueModel::log('delete', 'budget', $id, "Ligne #{$id} (projet #{$projetId})", [
+                'finance_id' => $id,
+                'projet_id'  => $projetId,
+            ]);
+        }
+
+        return $ok ? 'success:Ligne supprimée.' : 'error:Erreur lors de la suppression.';
     }
 
     private function attachEvent(): string
@@ -176,6 +242,7 @@ class ProjectController
             ? 'success:Événement détaché du projet.'
             : 'error:Erreur lors du détachement.';
     }
+
     private function detachContact(): string
     {
         $lienId = \Core\Security::sanitizeInt($_POST['lien_id'] ?? 0);
