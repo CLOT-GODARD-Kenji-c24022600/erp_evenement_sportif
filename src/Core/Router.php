@@ -35,6 +35,7 @@ use App\Controllers\ProjectController;
 use App\Controllers\ContactController;
 use App\Controllers\OperationnelController;
 use App\Controllers\ExportController;
+use App\Controllers\HistoriqueController;
 
 class Router
 {
@@ -73,6 +74,7 @@ class Router
         'aide',
         'mentions_legales',
         'plan-du-site',
+        'historique',
     ];
 
     public static function dispatch(): void
@@ -149,6 +151,7 @@ class Router
             'operationnel'        => 'operationnel',
             'duplicate_event'     => 'duplicate_event',
             'export'              => 'export',
+            'historique'          => 'historique',
         ];
 
         if (isset($uriMap[$uri])) {
@@ -363,10 +366,8 @@ class Router
             $dbStatus = 'offline';
         }
 
-        // Générer les notifications automatiques
         try { (new NotificationModel())->generateAuto($userId); } catch (\Exception $e) {}
 
-        // Charger les notifs non lues pour le header
         $notifications = [];
         try { $notifications = (new NotificationModel())->getUnread($userId); } catch (\Exception $e) {}
 
@@ -420,7 +421,6 @@ class Router
                     self::redirect('/dashboard');
                 }
 
-                // Projets pour le select (si besoin futur)
                 $projetsSimple = [];
                 try {
                     $projetsSimple = (new ProjectModel())->getAllSimple();
@@ -480,7 +480,7 @@ class Router
 
             case 'import_csv':
                 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['dbFile'])) {
-                    // Import CSV désactivé — l'annuaire est désormais géré via l'interface
+                    // Import CSV désactivé
                 }
                 self::redirect('/annuaire');
                 break;
@@ -497,7 +497,6 @@ class Router
                 break;
 
             case 'profil_supprimer':
-                // On vérifie que c'est bien une requête POST (clic sur le bouton) pour la sécurité
                 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $ctrl = new ProfileController($userModel, new AuthController($userModel));
                     $ctrl->deleteAccount();
@@ -584,6 +583,18 @@ class Router
                 Renderer::renderApp(
                     __DIR__ . '/../app/Views/pages/plan-du-site.php',
                     $common
+                );
+                break;
+
+            case 'historique':
+                if (!$isAdmin) {
+                    self::redirect('/dashboard');
+                }
+                $ctrl     = new HistoriqueController();
+                $viewData = $ctrl->index();
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/historique/historique.php',
+                    array_merge($common, $viewData)
                 );
                 break;
 

@@ -2,8 +2,12 @@
 
 /**
  * YES - Your Event Solution
+ * 
  * @file EventController.php
- * @version 1.2  –  2026
+ * @author CELESTINE Samuel
+ * @author CLOT-GODARD Kenji
+ * @version 2.1
+ * @since 2026
  */
 
 declare(strict_types=1);
@@ -11,6 +15,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Models\EventModel;
+use App\Models\HistoriqueModel;
 use Core\Router;
 use Core\Security;
 use Core\Session;
@@ -40,6 +45,16 @@ class EventController
 
         try {
             $this->eventModel->create($data);
+
+            try {
+                $last = $this->eventModel->getLastInsertedId();
+                HistoriqueModel::log('create', 'evenement', $last, $data['nom'], [
+                    'nom'        => $data['nom'],
+                    'date_debut' => $data['date_debut'],
+                    'lieu'       => $data['lieu'] ?? '',
+                ]);
+            } catch (\Throwable) {}
+
             Session::set('success_msg', "L'événement '{$data['nom']}' a été enregistré avec succès !");
             Router::redirect('/dashboard');
         } catch (\Exception $e) {
@@ -68,7 +83,15 @@ class EventController
 
         try {
             if ($action === 'delete') {
+                $existing = $this->eventModel->findById($idEvent);
+                $nomEvent = $existing['nom'] ?? "#{$idEvent}";
+
                 $this->eventModel->delete($idEvent);
+
+                HistoriqueModel::log('delete', 'evenement', $idEvent, $nomEvent, [
+                    'nom' => $nomEvent,
+                ]);
+
                 Session::set('success_msg', "L'événement a été supprimé avec succès.");
                 Router::redirect('/dashboard');
             }
@@ -82,7 +105,15 @@ class EventController
                     Router::redirect("/gerer_event?id={$idEvent}");
                 }
 
+                $before = $this->eventModel->findById($idEvent);
+
                 $this->eventModel->update($idEvent, $data);
+
+                HistoriqueModel::log('update', 'evenement', $idEvent, $data['nom'], [
+                    'before' => array_intersect_key($before ?? [], array_flip(['nom', 'date_debut', 'date_fin', 'lieu'])),
+                    'after'  => array_intersect_key($data,         array_flip(['nom', 'date_debut', 'date_fin', 'lieu'])),
+                ]);
+
                 Session::set('success_msg', "L'événement '{$data['nom']}' a été mis à jour avec succès !");
                 Router::redirect('/dashboard');
             }
@@ -93,8 +124,6 @@ class EventController
 
         Router::redirect('/dashboard');
     }
-
-    // ── Collecte des données POST ─────────────────────────────
 
     private function collectPostData(): array
     {
@@ -116,7 +145,6 @@ class EventController
             'lieu'                 => Security::sanitizeString($_POST['lieu']                 ?? ''),
             'capacite'             => $capacite,
             'projet_id'            => $projetId,
-            // Phases
             'date_preprod_debut'   => Security::sanitizeString($_POST['date_preprod_debut']   ?? '') ?: null,
             'date_preprod_fin'     => Security::sanitizeString($_POST['date_preprod_fin']     ?? '') ?: null,
             'date_prod_debut'      => Security::sanitizeString($_POST['date_prod_debut']      ?? '') ?: null,
@@ -125,14 +153,11 @@ class EventController
             'date_exploit_fin'     => Security::sanitizeString($_POST['date_exploit_fin']     ?? '') ?: null,
             'date_demontage_debut' => Security::sanitizeString($_POST['date_demontage_debut'] ?? '') ?: null,
             'date_demontage_fin'   => Security::sanitizeString($_POST['date_demontage_fin']   ?? '') ?: null,
-            // Drive / Maps
             'drive_url'            => Security::sanitizeString($_POST['drive_url']            ?? '') ?: null,
             'drive_doc_url'        => Security::sanitizeString($_POST['drive_doc_url']        ?? '') ?: null,
             'maps_url'             => Security::sanitizeString($_POST['maps_url']             ?? '') ?: null,
         ];
     }
-
-    // ── Validation ────────────────────────────────────────────
 
     private function validateEvent(string $nom, string $dateDebut, ?string $dateFin): array
     {
@@ -141,24 +166,23 @@ class EventController
         if (empty($nom)) {
             $erreurs[] = "Le nom de l'événement est obligatoire.";
         }
-
         if (empty($dateDebut)) {
             $erreurs[] = "La date de début est obligatoire.";
         }
-
         if ($dateFin !== null && strtotime($dateFin) < strtotime($dateDebut)) {
             $erreurs[] = "La date de fin ne peut pas être antérieure à la date de début.";
         }
 
         return $erreurs;
     }
+
     public function duplicate(): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             \Core\Router::redirect('/dashboard');
         }
 
-        $sourceId   = \Core\Security::sanitizeInt($_POST['source_id']    ?? 0);
+        $sourceId   = \Core\Security::sanitizeInt($_POST['source_id']     ?? 0);
         $nouveauNom = \Core\Security::sanitizeString($_POST['nouveau_nom'] ?? '');
 
         if (!$sourceId || $nouveauNom === '') {
@@ -169,6 +193,14 @@ class EventController
         try {
             $ok = $this->eventModel->duplicate($sourceId, $nouveauNom);
             if ($ok) {
+                try {
+                    $last = $this->eventModel->getLastInsertedId();
+                    HistoriqueModel::log('duplicate', 'evenement', $last, $nouveauNom, [
+                        'source_id'   => $sourceId,
+                        'nouveau_nom' => $nouveauNom,
+                    ]);
+                } catch (\Throwable) {}
+
                 \Core\Session::set('success_msg', "Événement « {$nouveauNom} » créé par duplication !");
             } else {
                 \Core\Session::set('error_msg', 'Erreur lors de la duplication.');
