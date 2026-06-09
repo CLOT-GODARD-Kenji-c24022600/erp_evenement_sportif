@@ -413,7 +413,14 @@ class Router
                 break;
 
             case 'gerer_event':
-                $ctrl  = new EventController(new EventModel());
+                $ctrl = new EventController(new EventModel());
+
+                // Gestion du POST (update / delete)
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    $ctrl->handleUpdate();
+                    // handleUpdate() redirige lui-même, on n'arrivera pas ici
+                }
+
                 $id    = Security::sanitizeInt($_GET['id'] ?? 0);
                 $event = $ctrl->getForEdit($id);
 
