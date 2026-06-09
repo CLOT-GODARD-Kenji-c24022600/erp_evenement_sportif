@@ -31,18 +31,10 @@ body {
   background-color: var(--bs-tertiary-bg);
   transition: var(--transition);
   margin: 0;
-  overflow-x: hidden;
+  /* Bloquer tout scroll sur body : seul main-content scrollera */
+  overflow: hidden;
+  height: 100%;
   max-width: 100%;
-}
-
-/* Ensure the root elements take full height so 100vh calculations work reliably */
-html, body {
-  height: 100%;
-}
-
-/* Ensure the root elements take full height so 100vh calculations work reliably */
-html, body {
-  height: 100%;
 }
 
 /* ─── Dark mode overrides ───────────────────────────── */
@@ -75,10 +67,19 @@ html, body {
   flex: 1 1 auto;
   overflow-y: auto;
   overflow-x: hidden;
-  scrollbar-width: none; /* Firefox */
+  /* Scrollbar fine et discrète sur la sidebar */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.2) transparent;
 }
 .sidebar > ul.nav::-webkit-scrollbar {
-  display: none; /* Chrome/Safari */
+  width: 4px;
+}
+.sidebar > ul.nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar > ul.nav::-webkit-scrollbar-thumb {
+  background-color: rgba(255,255,255,0.2);
+  border-radius: 4px;
 }
 
 /* Footer profil toujours visible en bas */
@@ -214,12 +215,13 @@ body.sidebar-open .sidebar-overlay {
 .main-content {
   margin-left: var(--sb-width);
   transition: var(--transition);
-  min-height: 100vh;
+  /* Hauteur exacte de la viewport : pas de min-height qui crée du débordement */
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  /* Make sure main-content behaves as a column flex container so footer can push to bottom */
   width: calc(100% - var(--sb-width));
-  width: calc(100% - var(--sb-width));
+  /* C'est ICI que se trouve l'unique scrollbar verticale de l'app */
+  overflow-y: auto;
   overflow-x: hidden;
   max-width: calc(100% - var(--sb-width));
 }
@@ -229,15 +231,14 @@ body.sidebar-open .sidebar-overlay {
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
-  min-height: 0; /* allow children to shrink correctly in flex layout */
+  min-height: 0;
 }
-
-/* (no bottom padding — footer is flex-managed and sits after content) */
 
 body.collapsed .main-content {
   margin-left: var(--sb-collapsed);
   width: calc(100% - var(--sb-collapsed));
   max-width: calc(100% - var(--sb-collapsed));
+  height: 100vh;
 }
 
 /* ─── Top bar ───────────────────────────────────────── */
@@ -289,7 +290,6 @@ body.collapsed .main-content {
 /* ─── Footer ────────────────────────────────────────── */
 .app-footer {
   margin-top: auto;
-  /* Ensure footer is treated as a flex item and stays visually at the bottom when content is short */
   flex-shrink: 0;
   background: var(--bs-body-bg);
   position: static;
@@ -341,6 +341,7 @@ body.collapsed .main-content {
     margin-left: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
+    height: 100vh;
   }
 
   .top-bar {
