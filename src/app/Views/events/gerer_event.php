@@ -39,7 +39,7 @@ $successMsg = \Core\Session::flash('success_msg');
 
     <article class="card shadow-sm border-0 rounded-3" style="max-width:900px;">
         <div class="card-body p-4">
-            <form action="/traitement_gerer_event.php" method="POST" novalidate>
+            <form action="/gerer_event" method="POST" novalidate>
 
                 <input type="hidden" name="id"     value="<?= (int) $event['id'] ?>">
                 <input type="hidden" name="action" id="form_action" value="update">
