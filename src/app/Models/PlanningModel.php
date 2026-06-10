@@ -123,4 +123,73 @@ class PlanningModel
             return false;
         }
     }
+
+    /**
+     * Synchronise les phases de préproduction d'un événement vers le planning.
+     * Si une tâche liée à la phase existe déjà (via source_phase), on la met à jour.
+     * Sinon on la crée. Si la phase n'a plus de dates, on supprime la tâche correspondante.
+     */
+    public function syncPhasesToPlanning(int $eventId, array $phases): void
+    {
+        // Vérifie si la colonne source_phase existe, sinon on tente de l'ajouter
+        try {
+            $this->db->query('SELECT source_phase FROM ' . self::TABLE . ' LIMIT 1');
+        } catch (PDOException) {
+            // Colonne absente : on l'ajoute
+            try {
+                $this->db->exec('ALTER TABLE ' . self::TABLE . ' ADD COLUMN source_phase VARCHAR(50) DEFAULT NULL');
+            } catch (PDOException) {
+                return; // Si l'ALTER échoue on abandonne silencieusement
+            }
+        }
+
+        foreach ($phases as $phaseKey => $phase) {
+            $debut = $phase['debut'] ?? null;
+            $fin   = $phase['fin']   ?? null;
+            $label = $phase['label'];
+
+            // Chercher une tâche existante liée à cette phase pour cet événement
+            $stmt = $this->db->prepare(
+                'SELECT id FROM ' . self::TABLE .
+                ' WHERE event_id = :eid AND source_phase = :phase LIMIT 1'
+            );
+            $stmt->execute(['eid' => $eventId, 'phase' => $phaseKey]);
+            $existing = $stmt->fetchColumn();
+
+            if (!$debut && !$fin) {
+                // Phase supprimée → retirer la tâche du planning si elle existe
+                if ($existing) {
+                    $this->db->prepare('DELETE FROM ' . self::TABLE . ' WHERE id = :id')
+                             ->execute(['id' => $existing]);
+                }
+                continue;
+            }
+
+            if ($existing) {
+                // Mise à jour de la tâche existante (dates seulement, on ne touche pas au statut)
+                $upd = $this->db->prepare(
+                    'UPDATE ' . self::TABLE .
+                    ' SET date_debut = :deb, date_fin = :fin WHERE id = :id'
+                );
+                $upd->execute(['deb' => $debut, 'fin' => $fin, 'id' => $existing]);
+            } else {
+                // Création d'une nouvelle tâche de planning
+                $ins = $this->db->prepare(
+                    'INSERT INTO ' . self::TABLE .
+                    ' (event_id, tache, statut, date_debut, date_fin, note, ordre, source_phase)
+                     VALUES (:eid, :tache, :statut, :deb, :fin, :note, :ordre, :phase)'
+                );
+                $ins->execute([
+                    'eid'    => $eventId,
+                    'tache'  => $label,
+                    'statut' => 'wip',
+                    'deb'    => $debut,
+                    'fin'    => $fin,
+                    'note'   => 'Synchronisé depuis la préproduction',
+                    'ordre'  => 0,
+                    'phase'  => $phaseKey,
+                ]);
+            }
+        }
+    }
 }

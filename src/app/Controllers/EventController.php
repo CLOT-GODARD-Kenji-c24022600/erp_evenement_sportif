@@ -16,6 +16,7 @@ namespace App\Controllers;
 
 use App\Models\EventModel;
 use App\Models\HistoriqueModel;
+use App\Models\PlanningModel;
 use Core\Router;
 use Core\Security;
 use Core\Session;
@@ -52,6 +53,15 @@ class EventController
                     'nom'        => $data['nom'],
                     'date_debut' => $data['date_debut'],
                     'lieu'       => $data['lieu'] ?? '',
+                ]);
+
+                // Synchroniser les phases de préproduction vers le planning si dates définies
+                $planningModel = new PlanningModel();
+                $planningModel->syncPhasesToPlanning($last, [
+                    'preprod'   => ['debut' => $data['date_preprod_debut'],   'fin' => $data['date_preprod_fin'],   'label' => 'Pré-production'],
+                    'prod'      => ['debut' => $data['date_prod_debut'],      'fin' => $data['date_prod_fin'],      'label' => 'Production / Installation'],
+                    'exploit'   => ['debut' => $data['date_exploit_debut'],   'fin' => $data['date_exploit_fin'],   'label' => 'Exploitation / Événement'],
+                    'demontage' => ['debut' => $data['date_demontage_debut'], 'fin' => $data['date_demontage_fin'], 'label' => 'Démontage'],
                 ]);
             } catch (\Throwable) {}
 
@@ -108,6 +118,15 @@ class EventController
                 $before = $this->eventModel->findById($idEvent);
 
                 $this->eventModel->update($idEvent, $data);
+
+                // Synchroniser les phases de préproduction vers le planning
+                $planningModel = new PlanningModel();
+                $planningModel->syncPhasesToPlanning($idEvent, [
+                    'preprod'   => ['debut' => $data['date_preprod_debut'],   'fin' => $data['date_preprod_fin'],   'label' => 'Pré-production'],
+                    'prod'      => ['debut' => $data['date_prod_debut'],      'fin' => $data['date_prod_fin'],      'label' => 'Production / Installation'],
+                    'exploit'   => ['debut' => $data['date_exploit_debut'],   'fin' => $data['date_exploit_fin'],   'label' => 'Exploitation / Événement'],
+                    'demontage' => ['debut' => $data['date_demontage_debut'], 'fin' => $data['date_demontage_fin'], 'label' => 'Démontage'],
+                ]);
 
                 HistoriqueModel::log('update', 'evenement', $idEvent, $data['nom'], [
                     'before' => array_intersect_key($before ?? [], array_flip(['nom', 'date_debut', 'date_fin', 'lieu'])),

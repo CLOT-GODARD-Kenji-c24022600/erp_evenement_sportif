@@ -171,6 +171,9 @@ class OperationnelController
             'facturation_create' => $this->facturationCreate($eventId, $projetId),
             'facturation_update' => $this->facturationUpdate(),
             'facturation_delete' => $this->facturationDelete(),
+            'facturation_toggle' => $this->facturationToggle(),
+            // Préproduction
+            'preprod_sync'       => $this->preprodSync($eventId),
             // Budget
             'budget_create' => $this->budgetCreate($eventId, $projetId),
             'budget_update' => $this->budgetUpdate(),
@@ -419,6 +422,73 @@ class OperationnelController
         $id = Security::sanitizeInt($_POST['ligne_id'] ?? 0);
         return $id && $this->facturation->delete($id)
             ? 'success:Ligne supprimée.' : 'error:Erreur suppression.';
+    }
+
+    private function facturationToggle(): string
+    {
+        $id    = Security::sanitizeInt($_POST['ligne_id'] ?? 0);
+        $field = Security::sanitizeString($_POST['toggle_field'] ?? '');
+
+        $allowed = ['statut_devis', 'statut_facture', 'statut_virement'];
+        if (!$id || !in_array($field, $allowed, true)) {
+            return 'error:Paramètres invalides.';
+        }
+
+        // Récupérer la valeur actuelle et l'inverser
+        $row = $this->facturation->findById($id);
+        if (!$row) return 'error:Ligne introuvable.';
+
+        $newVal = $row[$field] ? 0 : 1;
+        $ok = $this->facturation->update($id, array_merge($row, [$field => $newVal]));
+        return $ok ? 'success:Statut mis à jour.' : 'error:Erreur mise à jour.';
+    }
+
+    // ── Préproduction ────────────────────────────────────────
+
+    private function preprodSync(int $eventId): string
+    {
+        if ($eventId <= 0) return 'error:Aucun événement sélectionné.';
+
+        try {
+            $event = (new EventModel())->findById($eventId);
+        } catch (\Exception) {
+            return 'error:Événement introuvable.';
+        }
+
+        if (!$event) return 'error:Événement introuvable.';
+
+        $phases = [
+            'preprod'   => [
+                'debut' => $event['date_preprod_debut']   ?? null,
+                'fin'   => $event['date_preprod_fin']     ?? null,
+                'label' => 'Pré-production',
+            ],
+            'prod'      => [
+                'debut' => $event['date_prod_debut']      ?? null,
+                'fin'   => $event['date_prod_fin']        ?? null,
+                'label' => 'Production / Installation',
+            ],
+            'exploit'   => [
+                'debut' => $event['date_exploit_debut']   ?? null,
+                'fin'   => $event['date_exploit_fin']     ?? null,
+                'label' => 'Exploitation / Événement',
+            ],
+            'demontage' => [
+                'debut' => $event['date_demontage_debut'] ?? null,
+                'fin'   => $event['date_demontage_fin']   ?? null,
+                'label' => 'Démontage',
+            ],
+        ];
+
+        // Compter les phases qui ont des dates
+        $count = count(array_filter($phases, fn($p) => $p['debut'] || $p['fin']));
+        if ($count === 0) {
+            return 'error:Aucune phase avec des dates à synchroniser. Définissez d\'abord les dates dans la fiche événement.';
+        }
+
+        $this->planning->syncPhasesToPlanning($eventId, $phases);
+
+        return "success:{$count} phase(s) synchronisée(s) dans le planning.";
     }
 
     // ── Budget ───────────────────────────────────────────────
