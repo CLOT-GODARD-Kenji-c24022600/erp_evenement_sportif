@@ -176,6 +176,7 @@ class OperationnelController
             'preprod_sync'       => $this->preprodSync($eventId),
             // Budget
             'budget_sync_fact'   => $this->budgetSyncFacturation($eventId, $projetId),
+            'budget_sync_mat'    => $this->budgetSyncMateriel($eventId, $projetId),
             // Budget
             'budget_create' => $this->budgetCreate($eventId, $projetId),
             'budget_update' => $this->budgetUpdate(),
@@ -307,6 +308,20 @@ class OperationnelController
             'categorie_achat' => Security::sanitizeString($_POST['categorie_achat'] ?? ''),
             'budget'          => $_POST['budget'] !== '' ? $_POST['budget'] : null,
         ]);
+
+        if ($ok && $_POST['budget'] !== '' && (float)($_POST['budget'] ?? 0) > 0) {
+            $newId = $this->materiel->getLastInsertId();
+            $this->budget->syncMaterielToBudget(
+                $newId,
+                (float)$_POST['budget'],
+                $nom,
+                Security::sanitizeString($_POST['fournisseur']     ?? ''),
+                Security::sanitizeString($_POST['categorie_achat'] ?? ''),
+                $eventId  ?: null,
+                $projetId ?: null
+            );
+        }
+
         return $ok ? 'success:Matériel ajouté.' : 'error:Erreur lors de l\'ajout.';
     }
 
@@ -324,13 +339,32 @@ class OperationnelController
             'categorie_achat' => Security::sanitizeString($_POST['categorie_achat'] ?? ''),
             'budget'          => $_POST['budget'] !== '' ? $_POST['budget'] : null,
         ]);
+
+        if ($ok) {
+            $row = $this->materiel->findById($id);
+            $this->budget->syncMaterielToBudget(
+                $id,
+                (float)($_POST['budget'] ?? 0),
+                Security::sanitizeString($_POST['nom']             ?? ''),
+                Security::sanitizeString($_POST['fournisseur']     ?? ''),
+                Security::sanitizeString($_POST['categorie_achat'] ?? ''),
+                $row ? (int)($row['event_id']  ?? 0) ?: null : null,
+                $row ? (int)($row['projet_id'] ?? 0) ?: null : null
+            );
+        }
+
         return $ok ? 'success:Matériel mis à jour.' : 'error:Erreur mise à jour.';
     }
 
     private function materielDelete(): string
     {
         $id = Security::sanitizeInt($_POST['ligne_id'] ?? 0);
-        return $id && $this->materiel->delete($id)
+        if (!$id) return 'error:ID invalide.';
+
+        // Supprimer la ligne budget liée avant de supprimer le matériel
+        $this->budget->syncMaterielToBudget($id, 0, '', '', '', null, null, true);
+
+        return $this->materiel->delete($id)
             ? 'success:Matériel supprimé.' : 'error:Erreur suppression.';
     }
 
@@ -548,7 +582,32 @@ class OperationnelController
             );
         }
 
-        return 'success:' . count($lignes) . ' ligne(s) synchronisée(s) dans le budget.';
+        return 'success:' . count($lignes) . ' ligne(s) de facturation synchronisée(s) dans le budget.';
+    }
+
+    private function budgetSyncMateriel(int $eventId, int $projetId): string
+    {
+        $lignes = $eventId
+            ? $this->materiel->getByEvent($eventId)
+            : $this->materiel->getByProjet($projetId);
+
+        $avecBudget = array_filter($lignes, fn($m) => isset($m['budget']) && (float)$m['budget'] > 0);
+
+        if (empty($avecBudget)) return 'error:Aucun matériel avec un budget à synchroniser.';
+
+        foreach ($avecBudget as $mat) {
+            $this->budget->syncMaterielToBudget(
+                (int)$mat['id'],
+                (float)$mat['budget'],
+                $mat['nom']             ?? '',
+                $mat['fournisseur']     ?? '',
+                $mat['categorie_achat'] ?? '',
+                $eventId  ?: null,
+                $projetId ?: null
+            );
+        }
+
+        return 'success:' . count($avecBudget) . ' matériel(s) synchronisé(s) dans le budget.';
     }
 
     // ── Budget ───────────────────────────────────────────────

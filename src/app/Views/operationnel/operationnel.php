@@ -437,10 +437,19 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                     </div>
                 </div>
             </div>
-            <a href="#pane-materiel" class="btn btn-sm btn-outline-warning rounded-3"
-               onclick="bootstrap.Tab.getOrCreateInstance(document.getElementById('tab-materiel')).show(); return false;">
-                <i class="bi bi-box-seam me-1"></i>Voir le détail matériel
-            </a>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="#pane-materiel" class="btn btn-sm btn-outline-warning rounded-3"
+                   onclick="bootstrap.Tab.getOrCreateInstance(document.getElementById('tab-materiel')).show(); return false;">
+                    <i class="bi bi-box-seam me-1"></i>Voir le détail matériel
+                </a>
+                <form method="POST" class="d-inline">
+                    <?= opsForm($eventId, $projetId) ?>
+                    <input type="hidden" name="ops_action" value="budget_sync_mat">
+                    <button type="submit" class="btn btn-sm btn-outline-success rounded-3 fw-semibold">
+                        <i class="bi bi-arrow-repeat me-1"></i>Synchroniser vers les charges
+                    </button>
+                </form>
+            </div>
             <?php endif; ?>
 
             <!-- ── Récap facturation dans le budget ─────────────── -->

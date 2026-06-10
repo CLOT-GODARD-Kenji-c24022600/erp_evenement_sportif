@@ -239,4 +239,91 @@ class BudgetModel
             ]);
         }
     }
+
+    /**
+     * Synchronise une ligne de matériel (avec budget) vers le budget (charges).
+     * Même principe que syncFacturationToBudget, via source_mat_id.
+     */
+    public function syncMaterielToBudget(
+        int $matId,
+        float $montant,
+        string $nom,
+        string $fournisseur,
+        string $categorieAchat,
+        ?int $eventId,
+        ?int $projetId,
+        bool $delete = false
+    ): void {
+        // Ajouter la colonne si absente
+        try {
+            $this->db->query('SELECT source_mat_id FROM budget_lignes LIMIT 1');
+        } catch (PDOException) {
+            try {
+                $this->db->exec('ALTER TABLE budget_lignes ADD COLUMN source_mat_id INT DEFAULT NULL');
+            } catch (PDOException) {
+                return;
+            }
+        }
+
+        // Chercher une ligne existante liée à ce matériel
+        $stmt = $this->db->prepare(
+            'SELECT id FROM budget_lignes WHERE source_mat_id = :mid LIMIT 1'
+        );
+        $stmt->execute(['mid' => $matId]);
+        $existingId = $stmt->fetchColumn();
+
+        if ($delete) {
+            if ($existingId) {
+                $this->db->prepare('DELETE FROM budget_lignes WHERE id = :id')
+                         ->execute(['id' => $existingId]);
+            }
+            return;
+        }
+
+        // Si montant nul, supprimer la ligne éventuelle (matériel sans budget)
+        if ($montant <= 0) {
+            if ($existingId) {
+                $this->db->prepare('DELETE FROM budget_lignes WHERE id = :id')
+                         ->execute(['id' => $existingId]);
+            }
+            return;
+        }
+
+        $libelle = trim($nom)         ?: 'Matériel #' . $matId;
+        $four    = trim($fournisseur) ?: null;
+        $cat     = $categorieAchat === 'loue' ? 'Matériel loué' : ($categorieAchat === 'achete' ? 'Matériel acheté' : 'Matériel');
+
+        if ($existingId) {
+            $this->db->prepare(
+                'UPDATE budget_lignes
+                 SET libelle = :lib, categorie = :cat, previsionnel = :prev
+                 WHERE id = :id'
+            )->execute([
+                'lib'  => $libelle,
+                'cat'  => $cat,
+                'prev' => $montant,
+                'id'   => $existingId,
+            ]);
+        } else {
+            $this->db->prepare(
+                'INSERT INTO budget_lignes
+                    (event_id, projet_id, type, categorie, sous_categorie, libelle,
+                     previsionnel, comparatif, note, fournisseur, source_mat_id)
+                 VALUES
+                    (:eid, :pid, :type, :cat, :scat, :lib,
+                     :prev, 0, :note, :four, :mid)'
+            )->execute([
+                'eid'  => $eventId  ?: null,
+                'pid'  => $projetId ?: null,
+                'type' => 'charge',
+                'cat'  => $cat,
+                'scat' => 'Matériel',
+                'lib'  => $libelle,
+                'prev' => $montant,
+                'note' => 'Synchronisé depuis le matériel',
+                'four' => $four,
+                'mid'  => $matId,
+            ]);
+        }
+    }
 }
