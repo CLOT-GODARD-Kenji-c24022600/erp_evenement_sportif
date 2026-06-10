@@ -5,13 +5,28 @@
  * @file layout.js
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 2.0
+ * @version 2.1
  * @since 2026
  */
 
 'use strict';
 
 document.addEventListener('DOMContentLoaded', () => {
+
+  // ── Fix hauteur viewport (Lenovo Y13, zoom 125 %, mobile) ─────
+  // Sur les écrans basse résolution ou avec scaling OS/navigateur,
+  // 100vh ≠ hauteur visible réelle. On calcule la vraie hauteur
+  // avec window.innerHeight et on l'injecte dans --app-height.
+  // Le CSS utilise cette variable partout à la place de 100vh.
+  function setAppHeight() {
+    document.documentElement.style.setProperty(
+      '--app-height',
+      window.innerHeight + 'px'
+    );
+  }
+  setAppHeight();
+  window.addEventListener('resize', setAppHeight);
+  // ─────────────────────────────────────────────────────────────
 
   const isMobile = () => window.innerWidth < 768;
 
@@ -21,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ── Hamburger (mobile) ─────────────────────────────
-  const hamburgerBtn  = document.getElementById('hamburgerBtn');
+  const hamburgerBtn   = document.getElementById('hamburgerBtn');
   const sidebarOverlay = document.getElementById('sidebarOverlay');
 
   function openMobileSidebar() {
@@ -101,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const themeBtn = document.getElementById('darkModeToggle');
   if (themeBtn) {
     themeBtn.addEventListener('click', () => {
-      const current  = document.documentElement.getAttribute('data-bs-theme');
+      const current = document.documentElement.getAttribute('data-bs-theme');
       applyTheme(current === 'light' ? 'dark' : 'light');
     });
   }
@@ -110,7 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const themeBtnMobile = document.getElementById('darkModeToggleMobile');
   if (themeBtnMobile) {
     themeBtnMobile.addEventListener('click', () => {
-      const current  = document.documentElement.getAttribute('data-bs-theme');
+      const current = document.documentElement.getAttribute('data-bs-theme');
       applyTheme(current === 'light' ? 'dark' : 'light');
     });
   }
@@ -171,27 +186,22 @@ document.addEventListener('DOMContentLoaded', () => {
   initNotifications();
 
 });
+
 // ── Fix bfcache : forcer le rechargement si la page vient du cache ──
-// Quand l'utilisateur navigue en arrière/avant, le navigateur peut
-// restaurer la page depuis son cache sans ré-exécuter le JS.
-// On détecte ça avec l'event "pageshow" et on force un reload propre.
 window.addEventListener('pageshow', (event) => {
   if (event.persisted) {
-    // La page a été restaurée depuis le bfcache → reload
     window.location.reload();
   }
 });
-// ── Notifications ─────────────────────────────────────────────
 
+// ── Notifications ─────────────────────────────────────────────
 function initNotifications() {
-  // Marquer tout comme lu
   const markAllBtn = document.getElementById('notif-mark-all-btn');
   if (markAllBtn) {
     markAllBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       try {
         await fetch('/ajax_notif_read_all', { method: 'POST' });
-        // Mettre à jour l'UI
         document.querySelectorAll('.notif-item').forEach(el => {
           el.style.background = 'transparent';
         });
@@ -208,16 +218,12 @@ window.notifClick = async function(id, lien) {
     const fd = new FormData();
     fd.append('id', id);
     await fetch('/ajax_notif_read', { method: 'POST', body: fd });
-    // Retirer le fond coloré
     const item = document.querySelector(`.notif-item[data-id="${id}"]`);
     if (item) item.style.background = 'transparent';
-    // Recalculer le badge
     const unread = document.querySelectorAll('.notif-item[style*="primary-bg-subtle"]').length;
     updateNotifBadge(unread);
   } catch {}
-  // Naviguer si lien fourni
   if (lien && lien !== '') {
-    // Fermer le dropdown
     const dropdown = document.getElementById('notif-dropdown-wrapper');
     if (dropdown) bootstrap.Dropdown.getOrCreateInstance(dropdown.querySelector('[data-bs-toggle="dropdown"]'))?.hide();
     setTimeout(() => { window.location.href = lien; }, 150);
@@ -251,10 +257,10 @@ window.notifDelete = async function(e, id) {
 };
 
 function updateNotifBadge(count) {
-  const badge  = document.getElementById('notif-badge');
-  const header = document.getElementById('notif-count-header');
+  const badge      = document.getElementById('notif-badge');
+  const header     = document.getElementById('notif-count-header');
   const markAllBtn = document.getElementById('notif-mark-all-btn');
-  if (badge)  { badge.textContent  = count > 99 ? '99+' : count; badge.style.display  = count > 0 ? '' : 'none'; }
-  if (header) { header.textContent = count > 99 ? '99+' : count; header.style.display = count > 0 ? '' : 'none'; }
-  if (markAllBtn) markAllBtn.style.display = count > 0 ? '' : 'none';
+  if (badge)      { badge.textContent      = count > 99 ? '99+' : count; badge.style.display      = count > 0 ? '' : 'none'; }
+  if (header)     { header.textContent     = count > 99 ? '99+' : count; header.style.display     = count > 0 ? '' : 'none'; }
+  if (markAllBtn) { markAllBtn.style.display = count > 0 ? '' : 'none'; }
 }
