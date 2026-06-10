@@ -205,10 +205,10 @@ class BudgetModel
         $cat     = trim($categorie)   ?: 'Facturation';
 
         if ($existingId) {
-            // Mise à jour de la ligne existante
+            // Mise à jour de la ligne existante (comparatif remis à 0 — géré manuellement)
             $this->db->prepare(
                 'UPDATE budget_lignes
-                 SET libelle = :lib, categorie = :cat, previsionnel = :prev
+                 SET libelle = :lib, categorie = :cat, previsionnel = :prev, comparatif = 0
                  WHERE id = :id'
             )->execute([
                 'lib'  => $libelle,
@@ -296,7 +296,7 @@ class BudgetModel
         if ($existingId) {
             $this->db->prepare(
                 'UPDATE budget_lignes
-                 SET libelle = :lib, categorie = :cat, previsionnel = :prev
+                 SET libelle = :lib, categorie = :cat, previsionnel = :prev, comparatif = 0
                  WHERE id = :id'
             )->execute([
                 'lib'  => $libelle,
