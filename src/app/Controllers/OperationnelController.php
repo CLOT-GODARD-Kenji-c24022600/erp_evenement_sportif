@@ -175,6 +175,8 @@ class OperationnelController
             // Préproduction
             'preprod_sync'       => $this->preprodSync($eventId),
             // Budget
+            'budget_sync_fact'   => $this->budgetSyncFacturation($eventId, $projetId),
+            // Budget
             'budget_create' => $this->budgetCreate($eventId, $projetId),
             'budget_update' => $this->budgetUpdate(),
             'budget_delete' => $this->budgetDelete(),
@@ -371,6 +373,21 @@ class OperationnelController
             'note'            => Security::sanitizeString($_POST['note'] ?? ''),
             'fichier'         => $_POST['fichier'] ?? null,
         ]);
+
+        if ($ok) {
+            // Synchroniser vers le budget
+            $newId   = $this->facturation->getLastInsertId();
+            $montant = (float)($_POST['prix_unitaire'] ?? 0) * (float)($_POST['quantite'] ?? 1);
+            $this->budget->syncFacturationToBudget(
+                $newId,
+                $montant,
+                Security::sanitizeString($_POST['categorie']   ?? ''),
+                Security::sanitizeString($_POST['prestataire'] ?? ''),
+                $eventId  ?: null,
+                $projetId ?: null
+            );
+        }
+
         return $ok ? 'success:Ligne de facturation ajoutée.' : 'error:Erreur lors de l\'ajout.';
     }
 
@@ -414,13 +431,33 @@ class OperationnelController
             'note'            => Security::sanitizeString($_POST['note'] ?? ''),
             'fichier'         => $fichier,
         ]);
+
+        if ($ok) {
+            // Synchroniser vers le budget (récupérer event_id/projet_id depuis la ligne)
+            $row     = $this->facturation->findById($id);
+            $montant = (float)($_POST['prix_unitaire'] ?? 0) * (float)($_POST['quantite'] ?? 1);
+            $this->budget->syncFacturationToBudget(
+                $id,
+                $montant,
+                Security::sanitizeString($_POST['categorie']   ?? ''),
+                Security::sanitizeString($_POST['prestataire'] ?? ''),
+                $row ? (int)($row['event_id']  ?? 0) ?: null : null,
+                $row ? (int)($row['projet_id'] ?? 0) ?: null : null
+            );
+        }
+
         return $ok ? 'success:Facturation mise à jour.' : 'error:Erreur mise à jour.';
     }
 
     private function facturationDelete(): string
     {
         $id = Security::sanitizeInt($_POST['ligne_id'] ?? 0);
-        return $id && $this->facturation->delete($id)
+        if (!$id) return 'error:ID invalide.';
+
+        // Supprimer la ligne budget liée avant de supprimer la facturation
+        $this->budget->syncFacturationToBudget($id, 0, '', '', null, null, true);
+
+        return $this->facturation->delete($id)
             ? 'success:Ligne supprimée.' : 'error:Erreur suppression.';
     }
 
@@ -489,6 +526,29 @@ class OperationnelController
         $this->planning->syncPhasesToPlanning($eventId, $phases);
 
         return "success:{$count} phase(s) synchronisée(s) dans le planning.";
+    }
+
+    private function budgetSyncFacturation(int $eventId, int $projetId): string
+    {
+        $lignes = $eventId
+            ? $this->facturation->getByEvent($eventId)
+            : $this->facturation->getByProjet($projetId);
+
+        if (empty($lignes)) return 'error:Aucune ligne de facturation à synchroniser.';
+
+        foreach ($lignes as $fac) {
+            $montant = (float)$fac['prix_unitaire'] * (float)$fac['quantite'];
+            $this->budget->syncFacturationToBudget(
+                (int)$fac['id'],
+                $montant,
+                $fac['categorie']   ?? '',
+                $fac['prestataire'] ?? '',
+                $eventId  ?: null,
+                $projetId ?: null
+            );
+        }
+
+        return 'success:' . count($lignes) . ' ligne(s) synchronisée(s) dans le budget.';
     }
 
     // ── Budget ───────────────────────────────────────────────

@@ -106,6 +106,11 @@ class FacturationModel
         }
     }
 
+    public function getLastInsertId(): int
+    {
+        return (int) $this->db->lastInsertId();
+    }
+
     public function update(int $id, array $d): bool
     {
         try {

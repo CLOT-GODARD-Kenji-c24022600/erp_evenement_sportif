@@ -462,10 +462,19 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                 <strong><?= ($ecartBudget >= 0 ? '+' : '') . number_format($ecartBudget,2,',',' ') ?> €</strong>
             </div>
             <?php endif; ?>
-            <a href="#pane-facturation" class="btn btn-sm btn-outline-info rounded-3"
-               onclick="bootstrap.Tab.getOrCreateInstance(document.getElementById('tab-facturation')).show(); return false;">
-                <i class="bi bi-receipt me-1"></i>Voir le détail facturation
-            </a>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="#pane-facturation" class="btn btn-sm btn-outline-info rounded-3"
+                   onclick="bootstrap.Tab.getOrCreateInstance(document.getElementById('tab-facturation')).show(); return false;">
+                    <i class="bi bi-receipt me-1"></i>Voir le détail facturation
+                </a>
+                <form method="POST" class="d-inline">
+                    <?= opsForm($eventId, $projetId) ?>
+                    <input type="hidden" name="ops_action" value="budget_sync_fact">
+                    <button type="submit" class="btn btn-sm btn-outline-success rounded-3 fw-semibold">
+                        <i class="bi bi-arrow-repeat me-1"></i>Synchroniser vers les charges
+                    </button>
+                </form>
+            </div>
             <?php endif; ?>
 
         </div>
