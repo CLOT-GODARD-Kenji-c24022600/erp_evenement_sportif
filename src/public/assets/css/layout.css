@@ -5,7 +5,7 @@
  * @file layout.css
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 2.3
+ * @version 2.5
  * @since 2026
  */
 
@@ -16,6 +16,7 @@
   --transition: all 0.3s ease;
   --sidebar-bg: #1e293b;
   --footer-height: 64px;
+  --app-height: 100vh;
 }
 
 /* ─── Reset / Base ──────────────────────────────────── */
@@ -25,15 +26,18 @@
   box-sizing: border-box;
 }
 
-html,
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
+  height: 100%;
+  overflow: hidden;
   font-family: 'Inter', system-ui, sans-serif;
   background-color: var(--bs-tertiary-bg);
   transition: var(--transition);
   margin: 0;
-  /* Bloquer tout scroll sur body : seul main-content scrollera */
-  overflow: hidden;
-  height: 100%;
   max-width: 100%;
 }
 
@@ -48,7 +52,7 @@ body {
 /* ─── Sidebar ───────────────────────────────────────── */
 .sidebar {
   width: var(--sb-width);
-  height: 100vh;
+  height: var(--app-height);
   position: fixed;
   top: 0;
   left: 0;
@@ -56,47 +60,49 @@ body {
   transition: var(--transition);
   background-color: var(--sidebar-bg);
   overflow: hidden;
-
-  /* Flex column pour que le footer colle toujours en bas */
   display: flex;
   flex-direction: column;
 }
 
-/* La zone nav est scrollable si trop d'items */
+/* Zone nav scrollable avec scrollbar fine visible */
 .sidebar > ul.nav {
   flex: 1 1 auto;
   overflow-y: auto;
   overflow-x: hidden;
-  /* Scrollbar fine et discrète sur la sidebar */
   scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.2) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
 }
+
 .sidebar > ul.nav::-webkit-scrollbar {
   width: 4px;
 }
+
 .sidebar > ul.nav::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .sidebar > ul.nav::-webkit-scrollbar-thumb {
-  background-color: rgba(255,255,255,0.2);
+  background-color: rgba(255, 255, 255, 0.25);
   border-radius: 4px;
 }
 
-/* Footer profil toujours visible en bas */
+/* Actions mobile dans sidebar */
+.sidebar > .mobile-header-actions {
+  flex-shrink: 0;
+}
+
+/* Footer profil épinglé en bas */
 .sidebar > footer {
   flex-shrink: 0;
 }
 
-/* ── Items nav plus compacts ──────────────────────────
-   On réduit le padding vertical des liens de navigation
-   pour qu'ils prennent moins de hauteur
-───────────────────────────────────────────────────── */
+/* Items nav compacts */
 .sidebar .nav-link {
   padding-top: 0.55rem !important;
   padding-bottom: 0.55rem !important;
 }
 
-/* Sidebar réduite (desktop) */
+/* ─── Sidebar réduite (desktop) ─────────────────────── */
 body.collapsed .sidebar {
   width: var(--sb-collapsed);
 }
@@ -139,7 +145,7 @@ body.collapsed .user-block .ms-3 {
   display: none !important;
 }
 
-/* Toggle button (desktop) */
+/* ─── Toggle button (desktop) ───────────────────────── */
 .toggle-btn {
   position: absolute;
   right: 15px;
@@ -150,19 +156,17 @@ body.collapsed .user-block .ms-3 {
   transition: transform 0.3s;
 }
 
-/* Logo box */
+/* ─── Logo & Avatar ──────────────────────────────────── */
 .logo-box {
   width: 35px;
   height: 35px;
 }
 
-/* Avatar sidebar */
 .avatar-circle {
   width: 40px;
   height: 40px;
 }
 
-/* Hover user block */
 .user-block:hover {
   opacity: 0.85;
   background-color: rgba(255, 255, 255, 0.05);
@@ -183,7 +187,7 @@ body.collapsed .user-block .ms-3 {
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   transition: var(--transition);
 }
 
@@ -211,34 +215,48 @@ body.sidebar-open .sidebar-overlay {
   gap: 0.5rem;
 }
 
-/* ─── Main content ──────────────────────────────────── */
+/* ─── Modales dans main-content ─────────────────────────
+   Les <dialog> Bootstrap sont des enfants directs de .main-content
+   (flex container). Sans ce fix, ils occupent de la hauteur dans
+   le flex column et décalent #spa-content + le footer.
+   On les sort du flux flex : position fixed + flex-basis 0.
+──────────────────────────────────────────────────────── */
+.main-content > dialog,
+.main-content > .modal {
+  position: fixed !important;
+  flex: 0 0 0 !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  overflow: visible !important;
+}
+
+/* ─── Main content ───────────────────────────────────── */
 .main-content {
   margin-left: var(--sb-width);
   transition: var(--transition);
-  /* Hauteur exacte de la viewport : pas de min-height qui crée du débordement */
-  height: 100vh;
+  height: var(--app-height);
   display: flex;
   flex-direction: column;
   width: calc(100% - var(--sb-width));
-  /* C'est ICI que se trouve l'unique scrollbar verticale de l'app */
+  max-width: calc(100% - var(--sb-width));
   overflow-y: auto;
   overflow-x: hidden;
-  max-width: calc(100% - var(--sb-width));
 }
 
-/* Make SPA content fill remaining vertical space so footer can be pushed down */
+/* SPA content : flex:1 pour pousser le footer en bas sur pages courtes.
+   Pas de min-height fixe : le contenu doit pouvoir grandir librement
+   sans déborder par-dessus le footer. */
 .main-content > #spa-content {
-  display: flex;
-  flex-direction: column;
   flex: 1 1 auto;
-  min-height: 0;
 }
 
 body.collapsed .main-content {
   margin-left: var(--sb-collapsed);
   width: calc(100% - var(--sb-collapsed));
   max-width: calc(100% - var(--sb-collapsed));
-  height: 100vh;
 }
 
 /* ─── Top bar ───────────────────────────────────────── */
@@ -249,9 +267,10 @@ body.collapsed .main-content {
   position: sticky;
   top: 0;
   z-index: 1020;
+  flex-shrink: 0;
 }
 
-/* Search bar */
+/* ─── Search bar ─────────────────────────────────────── */
 .search-btn {
   border-radius: 8px 0 0 8px;
 }
@@ -262,7 +281,6 @@ body.collapsed .main-content {
   min-width: 0;
 }
 
-/* Dropdown recherche */
 #searchDropdown {
   z-index: 1080;
   min-width: 280px;
@@ -289,14 +307,13 @@ body.collapsed .main-content {
 
 /* ─── Footer ────────────────────────────────────────── */
 .app-footer {
-  margin-top: auto;
-  flex-shrink: 0;
   background: var(--bs-body-bg);
   position: static;
+  flex-shrink: 0;
+  margin-top: auto;
   z-index: 1010;
 }
 
-/* Ensure app name in footer is always visible and contrasts with theme */
 .app-footer .app-name {
   color: var(--bs-body-color, #212529) !important;
   font-weight: 600;
@@ -341,7 +358,6 @@ body.collapsed .main-content {
     margin-left: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
-    height: 100vh;
   }
 
   .top-bar {
@@ -388,9 +404,9 @@ body.collapsed .main-content {
   }
 }
 
-/* ===== SEARCH DYNAMIQUE ===== */
+/* ─── Recherche dynamique ────────────────────────────── */
 .search-result-item {
-  transition: background-color .12s ease;
+  transition: background-color 0.12s ease;
 }
 
 .search-result-item:hover,
