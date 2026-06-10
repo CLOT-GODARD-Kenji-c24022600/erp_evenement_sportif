@@ -14,10 +14,6 @@
 document.addEventListener('DOMContentLoaded', () => {
 
   // ── Fix hauteur viewport (Lenovo Y13, zoom 125 %, mobile) ─────
-  // Sur les écrans basse résolution ou avec scaling OS/navigateur,
-  // 100vh ≠ hauteur visible réelle. On calcule la vraie hauteur
-  // avec window.innerHeight et on l'injecte dans --app-height.
-  // Le CSS utilise cette variable partout à la place de 100vh.
   function setAppHeight() {
     document.documentElement.style.setProperty(
       '--app-height',
@@ -25,7 +21,12 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   }
   setAppHeight();
-  window.addEventListener('resize', setAppHeight);
+  // Debounce : attend 150ms après le dernier resize avant de recalculer
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(setAppHeight, 150);
+  }, { passive: true });
   // ─────────────────────────────────────────────────────────────
 
   const isMobile = () => window.innerWidth < 768;
@@ -35,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.remove('collapsed');
   }
 
-  // ── Hamburger (mobile) ─────────────────────────────
+  // ── Hamburger (mobile) ────────────────────────────────────────
   const hamburgerBtn   = document.getElementById('hamburgerBtn');
   const sidebarOverlay = document.getElementById('sidebarOverlay');
 
@@ -58,35 +59,30 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Clic sur l'overlay → ferme le menu
   if (sidebarOverlay) {
     sidebarOverlay.addEventListener('click', closeMobileSidebar);
   }
 
-  // Fermer le menu quand on clique sur un lien nav (mobile)
   document.querySelectorAll('.sidebar .nav-link').forEach(link => {
     link.addEventListener('click', () => {
       if (isMobile()) closeMobileSidebar();
     });
   });
 
-  // Touche Échap ferme la sidebar mobile
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && document.body.classList.contains('sidebar-open')) {
       closeMobileSidebar();
     }
   });
 
-  // ── Sidebar toggle (desktop : réduire/agrandir) ────
+  // ── Sidebar toggle (desktop : réduire/agrandir) ───────────────
   const sbBtn = document.getElementById('sidebarToggle');
   if (sbBtn) {
     sbBtn.addEventListener('click', (e) => {
       e.preventDefault();
       if (isMobile()) {
-        // Sur mobile, le bouton × ferme la sidebar
         closeMobileSidebar();
       } else {
-        // Sur desktop, collapse/expand
         document.body.classList.toggle('collapsed');
         const isCollapsed = document.body.classList.contains('collapsed');
         document.cookie = `sidebar=${isCollapsed ? 'collapsed' : 'expanded'}; path=/; max-age=31536000`;
@@ -94,16 +90,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ── Fonction commune pour changer le thème ─────────
+  // ── Fonction commune pour changer le thème ────────────────────
   function applyTheme(newTheme) {
-    const htmlEl = document.documentElement;
-    htmlEl.setAttribute('data-bs-theme', newTheme);
+    document.documentElement.setAttribute('data-bs-theme', newTheme);
 
     const iconHtml = newTheme === 'dark'
       ? '<i class="bi bi-moon-stars-fill text-warning"></i>'
       : '<i class="bi bi-sun-fill text-warning"></i>';
 
-    // Mettre à jour les deux boutons (desktop + mobile)
     const desktopBtn = document.getElementById('darkModeToggle');
     const mobileBtn  = document.getElementById('darkModeToggleMobile');
     if (desktopBtn) desktopBtn.innerHTML = iconHtml;
@@ -112,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.cookie = `theme=${newTheme}; max-age=31536000; path=/`;
   }
 
-  // ── Dark mode toggle (desktop) ─────────────────────
+  // ── Dark mode toggle (desktop) ────────────────────────────────
   const themeBtn = document.getElementById('darkModeToggle');
   if (themeBtn) {
     themeBtn.addEventListener('click', () => {
@@ -121,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ── Dark mode toggle (mobile, dans la sidebar) ─────
+  // ── Dark mode toggle (mobile, dans la sidebar) ────────────────
   const themeBtnMobile = document.getElementById('darkModeToggleMobile');
   if (themeBtnMobile) {
     themeBtnMobile.addEventListener('click', () => {
@@ -130,18 +124,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ── Bootstrap tooltips ────────────────────────────
-  const tooltipEls = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-  tooltipEls.forEach(el => new bootstrap.Tooltip(el));
+  // ── Bootstrap tooltips ────────────────────────────────────────
+  document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+    new bootstrap.Tooltip(el);
+  });
 
-  // ── Fermer sidebar si redimensionnement vers desktop ─
+  // ── Fermer sidebar si redimensionnement vers desktop ──────────
   window.addEventListener('resize', () => {
     if (!isMobile() && document.body.classList.contains('sidebar-open')) {
       closeMobileSidebar();
     }
-  });
+  }, { passive: true });
 
-  // ── Swipe gauche pour fermer la sidebar (mobile) ───
+  // ── Swipe gauche pour fermer la sidebar (mobile) ─────────────
   const sidebar = document.getElementById('mobileSidebar');
   if (sidebar) {
     let touchStartX = 0;
@@ -156,23 +151,19 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!document.body.classList.contains('sidebar-open')) return;
       const dx = e.changedTouches[0].clientX - touchStartX;
       const dy = e.changedTouches[0].clientY - touchStartY;
-      // Swipe gauche (dx < -60) et plus horizontal que vertical
       if (dx < -60 && Math.abs(dx) > Math.abs(dy)) {
         closeMobileSidebar();
       }
     }, { passive: true });
   }
 
-  // ── Swipe droit sur le bord gauche de l'écran pour ouvrir ──
+  // ── Swipe droit sur le bord gauche pour ouvrir ───────────────
+  let touchEdgeStart = null;
+
   document.addEventListener('touchstart', (e) => {
-    if (e.touches[0].clientX < 20) {
-      touchEdgeStart = e.touches[0].clientX;
-    } else {
-      touchEdgeStart = null;
-    }
+    touchEdgeStart = e.touches[0].clientX < 20 ? e.touches[0].clientX : null;
   }, { passive: true });
 
-  let touchEdgeStart = null;
   document.addEventListener('touchend', (e) => {
     if (touchEdgeStart === null) return;
     const dx = e.changedTouches[0].clientX - touchEdgeStart;
@@ -182,19 +173,12 @@ document.addEventListener('DOMContentLoaded', () => {
     touchEdgeStart = null;
   }, { passive: true });
 
-  // ── Notifications ────────────────────────────────
+  // ── Notifications ─────────────────────────────────────────────
   initNotifications();
 
 });
 
-// ── Fix bfcache : forcer le rechargement si la page vient du cache ──
-window.addEventListener('pageshow', (event) => {
-  if (event.persisted) {
-    window.location.reload();
-  }
-});
-
-// ── Notifications ─────────────────────────────────────────────
+// ── Notifications ─────────────────────────────────────────────────
 function initNotifications() {
   const markAllBtn = document.getElementById('notif-mark-all-btn');
   if (markAllBtn) {
@@ -212,7 +196,6 @@ function initNotifications() {
   }
 }
 
-// Clic sur une notification → marquer lue + naviguer
 window.notifClick = async function(id, lien) {
   try {
     const fd = new FormData();
@@ -225,12 +208,13 @@ window.notifClick = async function(id, lien) {
   } catch {}
   if (lien && lien !== '') {
     const dropdown = document.getElementById('notif-dropdown-wrapper');
-    if (dropdown) bootstrap.Dropdown.getOrCreateInstance(dropdown.querySelector('[data-bs-toggle="dropdown"]'))?.hide();
+    if (dropdown) bootstrap.Dropdown.getOrCreateInstance(
+      dropdown.querySelector('[data-bs-toggle="dropdown"]')
+    )?.hide();
     setTimeout(() => { window.location.href = lien; }, 150);
   }
 };
 
-// Supprimer une notification
 window.notifDelete = async function(e, id) {
   e.stopPropagation();
   const item = document.querySelector(`.notif-item[data-id="${id}"]`);
@@ -238,10 +222,10 @@ window.notifDelete = async function(e, id) {
   try {
     const fd = new FormData();
     fd.append('id', id);
-    const res = await fetch('/ajax_notif_delete', { method: 'POST', body: fd });
+    const res  = await fetch('/ajax_notif_delete', { method: 'POST', body: fd });
     const json = await res.json();
     if (json.ok) {
-      item.style.opacity = '0';
+      item.style.opacity    = '0';
       item.style.transition = 'opacity .2s';
       setTimeout(() => {
         item.remove();
@@ -249,7 +233,9 @@ window.notifDelete = async function(e, id) {
         updateNotifBadge(remaining);
         if (remaining === 0) {
           const list = document.getElementById('notif-list');
-          if (list) list.innerHTML = '<li class="text-center text-muted small py-4"><i class="bi bi-bell-slash fs-3 d-block mb-2 opacity-50"></i>Aucune nouvelle notification</li>';
+          if (list) list.innerHTML = '<li class="text-center text-muted small py-4">'
+            + '<i class="bi bi-bell-slash fs-3 d-block mb-2 opacity-50"></i>'
+            + 'Aucune nouvelle notification</li>';
         }
       }, 200);
     }
@@ -260,7 +246,7 @@ function updateNotifBadge(count) {
   const badge      = document.getElementById('notif-badge');
   const header     = document.getElementById('notif-count-header');
   const markAllBtn = document.getElementById('notif-mark-all-btn');
-  if (badge)      { badge.textContent      = count > 99 ? '99+' : count; badge.style.display      = count > 0 ? '' : 'none'; }
-  if (header)     { header.textContent     = count > 99 ? '99+' : count; header.style.display     = count > 0 ? '' : 'none'; }
+  if (badge)      { badge.textContent        = count > 99 ? '99+' : count; badge.style.display        = count > 0 ? '' : 'none'; }
+  if (header)     { header.textContent       = count > 99 ? '99+' : count; header.style.display       = count > 0 ? '' : 'none'; }
   if (markAllBtn) { markAllBtn.style.display = count > 0 ? '' : 'none'; }
 }
