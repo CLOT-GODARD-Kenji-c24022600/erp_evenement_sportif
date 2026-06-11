@@ -118,7 +118,7 @@ const YesRouter = (() => {
     }
 
     // ✅ Pages dont le contenu change fréquemment : on invalide le cache
-    const noCache = ['/dashboard', '/annuaire', '/staff', '/operationnel'];
+    const noCache = ['/dashboard', '/annuaire', '/staff', '/operationnel', '/statistiques'];
     if (noCache.some(p => url.startsWith(p))) {
       pageCache.delete(url);
     }
