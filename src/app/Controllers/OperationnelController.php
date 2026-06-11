@@ -171,6 +171,12 @@ class OperationnelController
             'facturation_create' => $this->facturationCreate($eventId, $projetId),
             'facturation_update' => $this->facturationUpdate(),
             'facturation_delete' => $this->facturationDelete(),
+            'facturation_toggle' => $this->facturationToggle(),
+            // Préproduction
+            'preprod_sync'       => $this->preprodSync($eventId),
+            // Budget
+            'budget_sync_fact'   => $this->budgetSyncFacturation($eventId, $projetId),
+            'budget_sync_mat'    => $this->budgetSyncMateriel($eventId, $projetId),
             // Budget
             'budget_create' => $this->budgetCreate($eventId, $projetId),
             'budget_update' => $this->budgetUpdate(),
@@ -302,6 +308,20 @@ class OperationnelController
             'categorie_achat' => Security::sanitizeString($_POST['categorie_achat'] ?? ''),
             'budget'          => $_POST['budget'] !== '' ? $_POST['budget'] : null,
         ]);
+
+        if ($ok && $_POST['budget'] !== '' && (float)($_POST['budget'] ?? 0) > 0) {
+            $newId = $this->materiel->getLastInsertId();
+            $this->budget->syncMaterielToBudget(
+                $newId,
+                (float)$_POST['budget'],
+                $nom,
+                Security::sanitizeString($_POST['fournisseur']     ?? ''),
+                Security::sanitizeString($_POST['categorie_achat'] ?? ''),
+                $eventId  ?: null,
+                $projetId ?: null
+            );
+        }
+
         return $ok ? 'success:Matériel ajouté.' : 'error:Erreur lors de l\'ajout.';
     }
 
@@ -319,13 +339,32 @@ class OperationnelController
             'categorie_achat' => Security::sanitizeString($_POST['categorie_achat'] ?? ''),
             'budget'          => $_POST['budget'] !== '' ? $_POST['budget'] : null,
         ]);
+
+        if ($ok) {
+            $row = $this->materiel->findById($id);
+            $this->budget->syncMaterielToBudget(
+                $id,
+                (float)($_POST['budget'] ?? 0),
+                Security::sanitizeString($_POST['nom']             ?? ''),
+                Security::sanitizeString($_POST['fournisseur']     ?? ''),
+                Security::sanitizeString($_POST['categorie_achat'] ?? ''),
+                $row ? (int)($row['event_id']  ?? 0) ?: null : null,
+                $row ? (int)($row['projet_id'] ?? 0) ?: null : null
+            );
+        }
+
         return $ok ? 'success:Matériel mis à jour.' : 'error:Erreur mise à jour.';
     }
 
     private function materielDelete(): string
     {
         $id = Security::sanitizeInt($_POST['ligne_id'] ?? 0);
-        return $id && $this->materiel->delete($id)
+        if (!$id) return 'error:ID invalide.';
+
+        // Supprimer la ligne budget liée avant de supprimer le matériel
+        $this->budget->syncMaterielToBudget($id, 0, '', '', '', null, null, true);
+
+        return $this->materiel->delete($id)
             ? 'success:Matériel supprimé.' : 'error:Erreur suppression.';
     }
 
@@ -368,6 +407,21 @@ class OperationnelController
             'note'            => Security::sanitizeString($_POST['note'] ?? ''),
             'fichier'         => $_POST['fichier'] ?? null,
         ]);
+
+        if ($ok) {
+            // Synchroniser vers le budget
+            $newId   = $this->facturation->getLastInsertId();
+            $montant = (float)($_POST['prix_unitaire'] ?? 0) * (float)($_POST['quantite'] ?? 1);
+            $this->budget->syncFacturationToBudget(
+                $newId,
+                $montant,
+                Security::sanitizeString($_POST['categorie']   ?? ''),
+                Security::sanitizeString($_POST['prestataire'] ?? ''),
+                $eventId  ?: null,
+                $projetId ?: null
+            );
+        }
+
         return $ok ? 'success:Ligne de facturation ajoutée.' : 'error:Erreur lors de l\'ajout.';
     }
 
@@ -411,14 +465,149 @@ class OperationnelController
             'note'            => Security::sanitizeString($_POST['note'] ?? ''),
             'fichier'         => $fichier,
         ]);
+
+        if ($ok) {
+            // Synchroniser vers le budget (récupérer event_id/projet_id depuis la ligne)
+            $row     = $this->facturation->findById($id);
+            $montant = (float)($_POST['prix_unitaire'] ?? 0) * (float)($_POST['quantite'] ?? 1);
+            $this->budget->syncFacturationToBudget(
+                $id,
+                $montant,
+                Security::sanitizeString($_POST['categorie']   ?? ''),
+                Security::sanitizeString($_POST['prestataire'] ?? ''),
+                $row ? (int)($row['event_id']  ?? 0) ?: null : null,
+                $row ? (int)($row['projet_id'] ?? 0) ?: null : null
+            );
+        }
+
         return $ok ? 'success:Facturation mise à jour.' : 'error:Erreur mise à jour.';
     }
 
     private function facturationDelete(): string
     {
         $id = Security::sanitizeInt($_POST['ligne_id'] ?? 0);
-        return $id && $this->facturation->delete($id)
+        if (!$id) return 'error:ID invalide.';
+
+        // Supprimer la ligne budget liée avant de supprimer la facturation
+        $this->budget->syncFacturationToBudget($id, 0, '', '', null, null, true);
+
+        return $this->facturation->delete($id)
             ? 'success:Ligne supprimée.' : 'error:Erreur suppression.';
+    }
+
+    private function facturationToggle(): string
+    {
+        $id    = Security::sanitizeInt($_POST['ligne_id'] ?? 0);
+        $field = Security::sanitizeString($_POST['toggle_field'] ?? '');
+
+        $allowed = ['statut_devis', 'statut_facture', 'statut_virement'];
+        if (!$id || !in_array($field, $allowed, true)) {
+            return 'error:Paramètres invalides.';
+        }
+
+        // Récupérer la valeur actuelle et l'inverser
+        $row = $this->facturation->findById($id);
+        if (!$row) return 'error:Ligne introuvable.';
+
+        $newVal = $row[$field] ? 0 : 1;
+        $ok = $this->facturation->update($id, array_merge($row, [$field => $newVal]));
+        return $ok ? 'success:Statut mis à jour.' : 'error:Erreur mise à jour.';
+    }
+
+    // ── Préproduction ────────────────────────────────────────
+
+    private function preprodSync(int $eventId): string
+    {
+        if ($eventId <= 0) return 'error:Aucun événement sélectionné.';
+
+        try {
+            $event = (new EventModel())->findById($eventId);
+        } catch (\Exception) {
+            return 'error:Événement introuvable.';
+        }
+
+        if (!$event) return 'error:Événement introuvable.';
+
+        $phases = [
+            'preprod'   => [
+                'debut' => $event['date_preprod_debut']   ?? null,
+                'fin'   => $event['date_preprod_fin']     ?? null,
+                'label' => 'Pré-production',
+            ],
+            'prod'      => [
+                'debut' => $event['date_prod_debut']      ?? null,
+                'fin'   => $event['date_prod_fin']        ?? null,
+                'label' => 'Production / Installation',
+            ],
+            'exploit'   => [
+                'debut' => $event['date_exploit_debut']   ?? null,
+                'fin'   => $event['date_exploit_fin']     ?? null,
+                'label' => 'Exploitation / Événement',
+            ],
+            'demontage' => [
+                'debut' => $event['date_demontage_debut'] ?? null,
+                'fin'   => $event['date_demontage_fin']   ?? null,
+                'label' => 'Démontage',
+            ],
+        ];
+
+        // Compter les phases qui ont des dates
+        $count = count(array_filter($phases, fn($p) => $p['debut'] || $p['fin']));
+        if ($count === 0) {
+            return 'error:Aucune phase avec des dates à synchroniser. Définissez d\'abord les dates dans la fiche événement.';
+        }
+
+        $this->planning->syncPhasesToPlanning($eventId, $phases);
+
+        return "success:{$count} phase(s) synchronisée(s) dans le planning.";
+    }
+
+    private function budgetSyncFacturation(int $eventId, int $projetId): string
+    {
+        $lignes = $eventId
+            ? $this->facturation->getByEvent($eventId)
+            : $this->facturation->getByProjet($projetId);
+
+        if (empty($lignes)) return 'error:Aucune ligne de facturation à synchroniser.';
+
+        foreach ($lignes as $fac) {
+            $montant = (float)$fac['prix_unitaire'] * (float)$fac['quantite'];
+            $this->budget->syncFacturationToBudget(
+                (int)$fac['id'],
+                $montant,
+                $fac['categorie']   ?? '',
+                $fac['prestataire'] ?? '',
+                $eventId  ?: null,
+                $projetId ?: null
+            );
+        }
+
+        return 'success:' . count($lignes) . ' ligne(s) de facturation synchronisée(s) dans le budget.';
+    }
+
+    private function budgetSyncMateriel(int $eventId, int $projetId): string
+    {
+        $lignes = $eventId
+            ? $this->materiel->getByEvent($eventId)
+            : $this->materiel->getByProjet($projetId);
+
+        $avecBudget = array_filter($lignes, fn($m) => isset($m['budget']) && (float)$m['budget'] > 0);
+
+        if (empty($avecBudget)) return 'error:Aucun matériel avec un budget à synchroniser.';
+
+        foreach ($avecBudget as $mat) {
+            $this->budget->syncMaterielToBudget(
+                (int)$mat['id'],
+                (float)$mat['budget'],
+                $mat['nom']             ?? '',
+                $mat['fournisseur']     ?? '',
+                $mat['categorie_achat'] ?? '',
+                $eventId  ?: null,
+                $projetId ?: null
+            );
+        }
+
+        return 'success:' . count($avecBudget) . ' matériel(s) synchronisé(s) dans le budget.';
     }
 
     // ── Budget ───────────────────────────────────────────────

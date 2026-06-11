@@ -141,4 +141,21 @@ class MaterielModel
             return false;
         }
     }
+
+    public function getLastInsertId(): int
+    {
+        return (int) $this->db->lastInsertId();
+    }
+
+    public function findById(int $id): ?array
+    {
+        try {
+            $stmt = $this->db->prepare('SELECT * FROM materiel WHERE id = :id LIMIT 1');
+            $stmt->execute(['id' => $id]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $row ?: null;
+        } catch (PDOException) {
+            return null;
+        }
+    }
 }

@@ -342,7 +342,6 @@ class Router
     {
         $userModel = new UserModel();
         $userId    = (int) Session::get('user_id');
-        $isAdmin   = Session::get('user_role') === 'admin';
 
         try {
             $userModel->updateLastActivity($userId);
@@ -355,7 +354,16 @@ class Router
         } catch (\Exception $e) {
         }
 
-        $currentUser   = $userModel->findById($userId);
+        $currentUser = $userModel->findById($userId);
+
+        // Revalider le rôle depuis la BDD à chaque requête
+        // Si un admin a changé le rôle de cet utilisateur, la session se met à jour immédiatement
+        $realRole = (string) ($currentUser['role'] ?? 'staff');
+        if ($realRole !== (string) Session::get('user_role', '')) {
+            Session::set('user_role', $realRole);
+        }
+
+        $isAdmin       = \App\Models\UserModel::isPrivileged($realRole);
         $sidebarNom    = Session::get('user_nom', 'Utilisateur');
         $sidebarAvatar = $currentUser['avatar'] ?? null;
         $dbStatus      = 'online';
@@ -381,6 +389,13 @@ class Router
             'notifications', 'qcMsg', 'qcType'
         );
 
+        // ── Helpers de permission ────────────────────────────────
+        $canManageEvents  = in_array($realRole, ['super_admin','admin','developpeur','chef_projet'], true);
+        $canOperationnel  = in_array($realRole, ['super_admin','admin','developpeur','chef_projet','regisseur','commercial'], true);
+        $canProjects      = in_array($realRole, ['super_admin','admin','developpeur','chef_projet','regisseur','commercial'], true);
+        $canAnnuaire      = in_array($realRole, ['super_admin','admin','developpeur','chef_projet','regisseur','commercial','staff'], true);
+        $canStaffPage     = in_array($realRole, ['super_admin','admin','developpeur','chef_projet','regisseur'], true);
+
         switch ($page) {
 
             case 'dashboard':
@@ -399,6 +414,7 @@ class Router
                 break;
 
             case 'nouvel_event':
+                if (!$canManageEvents) { self::redirect('/dashboard'); }
                 $projetsSimple = [];
                 try {
                     $projetsSimple = (new ProjectModel())->getAllSimple();
@@ -413,12 +429,11 @@ class Router
                 break;
 
             case 'gerer_event':
+                if (!$canManageEvents) { self::redirect('/dashboard'); }
                 $ctrl = new EventController(new EventModel());
 
-                // Gestion du POST (update / delete)
                 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $ctrl->handleUpdate();
-                    // handleUpdate() redirige lui-même, on n'arrivera pas ici
                 }
 
                 $id    = Security::sanitizeInt($_GET['id'] ?? 0);
@@ -441,6 +456,7 @@ class Router
                 break;
 
             case 'annuaire':
+                if (!$canAnnuaire) { self::redirect('/dashboard'); }
                 $ctrl     = new ContactController();
                 $viewData = $ctrl->index();
                 Renderer::renderApp(
@@ -452,15 +468,18 @@ class Router
                 break;
 
             case 'export':
+                if (!$canManageEvents) { self::redirect('/dashboard'); }
                 (new ExportController())->handle();
                 break;
 
             case 'duplicate_event':
+                if (!$canManageEvents) { self::redirect('/dashboard'); }
                 $ctrl = new EventController(new EventModel());
                 $ctrl->duplicate();
                 break;
 
             case 'operationnel':
+                if (!$canOperationnel) { self::redirect('/dashboard'); }
                 $ctrl     = new OperationnelController();
                 $viewData = $ctrl->index();
                 Renderer::renderApp(
@@ -472,6 +491,7 @@ class Router
                 break;
 
             case 'staff':
+                if (!$canStaffPage) { self::redirect('/dashboard'); }
                 $staffMembers = [];
                 try {
                     $staffMembers = $userModel->getAllApproved();
@@ -545,6 +565,7 @@ class Router
                 break;
 
             case 'projets':
+                if (!$canProjects) { self::redirect('/dashboard'); }
                 $ctrl     = new ProjectController(new ProjectModel());
                 $viewData = $ctrl->index();
                 Renderer::renderApp(
@@ -556,6 +577,7 @@ class Router
                 break;
 
             case 'projet_detail':
+                if (!$canProjects) { self::redirect('/dashboard'); }
                 $ctrl = new ProjectController(new ProjectModel());
                 $id   = Security::sanitizeInt($_GET['id'] ?? 0);
                 $data = $ctrl->detail($id);

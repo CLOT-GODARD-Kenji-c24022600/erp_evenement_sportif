@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Models\TodoModel;
+use Core\Permission;
 use Core\Security;
 use Core\Session;
 
@@ -31,6 +32,11 @@ class TodoController
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['todo_action'])) {
             return null;
+        }
+
+        // Vérifier la permission
+        if (!Permission::canTodo(Permission::currentRole())) {
+            return 'error:Accès refusé.';
         }
 
         $action = (string) $_POST['todo_action'];

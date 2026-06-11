@@ -27,11 +27,14 @@
     if (!tabEls.length) return;
 
     // Priorité : data-restore-tab (session PHP) > localStorage
-    // On lit dans le DOM pour être compatible avec le SPA routeur
     const container  = document.getElementById('ops-container');
     const restoreTab = container ? container.dataset.restoreTab : '';
     const stored     = localStorage.getItem(TAB_KEY);
     const target     = restoreTab || stored || '#pane-budget';
+
+    // Persister immédiatement en localStorage (cas data-restore-tab)
+    if (target) localStorage.setItem(TAB_KEY, target);
+
     const triggerEl = document.querySelector(`#opsTabs [data-bs-target="${target}"]`);
     if (triggerEl) bootstrap.Tab.getOrCreateInstance(triggerEl).show();
 
@@ -62,7 +65,8 @@
       form.addEventListener('submit', () => {
         const tab = getCurrentTab();
         localStorage.setItem(TAB_KEY, tab);
-        form.querySelectorAll('.js-active-tab').forEach(i => i.value = tab);
+        // Mettre à jour tous les champs js-active-tab dans TOUS les formulaires
+        document.querySelectorAll('.js-active-tab').forEach(i => i.value = tab);
       });
     });
   }
@@ -494,7 +498,10 @@
     updateFcTotal();
     updateFeTotal();
 
-    const cur = localStorage.getItem(TAB_KEY) || '#pane-budget';
+    // Initialiser immédiatement avec l'onglet actif (data-restore-tab prioritaire, sinon localStorage, sinon budget)
+    const container  = document.getElementById('ops-container');
+    const restoreTab = container ? container.dataset.restoreTab : '';
+    const cur = restoreTab || localStorage.getItem(TAB_KEY) || '#pane-budget';
     updateActiveTabInputs(cur);
 
     hookFormSubmits();

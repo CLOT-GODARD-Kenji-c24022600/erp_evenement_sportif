@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Models\QuickCreateModel;
+use Core\Permission;
 use Core\Security;
 use Core\Session;
 
@@ -50,13 +51,19 @@ class QuickCreateController
         }
 
         $action    = (string) $_POST['quick_create'];
-        $userRole  = (string) Session::get('user_role', '');
+        $userRole  = Permission::currentRole();
 
         try {
             return match ($action) {
-                'event'  => $this->createEvent(),
-                'projet' => $this->createProjet(),
-                'user'   => $userRole === 'admin' ? $this->createUser() : ['msg' => 'Accès refusé.', 'type' => 'danger'],
+                'event'  => Permission::canQuickCreateEvent($userRole)
+                                ? $this->createEvent()
+                                : ['msg' => 'Accès refusé : vous ne pouvez pas créer d\'événement.', 'type' => 'danger'],
+                'projet' => Permission::canQuickCreateProjet($userRole)
+                                ? $this->createProjet()
+                                : ['msg' => 'Accès refusé : vous ne pouvez pas créer de projet.', 'type' => 'danger'],
+                'user'   => Permission::isPrivileged($userRole)
+                                ? $this->createUser()
+                                : ['msg' => 'Accès refusé.', 'type' => 'danger'],
                 default  => ['msg' => '', 'type' => ''],
             };
         } catch (\PDOException $e) {
@@ -112,7 +119,7 @@ class QuickCreateController
             'email'    => Security::sanitizeString($_POST['email']  ?? ''),
             'password' => $hash,
             'poste'    => Security::sanitizeString($_POST['poste']  ?? ''),
-            'role'     => in_array($_POST['role'] ?? '', ['staff', 'admin'], true) ? $_POST['role'] : 'staff',
+            'role'     => array_key_exists($_POST['role'] ?? '', \App\Models\UserModel::ROLES) ? $_POST['role'] : 'staff',
         ]);
 
         return ['msg' => 'Membre ajouté ! Mdp provisoire : Bienvenue123!', 'type' => 'success'];

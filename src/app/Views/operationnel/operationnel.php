@@ -437,10 +437,19 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                     </div>
                 </div>
             </div>
-            <a href="#pane-materiel" class="btn btn-sm btn-outline-warning rounded-3"
-               onclick="bootstrap.Tab.getOrCreateInstance(document.getElementById('tab-materiel')).show(); return false;">
-                <i class="bi bi-box-seam me-1"></i>Voir le détail matériel
-            </a>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="#pane-materiel" class="btn btn-sm btn-outline-warning rounded-3"
+                   onclick="bootstrap.Tab.getOrCreateInstance(document.getElementById('tab-materiel')).show(); return false;">
+                    <i class="bi bi-box-seam me-1"></i>Voir le détail matériel
+                </a>
+                <form method="POST" class="d-inline">
+                    <?= opsForm($eventId, $projetId) ?>
+                    <input type="hidden" name="ops_action" value="budget_sync_mat">
+                    <button type="submit" class="btn btn-sm btn-outline-success rounded-3 fw-semibold">
+                        <i class="bi bi-arrow-repeat me-1"></i>Synchroniser vers les charges
+                    </button>
+                </form>
+            </div>
             <?php endif; ?>
 
             <!-- ── Récap facturation dans le budget ─────────────── -->
@@ -462,10 +471,19 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                 <strong><?= ($ecartBudget >= 0 ? '+' : '') . number_format($ecartBudget,2,',',' ') ?> €</strong>
             </div>
             <?php endif; ?>
-            <a href="#pane-facturation" class="btn btn-sm btn-outline-info rounded-3"
-               onclick="bootstrap.Tab.getOrCreateInstance(document.getElementById('tab-facturation')).show(); return false;">
-                <i class="bi bi-receipt me-1"></i>Voir le détail facturation
-            </a>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="#pane-facturation" class="btn btn-sm btn-outline-info rounded-3"
+                   onclick="bootstrap.Tab.getOrCreateInstance(document.getElementById('tab-facturation')).show(); return false;">
+                    <i class="bi bi-receipt me-1"></i>Voir le détail facturation
+                </a>
+                <form method="POST" class="d-inline">
+                    <?= opsForm($eventId, $projetId) ?>
+                    <input type="hidden" name="ops_action" value="budget_sync_fact">
+                    <button type="submit" class="btn btn-sm btn-outline-success rounded-3 fw-semibold">
+                        <i class="bi bi-arrow-repeat me-1"></i>Synchroniser vers les charges
+                    </button>
+                </form>
+            </div>
             <?php endif; ?>
 
         </div>
@@ -765,13 +783,46 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                             <td class="text-end small"><?= htmlspecialchars((string)$fac['quantite'], ENT_QUOTES) ?></td>
                             <td class="text-end fw-bold"><?= number_format($tot,2,',',' ') ?> €</td>
                             <td class="text-center">
-                                <?= $fac['statut_devis']    ? '<i class="bi bi-check-circle-fill text-success"></i>' : '<i class="bi bi-circle text-body-secondary"></i>' ?>
+                                <form method="POST" class="d-inline">
+                                    <?= opsForm($eventId, $projetId) ?>
+                                    <input type="hidden" name="ops_action" value="facturation_toggle">
+                                    <input type="hidden" name="ligne_id" value="<?= (int)$fac['id'] ?>">
+                                    <input type="hidden" name="toggle_field" value="statut_devis">
+                                    <button type="submit" class="btn btn-link p-0 border-0 bg-transparent"
+                                            title="<?= $fac['statut_devis'] ? 'Cliquer pour annuler le devis' : 'Cliquer pour marquer devis reçu' ?>">
+                                        <?= $fac['statut_devis']
+                                            ? '<i class="bi bi-check-circle-fill text-success fs-5"></i>'
+                                            : '<i class="bi bi-circle text-body-secondary fs-5"></i>' ?>
+                                    </button>
+                                </form>
                             </td>
                             <td class="text-center">
-                                <?= $fac['statut_facture']  ? '<i class="bi bi-check-circle-fill text-success"></i>' : '<i class="bi bi-circle text-body-secondary"></i>' ?>
+                                <form method="POST" class="d-inline">
+                                    <?= opsForm($eventId, $projetId) ?>
+                                    <input type="hidden" name="ops_action" value="facturation_toggle">
+                                    <input type="hidden" name="ligne_id" value="<?= (int)$fac['id'] ?>">
+                                    <input type="hidden" name="toggle_field" value="statut_facture">
+                                    <button type="submit" class="btn btn-link p-0 border-0 bg-transparent"
+                                            title="<?= $fac['statut_facture'] ? 'Cliquer pour annuler la facture' : 'Cliquer pour marquer facture reçue' ?>">
+                                        <?= $fac['statut_facture']
+                                            ? '<i class="bi bi-check-circle-fill text-success fs-5"></i>'
+                                            : '<i class="bi bi-circle text-body-secondary fs-5"></i>' ?>
+                                    </button>
+                                </form>
                             </td>
                             <td class="text-center">
-                                <?= $fac['statut_virement'] ? '<i class="bi bi-check-circle-fill text-success"></i>' : '<i class="bi bi-circle text-body-secondary"></i>' ?>
+                                <form method="POST" class="d-inline">
+                                    <?= opsForm($eventId, $projetId) ?>
+                                    <input type="hidden" name="ops_action" value="facturation_toggle">
+                                    <input type="hidden" name="ligne_id" value="<?= (int)$fac['id'] ?>">
+                                    <input type="hidden" name="toggle_field" value="statut_virement">
+                                    <button type="submit" class="btn btn-link p-0 border-0 bg-transparent"
+                                            title="<?= $fac['statut_virement'] ? 'Cliquer pour annuler le virement' : 'Cliquer pour marquer virement effectué' ?>">
+                                        <?= $fac['statut_virement']
+                                            ? '<i class="bi bi-check-circle-fill text-success fs-5"></i>'
+                                            : '<i class="bi bi-circle text-body-secondary fs-5"></i>' ?>
+                                    </button>
+                                </form>
                             </td>
                             <td class="text-center">
                                 <?php if (!empty($fac['fichier'])): ?>
@@ -862,6 +913,32 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                 <a href="/gerer_event?id=<?= $eventId ?>" class="btn btn-sm btn-outline-primary rounded-3">
                     <i class="bi bi-pencil me-1"></i>Modifier l'événement
                 </a>
+            </div>
+
+            <!-- Indicateur de synchronisation planning -->
+            <div class="alert alert-success border-0 shadow-sm d-flex align-items-center gap-3 mb-3 flex-wrap">
+                <i class="bi bi-arrow-repeat text-success fs-4 flex-shrink-0"></i>
+                <div class="flex-grow-1">
+                    <strong>Synchronisation automatique avec le planning activée.</strong>
+                    <span class="text-body-secondary small ms-1">
+                        Les phases sont synchronisées à chaque modification de l'événement.
+                        Tu peux aussi forcer la synchronisation manuellement ci-dessous.
+                    </span>
+                </div>
+                <div class="d-flex gap-2 flex-shrink-0">
+                    <form method="POST" class="d-inline">
+                        <?= opsForm($eventId, $projetId) ?>
+                        <input type="hidden" name="ops_action" value="preprod_sync">
+                        <button type="submit" class="btn btn-success btn-sm rounded-3 fw-semibold">
+                            <i class="bi bi-arrow-repeat me-1"></i>Synchroniser maintenant
+                        </button>
+                    </form>
+                    <a href="#pane-planning"
+                       onclick="document.querySelector('[data-bs-target=\'#pane-planning\']').click(); return false;"
+                       class="btn btn-sm btn-outline-success rounded-3">
+                        <i class="bi bi-calendar3 me-1"></i>Voir le planning
+                    </a>
+                </div>
             </div>
 
             <!-- Timeline visuelle des phases -->

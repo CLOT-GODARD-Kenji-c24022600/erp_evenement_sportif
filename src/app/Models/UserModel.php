@@ -272,16 +272,52 @@ class UserModel
     }
 
     /**
+    /**
+     * Tous les rôles disponibles dans l'application.
+     * Ordre décroissant de privilège.
+     */
+    public const ROLES = [
+        'super_admin'   => 'Super Admin',
+        'admin'         => 'Admin',
+        'developpeur'   => 'Développeur',
+        'chef_projet'   => 'Chef de projet',
+        'regisseur'     => 'Régisseur',
+        'commercial'    => 'Commercial',
+        'staff'         => 'Staff',
+        'benevole'      => 'Bénévole',
+    ];
+
+    /**
+     * Rôles ayant accès complet à l'interface admin (= anciens "admin").
+     */
+    public const PRIVILEGED_ROLES = ['super_admin', 'admin', 'developpeur'];
+
+    /**
+     * Retourne true si le rôle donné est un rôle privilégié.
+     */
+    public static function isPrivileged(string $role): bool
+    {
+        return in_array($role, self::PRIVILEGED_ROLES, true);
+    }
+
+    /**
+     * Retourne le label lisible d'un rôle.
+     */
+    public static function roleLabel(string $role): string
+    {
+        return self::ROLES[$role] ?? ucfirst($role);
+    }
+
+    /**
      * Modifie le rôle d'un utilisateur.
      *
      * @param int    $userId Identifiant de l'utilisateur.
-     * @param string $role   Nouveau rôle ('admin', 'staff').
+     * @param string $role   Nouveau rôle.
      * @return bool
      */
     public function setRole(int $userId, string $role): bool
     {
-        $allowed = ['admin', 'staff'];
-        if (!in_array($role, $allowed, true)) {
+        if (!array_key_exists($role, self::ROLES)) {
             return false;
         }
 
