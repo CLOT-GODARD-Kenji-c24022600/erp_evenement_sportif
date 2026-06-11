@@ -16,6 +16,7 @@ use App\Models\TodoModel;
 use App\Models\ProjectModel;
 use App\Models\PlanningGlobalModel;
 use App\Controllers\TodoController;
+use Core\Permission;
 
 class DashboardController
 {
@@ -46,7 +47,11 @@ class DashboardController
 
         // ── Traitement actions planning global (POST) ─────────
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['pg_action'])) {
-            [$pgType, $pgMsg] = explode(':', $this->handlePlanningGlobal(), 2);
+            if (Permission::canPlanningGlobal(Permission::currentRole())) {
+                [$pgType, $pgMsg] = explode(':', $this->handlePlanningGlobal(), 2);
+            } else {
+                [$pgType, $pgMsg] = ['error', 'Accès refusé : vous ne pouvez pas modifier le planning global.'];
+            }
             if (!$todoMsg) {
                 $todoMsg  = $pgMsg;
                 $todoType = $pgType;
@@ -84,16 +89,20 @@ class DashboardController
             $planningGlobal = (new PlanningGlobalModel())->getAll();
         } catch (\Exception $e) {}
 
+        $role = Permission::currentRole();
         return [
-            'evenements'     => $evenements,
-            'todos'          => $todos,
-            'todoStats'      => $todoStats,
-            'utilisateurs'   => $utilisateurs,
-            'projets'        => $projets,
-            'planningGlobal' => $planningGlobal,
-            'todoMsg'        => $todoMsg,
-            'todoType'       => $todoType,
-            'erreur_bdd'     => $erreurBdd,
+            'evenements'          => $evenements,
+            'todos'               => $todos,
+            'todoStats'           => $todoStats,
+            'utilisateurs'        => $utilisateurs,
+            'projets'             => $projets,
+            'planningGlobal'      => $planningGlobal,
+            'todoMsg'             => $todoMsg,
+            'todoType'            => $todoType,
+            'erreur_bdd'          => $erreurBdd,
+            'canTodo'             => Permission::canTodo($role),
+            'canPlanningGlobal'   => Permission::canPlanningGlobal($role),
+            'canManageEvents'     => Permission::canManageEvents($role),
         ];
     }
 

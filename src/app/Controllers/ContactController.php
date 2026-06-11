@@ -14,6 +14,7 @@ namespace App\Controllers;
 use App\Models\ContactModel;
 use App\Models\EventModel;
 use App\Models\ProjectModel;
+use Core\Permission;
 use Core\Security;
 
 class ContactController
@@ -31,7 +32,11 @@ class ContactController
         $type = 'success';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['contact_action'])) {
-            [$type, $msg] = explode(':', $this->handlePost(), 2);
+            if (Permission::canAnnuaire(Permission::currentRole())) {
+                [$type, $msg] = explode(':', $this->handlePost(), 2);
+            } else {
+                [$type, $msg] = ['error', 'Accès refusé.'];
+            }
         }
 
         // Événements et projets pour les modals de liaison

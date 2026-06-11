@@ -67,6 +67,7 @@ $today = date('Y-m-d');
                 <?= $done ?> / <?= $total ?> <?= htmlspecialchars($t['todo_done_count'], ENT_QUOTES) ?>
             </p>
         </hgroup>
+        <?php if ($canTodo ?? true): ?>
         <button class="btn btn-primary btn-sm fw-semibold shadow-sm"
                 data-bs-toggle="modal"
                 data-bs-target="#modalNewTodo"
@@ -75,6 +76,7 @@ $today = date('Y-m-d');
             <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
             <?= htmlspecialchars($t['todo_new_btn'], ENT_QUOTES) ?>
         </button>
+        <?php endif; ?>
     </header>
 
     <figure class="mb-4" aria-label="<?= htmlspecialchars($t['todo_global_progress'], ENT_QUOTES) ?>">

@@ -94,7 +94,8 @@ $totalEvents = count($evenements);
                         <i class="bi bi-calendar-event me-2 text-primary"></i>
                         <?= htmlspecialchars($t['dash_events_title'], ENT_QUOTES) ?>
                     </h2>
-                    <a href="/nouvel_event" class="btn btn-primary btn-sm fw-semibold shadow-sm rounded-3">
+                    <a href="/nouvel_event" class="btn btn-primary btn-sm fw-semibold shadow-sm rounded-3"
+                       <?= !($canManageEvents ?? false) ? 'style="display:none"' : '' ?>>
                         <i class="bi bi-plus-lg me-1"></i>
                         <?= htmlspecialchars($t['nav_new_event'], ENT_QUOTES) ?>
                     </a>
@@ -198,10 +199,12 @@ $totalEvents = count($evenements);
                         <i class="bi bi-bar-chart-steps"></i>
                     </button>
                 </div>
+                <?php if ($canPlanningGlobal ?? false): ?>
                 <button class="btn btn-info btn-sm fw-semibold text-white shadow-sm rounded-3"
                         data-bs-toggle="modal" data-bs-target="#modalPgCreate">
                     <i class="bi bi-plus-lg me-1"></i>Ajouter
                 </button>
+                <?php endif; ?>
             </div>
         </div>
         <div class="card-body p-0">

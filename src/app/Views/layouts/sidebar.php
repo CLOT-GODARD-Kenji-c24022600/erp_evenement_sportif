@@ -14,7 +14,16 @@
 
 declare(strict_types=1);
 
-$isProjectPage = in_array($page, ['projets', 'projet_detail'], true);
+use App\Models\UserModel;
+
+$isProjectPage    = in_array($page, ['projets', 'projet_detail'], true);
+$sidebarRole      = (string) ($_SESSION['user_role'] ?? 'staff');
+$sbCanEvents      = in_array($sidebarRole, ['super_admin','admin','developpeur','chef_projet'], true);
+$sbCanOps         = in_array($sidebarRole, ['super_admin','admin','developpeur','chef_projet','regisseur','commercial'], true);
+$sbCanProjects    = in_array($sidebarRole, ['super_admin','admin','developpeur','chef_projet','regisseur','commercial'], true);
+$sbCanAnnuaire    = in_array($sidebarRole, ['super_admin','admin','developpeur','chef_projet','regisseur','commercial','staff'], true);
+$sbCanStaff       = in_array($sidebarRole, ['super_admin','admin','developpeur','chef_projet','regisseur'], true);
+$sbCanAdmin       = UserModel::isPrivileged($sidebarRole);
 ?>
 
 <!-- ── Bouton hamburger (mobile uniquement) ── -->
@@ -61,6 +70,7 @@ $isProjectPage = in_array($page, ['projets', 'projet_detail'], true);
         </li>
 
         <!-- Projets -->
+        <?php if ($sbCanProjects): ?>
         <li class="nav-item mb-1" role="none">
             <a href="/projets"
                class="nav-link text-white d-flex align-items-center py-3 <?= $isProjectPage ? 'active bg-primary' : 'opacity-75' ?>"
@@ -70,8 +80,10 @@ $isProjectPage = in_array($page, ['projets', 'projet_detail'], true);
                 <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_projects'], ENT_QUOTES) ?></span>
             </a>
         </li>
+        <?php endif; ?>
 
         <!-- Opérationnel -->
+        <?php if ($sbCanOps): ?>
         <li class="nav-item mb-1" role="none">
             <a href="/operationnel"
                class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'operationnel' ? 'active bg-primary' : 'opacity-75' ?>"
@@ -81,8 +93,10 @@ $isProjectPage = in_array($page, ['projets', 'projet_detail'], true);
                 <span class="ms-2 sb-text">Opérationnel</span>
             </a>
         </li>
+        <?php endif; ?>
 
         <!-- Annuaire -->
+        <?php if ($sbCanAnnuaire): ?>
         <li class="nav-item mb-1" role="none">
             <a href="/annuaire"
                class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'annuaire' ? 'active bg-primary' : 'opacity-75' ?>"
@@ -92,8 +106,10 @@ $isProjectPage = in_array($page, ['projets', 'projet_detail'], true);
                 <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_directory'], ENT_QUOTES) ?></span>
             </a>
         </li>
+        <?php endif; ?>
 
         <!-- Nouvel Événement -->
+        <?php if ($sbCanEvents): ?>
         <li class="nav-item mb-1" role="none">
             <a href="/nouvel_event"
                class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'nouvel_event' ? 'active bg-primary' : 'opacity-75' ?>"
@@ -103,8 +119,10 @@ $isProjectPage = in_array($page, ['projets', 'projet_detail'], true);
                 <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_new_event'], ENT_QUOTES) ?></span>
             </a>
         </li>
+        <?php endif; ?>
 
         <!-- Staff -->
+        <?php if ($sbCanStaff): ?>
         <li class="nav-item mb-1" role="none">
             <a href="/staff"
                class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'staff' ? 'active bg-primary' : 'opacity-75' ?>"
@@ -114,9 +132,10 @@ $isProjectPage = in_array($page, ['projets', 'projet_detail'], true);
                 <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_staff'], ENT_QUOTES) ?></span>
             </a>
         </li>
+        <?php endif; ?>
 
         <!-- Section Administration (admin uniquement) -->
-        <?php if ($isAdmin): ?>
+        <?php if ($sbCanAdmin): ?>
         <li class="nav-item mb-1 border-top border-secondary mt-3 pt-3" role="none">
             <small class="text-white-50 text-uppercase px-3 sb-text d-block mb-1"
                    style="font-size: 0.7rem;">Administration</small>
