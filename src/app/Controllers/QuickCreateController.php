@@ -56,7 +56,7 @@ class QuickCreateController
             return match ($action) {
                 'event'  => $this->createEvent(),
                 'projet' => $this->createProjet(),
-                'user'   => $userRole === 'admin' ? $this->createUser() : ['msg' => 'Accès refusé.', 'type' => 'danger'],
+                'user'   => \App\Models\UserModel::isPrivileged($userRole) ? $this->createUser() : ['msg' => 'Accès refusé.', 'type' => 'danger'],
                 default  => ['msg' => '', 'type' => ''],
             };
         } catch (\PDOException $e) {
@@ -112,7 +112,7 @@ class QuickCreateController
             'email'    => Security::sanitizeString($_POST['email']  ?? ''),
             'password' => $hash,
             'poste'    => Security::sanitizeString($_POST['poste']  ?? ''),
-            'role'     => in_array($_POST['role'] ?? '', ['staff', 'admin'], true) ? $_POST['role'] : 'staff',
+            'role'     => array_key_exists($_POST['role'] ?? '', \App\Models\UserModel::ROLES) ? $_POST['role'] : 'staff',
         ]);
 
         return ['msg' => 'Membre ajouté ! Mdp provisoire : Bienvenue123!', 'type' => 'success'];

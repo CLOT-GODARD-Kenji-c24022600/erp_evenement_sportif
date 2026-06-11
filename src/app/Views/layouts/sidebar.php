@@ -211,8 +211,27 @@ $isProjectPage = in_array($page, ['projets', 'projet_detail'], true);
                 <p class="fw-bold text-truncate mb-0" style="font-size: 0.85rem;">
                     <?= htmlspecialchars($sidebarNom, ENT_QUOTES) ?>
                 </p>
-                <p class="text-white-50 small text-capitalize fw-semibold mb-0">
-                    <?= htmlspecialchars((string) $_SESSION['user_role'], ENT_QUOTES) ?>
+                <p class="small fw-semibold mb-0">
+                    <?php
+                    $sidebarRoleColors = [
+                        'super_admin' => '#c0392b', 'admin' => '#6c3483', 'developpeur' => '#1a5276',
+                        'chef_projet' => '#1f618d', 'regisseur' => '#0e6655', 'commercial' => '#1e8449',
+                        'staff' => '#5d6d7e', 'benevole' => '#aaa',
+                    ];
+                    $sidebarRoleIcons = [
+                        'super_admin' => '👑', 'admin' => '🛡️', 'developpeur' => '💻',
+                        'chef_projet' => '📋', 'regisseur' => '🎛️', 'commercial' => '💼',
+                        'staff' => '👤', 'benevole' => '🤝',
+                    ];
+                    $sRole = (string)($_SESSION['user_role'] ?? 'staff');
+                    $sBg   = $sidebarRoleColors[$sRole] ?? '#5d6d7e';
+                    $sIcon = $sidebarRoleIcons[$sRole]  ?? '👤';
+                    $sLabel = htmlspecialchars(\App\Models\UserModel::roleLabel($sRole), ENT_QUOTES);
+                    ?>
+                    <span class="badge rounded-pill"
+                          style="background:<?= $sBg ?>;color:#fff;font-size:.75rem;padding:.3em .65em">
+                        <?= $sIcon ?> <?= $sLabel ?>
+                    </span>
                 </p>
             </section>
         </a>

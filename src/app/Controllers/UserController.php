@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Models\UserModel;
+use App\Models\HistoriqueModel;
 use Core\Security;
 use Core\Session;
 
@@ -57,27 +58,72 @@ class UserController
      */
     public function handleAction(int $targetId, string $action): void
     {
-        $currentUserId = (int) Session::get('user_id', 0);
+        $currentUserId   = (int) Session::get('user_id', 0);
+        $currentRole     = (string) Session::get('user_role', '');
 
-        // Sécurité : un admin ne peut pas agir sur son propre compte
-        if ($targetId === $currentUserId) {
-            return;
-        }
+        // On ne peut pas agir sur soi-même
+        if ($targetId === $currentUserId) return;
 
-        $validActions = ['approuver', 'rejeter', 'supprimer', 'promouvoir_admin', 'retrograder_staff'];
+        // Récupérer l'utilisateur cible
+        $target = $this->userModel->findById($targetId);
+        if (!$target) return;
 
-        if (!in_array($action, $validActions, true)) {
-            return;
-        }
+        $targetRole = (string) ($target['role'] ?? 'staff');
+
+        // Personne ne peut modifier un super_admin sauf un autre super_admin
+        if ($targetRole === 'super_admin' && $currentRole !== 'super_admin') return;
+
+        $newRole = Security::sanitizeString($_POST['new_role'] ?? '');
+
+        // Seul le super_admin peut attribuer le rôle super_admin
+        if ($newRole === 'super_admin' && $currentRole !== 'super_admin') return;
+
+        $validActions = [
+            'approuver', 'rejeter', 'supprimer',
+            'promouvoir_admin', 'retrograder_staff', 'changer_role',
+        ];
+        if (!in_array($action, $validActions, true)) return;
 
         match ($action) {
-            'approuver'        => $this->userModel->setStatut($targetId, 'approuve'),
-            'rejeter'          => $this->userModel->setStatut($targetId, 'rejete'),
-            'supprimer'        => $this->userModel->delete($targetId),
-            'promouvoir_admin' => $this->userModel->setRole($targetId, 'admin'),
-            'retrograder_staff'=> $this->userModel->setRole($targetId, 'staff'),
+            'approuver'         => $this->userModel->setStatut($targetId, 'approuve'),
+            'rejeter'           => $this->userModel->setStatut($targetId, 'rejete'),
+            'supprimer'         => $this->userModel->delete($targetId),
+            'promouvoir_admin'  => $this->userModel->setRole($targetId, 'admin'),
+            'retrograder_staff' => $this->userModel->setRole($targetId, 'staff'),
+            'changer_role'      => $this->changeRole($targetId, $newRole, $currentRole),
         };
     }
+
+    private function changeRole(int $targetId, string $newRole, string $currentRole): void
+    {
+        if (!array_key_exists($newRole, UserModel::ROLES)) return;
+
+        // Seul super_admin peut donner super_admin
+        if ($newRole === 'super_admin' && $currentRole !== 'super_admin') return;
+
+        // Récupérer l'ancien rôle pour le log
+        $target  = $this->userModel->findById($targetId);
+        $oldRole = (string) ($target['role'] ?? 'staff');
+        $nom     = trim(($target['prenom'] ?? '') . ' ' . ($target['nom'] ?? ''));
+
+        $ok = $this->userModel->setRole($targetId, $newRole);
+        if (!$ok) return;
+
+        // Mettre à jour la session si c'est le compte connecté
+        if ($targetId === (int) Session::get('user_id', 0)) {
+            Session::set('user_role', $newRole);
+        }
+
+        // Logger le changement de rôle
+        try {
+            HistoriqueModel::log('update', 'utilisateur', $targetId, $nom, [
+                'action'    => 'changement_role',
+                'old_role'  => UserModel::roleLabel($oldRole),
+                'new_role'  => UserModel::roleLabel($newRole),
+            ]);
+        } catch (\Throwable) {}
+    }
+
 
 /**
      * Importe des utilisateurs à partir d'un fichier CSV (Format Staff).

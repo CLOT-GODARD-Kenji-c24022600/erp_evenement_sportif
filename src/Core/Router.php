@@ -342,7 +342,6 @@ class Router
     {
         $userModel = new UserModel();
         $userId    = (int) Session::get('user_id');
-        $isAdmin   = Session::get('user_role') === 'admin';
 
         try {
             $userModel->updateLastActivity($userId);
@@ -355,7 +354,16 @@ class Router
         } catch (\Exception $e) {
         }
 
-        $currentUser   = $userModel->findById($userId);
+        $currentUser = $userModel->findById($userId);
+
+        // Revalider le rôle depuis la BDD à chaque requête
+        // Si un admin a changé le rôle de cet utilisateur, la session se met à jour immédiatement
+        $realRole = (string) ($currentUser['role'] ?? 'staff');
+        if ($realRole !== (string) Session::get('user_role', '')) {
+            Session::set('user_role', $realRole);
+        }
+
+        $isAdmin       = \App\Models\UserModel::isPrivileged($realRole);
         $sidebarNom    = Session::get('user_nom', 'Utilisateur');
         $sidebarAvatar = $currentUser['avatar'] ?? null;
         $dbStatus      = 'online';
