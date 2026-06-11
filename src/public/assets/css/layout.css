@@ -52,48 +52,60 @@ body {
 /* ─── Sidebar ───────────────────────────────────────── */
 .sidebar {
   width: var(--sb-width);
-  height: var(--app-height);
+  height: 100vh;
   position: fixed;
   top: 0;
   left: 0;
   z-index: 1040;
   transition: var(--transition);
   background-color: var(--sidebar-bg);
+  display: flex !important;
+  flex-direction: column !important;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
 }
 
-/* Zone nav scrollable avec scrollbar fine visible */
-.sidebar > ul.nav {
-  flex: 1 1 auto;
-  overflow-y: auto;
-  overflow-x: hidden;
+/* Wrapper scrollable — totalement indépendant de Bootstrap */
+.sidebar-nav-wrapper {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+  scrollbar-color: rgba(255,255,255,0.5) rgba(255,255,255,0.1);
 }
 
-.sidebar > ul.nav::-webkit-scrollbar {
-  width: 4px;
+.sidebar-nav-wrapper::-webkit-scrollbar {
+  width: 5px;
 }
 
-.sidebar > ul.nav::-webkit-scrollbar-track {
-  background: transparent;
+.sidebar-nav-wrapper::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.06);
 }
 
-.sidebar > ul.nav::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.25);
+.sidebar-nav-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.5);
   border-radius: 4px;
+}
+
+/* ul à l'intérieur : juste du contenu, pas de flex tricks */
+.sidebar-nav-wrapper > ul.nav {
+  min-height: 0;
+}
+
+/* Header logo : ne rétrécit jamais */
+.sidebar > header {
+  flex-shrink: 0 !important;
 }
 
 /* Actions mobile dans sidebar */
 .sidebar > .mobile-header-actions {
-  flex-shrink: 0;
+  flex-shrink: 0 !important;
 }
 
 /* Footer profil épinglé en bas */
 .sidebar > footer {
-  flex-shrink: 0;
+  flex-shrink: 0 !important;
+  overflow: hidden;
 }
 
 /* Items nav compacts */

@@ -39,7 +39,7 @@ $sbCanAdmin       = UserModel::isPrivileged($sidebarRole);
 <div id="sidebarOverlay" class="sidebar-overlay" aria-hidden="true"></div>
 
 <!-- ── Sidebar ── -->
-<nav class="sidebar d-flex flex-column flex-shrink-0 text-white shadow" id="mobileSidebar" aria-label="Navigation principale">
+<nav class="sidebar text-white shadow" id="mobileSidebar" aria-label="Navigation principale">
 
     <header class="d-flex align-items-center sidebar-header p-4 mb-2 position-relative">
         <a href="/dashboard" class="text-white text-decoration-none d-flex align-items-center logo-link"
@@ -56,7 +56,8 @@ $sbCanAdmin       = UserModel::isPrivileged($sidebarRole);
         </button>
     </header>
 
-    <ul class="nav nav-pills flex-column mb-auto px-2" role="menubar">
+    <div class="sidebar-nav-wrapper" role="menubar">
+        <ul class="nav nav-pills flex-column px-2 mb-0">
 
         <!-- Dashboard -->
         <li class="nav-item mb-1" role="none">
@@ -148,6 +149,15 @@ $sbCanAdmin       = UserModel::isPrivileged($sidebarRole);
             </a>
         </li>
         <li class="nav-item mb-1" role="none">
+            <a href="/statistiques"
+               class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'statistiques' ? 'active bg-primary' : 'opacity-75' ?>"
+               role="menuitem"
+               <?= $page === 'statistiques' ? 'aria-current="page"' : '' ?>>
+                <i class="bi bi-bar-chart-line-fill fs-5 mx-2" aria-hidden="true"></i>
+                <span class="ms-2 sb-text">Statistiques</span>
+            </a>
+        </li>
+        <li class="nav-item mb-1" role="none">
             <a href="/historique"
                class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'historique' ? 'active bg-primary' : 'opacity-75' ?>"
                role="menuitem"
@@ -158,7 +168,8 @@ $sbCanAdmin       = UserModel::isPrivileged($sidebarRole);
         </li>
         <?php endif; ?>
 
-    </ul>
+        </ul>
+    </div>
 
     <!-- ── Section mobile : actions du header ── -->
     <div class="d-flex d-md-none flex-column px-3 py-2 border-top border-secondary mx-2 mobile-header-actions">
