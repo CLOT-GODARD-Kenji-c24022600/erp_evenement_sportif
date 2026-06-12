@@ -36,6 +36,7 @@ use App\Controllers\ContactController;
 use App\Controllers\OperationnelController;
 use App\Controllers\ExportController;
 use App\Controllers\HistoriqueController;
+use App\Controllers\StatistiquesController;
 
 class Router
 {
@@ -75,6 +76,8 @@ class Router
         'mentions_legales',
         'plan-du-site',
         'historique',
+        'statistiques',
+        'statistiques/ajax',
     ];
 
     public static function dispatch(): void
@@ -152,6 +155,8 @@ class Router
             'duplicate_event'     => 'duplicate_event',
             'export'              => 'export',
             'historique'          => 'historique',
+            'statistiques'        => 'statistiques',
+            'statistiques/ajax'   => 'statistiques/ajax',
         ];
 
         if (isset($uriMap[$uri])) {
@@ -625,6 +630,26 @@ class Router
                     __DIR__ . '/../app/Views/historique/historique.php',
                     array_merge($common, $viewData)
                 );
+                break;
+
+            case 'statistiques':
+                $ctrl     = new StatistiquesController();
+                $viewData = $ctrl->index();
+                Renderer::renderApp(
+                    __DIR__ . '/../app/Views/statistiques/statistiques.php',
+                    array_merge($common, $viewData),
+                    '<link rel="stylesheet" href="/assets/css/statistiques.css">',
+                    '<script src="/assets/js/statistiques.js"></script>'
+                );
+                break;
+
+            case 'statistiques/ajax':
+                if (!Session::has('user_id')) {
+                    http_response_code(401);
+                    echo json_encode(['error' => 'Unauthorized']);
+                    exit();
+                }
+                (new StatistiquesController())->ajax();
                 break;
 
             case '404':

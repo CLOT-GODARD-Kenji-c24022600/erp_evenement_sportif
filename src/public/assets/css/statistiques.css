@@ -1,0 +1,186 @@
+/**
+ * YES – Your Event Solution
+ * CSS : Statistiques & Reporting
+ *
+ * @file statistiques.css
+ * @author CELESTINE Samuel
+ * @author CLOT-GODARD Kenji
+ * @version 1.0
+ * @since 2026
+ */
+
+/* ─── KPI cards ──────────────────────────────────────── */
+.stats-kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 12px;
+  padding: 1.1rem 1.25rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  height: 100%;
+}
+
+.stats-kpi-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.stats-kpi-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.stats-kpi-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--bs-body-color);
+}
+
+.stats-kpi-label {
+  font-size: 0.78rem;
+  color: var(--bs-secondary-color, #6c757d);
+  font-weight: 500;
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ─── Chart cards ────────────────────────────────────── */
+.stats-card {
+  background: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.2s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.stats-card:hover {
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.1);
+}
+
+.stats-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem 0.75rem;
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.stats-card-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--bs-body-color);
+}
+
+.stats-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.25em 0.65em;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.stats-card-body {
+  padding: 1.25rem;
+  flex: 1;
+  position: relative;
+}
+
+/* ─── Top prestataires table ─────────────────────────── */
+.stats-prest-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.stats-prest-row:last-child {
+  border-bottom: none;
+}
+
+.stats-prest-rank {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bs-primary);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stats-prest-rank.rank-1 { background: #f6c700; color: #333; }
+.stats-prest-rank.rank-2 { background: #adb5bd; color: #fff; }
+.stats-prest-rank.rank-3 { background: #cd7f32; color: #fff; }
+
+.stats-prest-name {
+  flex: 1;
+  font-size: 0.88rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stats-prest-bar-wrap {
+  flex: 2;
+  background: var(--bs-tertiary-bg);
+  border-radius: 4px;
+  height: 6px;
+  overflow: hidden;
+}
+
+.stats-prest-bar {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #0d6efd, #6ea8fe);
+  transition: width 0.6s ease;
+}
+
+.stats-prest-amount {
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  min-width: 70px;
+  text-align: right;
+}
+
+/* ─── Responsive ─────────────────────────────────────── */
+@media (max-width: 575.98px) {
+  .stats-kpi-value {
+    font-size: 1.3rem;
+  }
+
+  .stats-kpi-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.15rem;
+  }
+
+  .stats-prest-bar-wrap {
+    display: none;
+  }
+}

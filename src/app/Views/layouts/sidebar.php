@@ -8,7 +8,7 @@
  * @file sidebar.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 2.1
+ * @version 2.2
  * @since 2026
  */
 
@@ -39,7 +39,7 @@ $sbCanAdmin       = UserModel::isPrivileged($sidebarRole);
 <div id="sidebarOverlay" class="sidebar-overlay" aria-hidden="true"></div>
 
 <!-- ── Sidebar ── -->
-<nav class="sidebar d-flex flex-column flex-shrink-0 text-white shadow" id="mobileSidebar" aria-label="Navigation principale">
+<nav class="sidebar text-white shadow" id="mobileSidebar" aria-label="Navigation principale">
 
     <header class="d-flex align-items-center sidebar-header p-4 mb-2 position-relative">
         <a href="/dashboard" class="text-white text-decoration-none d-flex align-items-center logo-link"
@@ -56,163 +56,176 @@ $sbCanAdmin       = UserModel::isPrivileged($sidebarRole);
         </button>
     </header>
 
-    <ul class="nav nav-pills flex-column mb-auto px-2" role="menubar">
+    <!-- ── Zone scrollable (nav + actions mobile) ── -->
+    <div class="sidebar-nav-wrapper">
+        <ul class="nav nav-pills flex-column px-2 mb-0" role="menubar">
 
-        <!-- Dashboard -->
-        <li class="nav-item mb-1" role="none">
-            <a href="/dashboard"
-               class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'dashboard' ? 'active bg-primary' : 'opacity-75' ?>"
-               role="menuitem"
-               <?= $page === 'dashboard' ? 'aria-current="page"' : '' ?>>
-                <i class="bi bi-grid-1x2-fill fs-5 mx-2" aria-hidden="true"></i>
-                <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_dashboard'], ENT_QUOTES) ?></span>
-            </a>
-        </li>
+            <!-- Dashboard -->
+            <li class="nav-item mb-1" role="none">
+                <a href="/dashboard"
+                   class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'dashboard' ? 'active bg-primary' : 'opacity-75' ?>"
+                   role="menuitem"
+                   <?= $page === 'dashboard' ? 'aria-current="page"' : '' ?>>
+                    <i class="bi bi-grid-1x2-fill fs-5 mx-2" aria-hidden="true"></i>
+                    <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_dashboard'], ENT_QUOTES) ?></span>
+                </a>
+            </li>
 
-        <!-- Projets -->
-        <?php if ($sbCanProjects): ?>
-        <li class="nav-item mb-1" role="none">
-            <a href="/projets"
-               class="nav-link text-white d-flex align-items-center py-3 <?= $isProjectPage ? 'active bg-primary' : 'opacity-75' ?>"
-               role="menuitem"
-               <?= $isProjectPage ? 'aria-current="page"' : '' ?>>
-                <i class="bi bi-kanban-fill fs-5 mx-2" aria-hidden="true"></i>
-                <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_projects'], ENT_QUOTES) ?></span>
-            </a>
-        </li>
-        <?php endif; ?>
+            <!-- Projets -->
+            <?php if ($sbCanProjects): ?>
+            <li class="nav-item mb-1" role="none">
+                <a href="/projets"
+                   class="nav-link text-white d-flex align-items-center py-3 <?= $isProjectPage ? 'active bg-primary' : 'opacity-75' ?>"
+                   role="menuitem"
+                   <?= $isProjectPage ? 'aria-current="page"' : '' ?>>
+                    <i class="bi bi-kanban-fill fs-5 mx-2" aria-hidden="true"></i>
+                    <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_projects'], ENT_QUOTES) ?></span>
+                </a>
+            </li>
+            <?php endif; ?>
 
-        <!-- Opérationnel -->
-        <?php if ($sbCanOps): ?>
-        <li class="nav-item mb-1" role="none">
-            <a href="/operationnel"
-               class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'operationnel' ? 'active bg-primary' : 'opacity-75' ?>"
-               role="menuitem"
-               <?= $page === 'operationnel' ? 'aria-current="page"' : '' ?>>
-                <i class="bi bi-clipboard2-data-fill fs-5 mx-2" aria-hidden="true"></i>
-                <span class="ms-2 sb-text">Opérationnel</span>
-            </a>
-        </li>
-        <?php endif; ?>
+            <!-- Opérationnel -->
+            <?php if ($sbCanOps): ?>
+            <li class="nav-item mb-1" role="none">
+                <a href="/operationnel"
+                   class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'operationnel' ? 'active bg-primary' : 'opacity-75' ?>"
+                   role="menuitem"
+                   <?= $page === 'operationnel' ? 'aria-current="page"' : '' ?>>
+                    <i class="bi bi-clipboard2-data-fill fs-5 mx-2" aria-hidden="true"></i>
+                    <span class="ms-2 sb-text">Opérationnel</span>
+                </a>
+            </li>
+            <?php endif; ?>
 
-        <!-- Annuaire -->
-        <?php if ($sbCanAnnuaire): ?>
-        <li class="nav-item mb-1" role="none">
-            <a href="/annuaire"
-               class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'annuaire' ? 'active bg-primary' : 'opacity-75' ?>"
-               role="menuitem"
-               <?= $page === 'annuaire' ? 'aria-current="page"' : '' ?>>
-                <i class="bi bi-people-fill fs-5 mx-2" aria-hidden="true"></i>
-                <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_directory'], ENT_QUOTES) ?></span>
-            </a>
-        </li>
-        <?php endif; ?>
+            <!-- Annuaire -->
+            <?php if ($sbCanAnnuaire): ?>
+            <li class="nav-item mb-1" role="none">
+                <a href="/annuaire"
+                   class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'annuaire' ? 'active bg-primary' : 'opacity-75' ?>"
+                   role="menuitem"
+                   <?= $page === 'annuaire' ? 'aria-current="page"' : '' ?>>
+                    <i class="bi bi-people-fill fs-5 mx-2" aria-hidden="true"></i>
+                    <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_directory'], ENT_QUOTES) ?></span>
+                </a>
+            </li>
+            <?php endif; ?>
 
-        <!-- Nouvel Événement -->
-        <?php if ($sbCanEvents): ?>
-        <li class="nav-item mb-1" role="none">
-            <a href="/nouvel_event"
-               class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'nouvel_event' ? 'active bg-primary' : 'opacity-75' ?>"
-               role="menuitem"
-               <?= $page === 'nouvel_event' ? 'aria-current="page"' : '' ?>>
-                <i class="bi bi-calendar-event-fill fs-5 mx-2" aria-hidden="true"></i>
-                <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_new_event'], ENT_QUOTES) ?></span>
-            </a>
-        </li>
-        <?php endif; ?>
+            <!-- Nouvel Événement -->
+            <?php if ($sbCanEvents): ?>
+            <li class="nav-item mb-1" role="none">
+                <a href="/nouvel_event"
+                   class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'nouvel_event' ? 'active bg-primary' : 'opacity-75' ?>"
+                   role="menuitem"
+                   <?= $page === 'nouvel_event' ? 'aria-current="page"' : '' ?>>
+                    <i class="bi bi-calendar-event-fill fs-5 mx-2" aria-hidden="true"></i>
+                    <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_new_event'], ENT_QUOTES) ?></span>
+                </a>
+            </li>
+            <?php endif; ?>
 
-        <!-- Staff -->
-        <?php if ($sbCanStaff): ?>
-        <li class="nav-item mb-1" role="none">
-            <a href="/staff"
-               class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'staff' ? 'active bg-primary' : 'opacity-75' ?>"
-               role="menuitem"
-               <?= $page === 'staff' ? 'aria-current="page"' : '' ?>>
-                <i class="bi bi-person-badge-fill fs-5 mx-2" aria-hidden="true"></i>
-                <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_staff'], ENT_QUOTES) ?></span>
-            </a>
-        </li>
-        <?php endif; ?>
+            <!-- Staff -->
+            <?php if ($sbCanStaff): ?>
+            <li class="nav-item mb-1" role="none">
+                <a href="/staff"
+                   class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'staff' ? 'active bg-primary' : 'opacity-75' ?>"
+                   role="menuitem"
+                   <?= $page === 'staff' ? 'aria-current="page"' : '' ?>>
+                    <i class="bi bi-person-badge-fill fs-5 mx-2" aria-hidden="true"></i>
+                    <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_staff'], ENT_QUOTES) ?></span>
+                </a>
+            </li>
+            <?php endif; ?>
 
-        <!-- Section Administration (admin uniquement) -->
-        <?php if ($sbCanAdmin): ?>
-        <li class="nav-item mb-1 border-top border-secondary mt-3 pt-3" role="none">
-            <small class="text-white-50 text-uppercase px-3 sb-text d-block mb-1"
-                   style="font-size: 0.7rem;">Administration</small>
-            <a href="/utilisateurs"
-               class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'utilisateurs' ? 'active bg-primary' : 'opacity-75' ?>"
-               role="menuitem"
-               <?= $page === 'utilisateurs' ? 'aria-current="page"' : '' ?>>
-                <i class="bi bi-gear-fill fs-5 mx-2" aria-hidden="true"></i>
-                <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_settings'], ENT_QUOTES) ?></span>
-            </a>
-        </li>
-        <li class="nav-item mb-1" role="none">
-            <a href="/historique"
-               class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'historique' ? 'active bg-primary' : 'opacity-75' ?>"
-               role="menuitem"
-               <?= $page === 'historique' ? 'aria-current="page"' : '' ?>>
-                <i class="bi bi-clock-history fs-5 mx-2" aria-hidden="true"></i>
-                <span class="ms-2 sb-text">Historique</span>
-            </a>
-        </li>
-        <?php endif; ?>
+            <!-- Section Administration (admin uniquement) -->
+            <?php if ($sbCanAdmin): ?>
+            <li class="nav-item mb-1 border-top border-secondary mt-3 pt-3" role="none">
+                <small class="text-white-50 text-uppercase px-3 sb-text d-block mb-1"
+                       style="font-size: 0.7rem;">Administration</small>
+                <a href="/utilisateurs"
+                   class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'utilisateurs' ? 'active bg-primary' : 'opacity-75' ?>"
+                   role="menuitem"
+                   <?= $page === 'utilisateurs' ? 'aria-current="page"' : '' ?>>
+                    <i class="bi bi-gear-fill fs-5 mx-2" aria-hidden="true"></i>
+                    <span class="ms-2 sb-text"><?= htmlspecialchars($t['nav_settings'], ENT_QUOTES) ?></span>
+                </a>
+            </li>
+            <li class="nav-item mb-1" role="none">
+                <a href="/statistiques"
+                   class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'statistiques' ? 'active bg-primary' : 'opacity-75' ?>"
+                   role="menuitem"
+                   <?= $page === 'statistiques' ? 'aria-current="page"' : '' ?>>
+                    <i class="bi bi-bar-chart-line-fill fs-5 mx-2" aria-hidden="true"></i>
+                    <span class="ms-2 sb-text">Statistiques</span>
+                </a>
+            </li>
+            <li class="nav-item mb-1" role="none">
+                <a href="/historique"
+                   class="nav-link text-white d-flex align-items-center py-3 <?= $page === 'historique' ? 'active bg-primary' : 'opacity-75' ?>"
+                   role="menuitem"
+                   <?= $page === 'historique' ? 'aria-current="page"' : '' ?>>
+                    <i class="bi bi-clock-history fs-5 mx-2" aria-hidden="true"></i>
+                    <span class="ms-2 sb-text">Historique</span>
+                </a>
+            </li>
+            <?php endif; ?>
 
-    </ul>
+        </ul>
 
-    <!-- ── Section mobile : actions du header ── -->
-    <div class="d-flex d-md-none flex-column px-3 py-2 border-top border-secondary mx-2 mobile-header-actions">
-        <div class="dropdown mb-2">
-            <button class="btn btn-primary btn-sm w-100 fw-bold dropdown-toggle"
-                    type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <?= htmlspecialchars($t['qc_btn_add'], ENT_QUOTES) ?>
-            </button>
-            <ul class="dropdown-menu shadow border-0 mt-2 w-100" role="menu">
-                <li role="none">
-                    <a class="dropdown-item py-2" href="#" role="menuitem"
-                       data-bs-toggle="modal" data-bs-target="#modalEvent">
-                        <i class="bi bi-calendar-event me-2 text-success" aria-hidden="true"></i>
-                        <?= htmlspecialchars($t['qc_event_title'], ENT_QUOTES) ?>
-                    </a>
-                </li>
-                <li role="none">
-                    <a class="dropdown-item py-2" href="#" role="menuitem"
-                       data-bs-toggle="modal" data-bs-target="#modalProjet">
-                        <i class="bi bi-folder me-2 text-warning" aria-hidden="true"></i>
-                        <?= htmlspecialchars($t['qc_projet_title'], ENT_QUOTES) ?>
-                    </a>
-                </li>
-                <?php if ($isAdmin): ?>
-                    <li role="none"><hr class="dropdown-divider"></li>
+        <!-- ── Section mobile : actions du header ── -->
+        <div class="d-flex d-md-none flex-column px-3 py-2 border-top border-secondary mx-2 mobile-header-actions">
+            <div class="dropdown mb-2">
+                <button class="btn btn-primary btn-sm w-100 fw-bold dropdown-toggle"
+                        type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <?= htmlspecialchars($t['qc_btn_add'], ENT_QUOTES) ?>
+                </button>
+                <ul class="dropdown-menu shadow border-0 mt-2 w-100" role="menu">
                     <li role="none">
                         <a class="dropdown-item py-2" href="#" role="menuitem"
-                           data-bs-toggle="modal" data-bs-target="#modalUser">
-                            <i class="bi bi-person-plus me-2 text-primary" aria-hidden="true"></i>
-                            <?= htmlspecialchars($t['qc_user_title'], ENT_QUOTES) ?>
+                           data-bs-toggle="modal" data-bs-target="#modalEvent">
+                            <i class="bi bi-calendar-event me-2 text-success" aria-hidden="true"></i>
+                            <?= htmlspecialchars($t['qc_event_title'], ENT_QUOTES) ?>
                         </a>
                     </li>
-                <?php endif; ?>
-            </ul>
+                    <li role="none">
+                        <a class="dropdown-item py-2" href="#" role="menuitem"
+                           data-bs-toggle="modal" data-bs-target="#modalProjet">
+                            <i class="bi bi-folder me-2 text-warning" aria-hidden="true"></i>
+                            <?= htmlspecialchars($t['qc_projet_title'], ENT_QUOTES) ?>
+                        </a>
+                    </li>
+                    <?php if ($isAdmin): ?>
+                        <li role="none"><hr class="dropdown-divider"></li>
+                        <li role="none">
+                            <a class="dropdown-item py-2" href="#" role="menuitem"
+                               data-bs-toggle="modal" data-bs-target="#modalUser">
+                                <i class="bi bi-person-plus me-2 text-primary" aria-hidden="true"></i>
+                                <?= htmlspecialchars($t['qc_user_title'], ENT_QUOTES) ?>
+                            </a>
+                        </li>
+                    <?php endif; ?>
+                </ul>
+            </div>
+            <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
+                <nav class="btn-group border border-secondary rounded-pill overflow-hidden" role="group" aria-label="Langue">
+                    <a href="/change_lang?lang=fr&return=<?= htmlspecialchars($page, ENT_QUOTES) ?>"
+                       class="btn btn-xs py-1 px-3 <?= $lang === 'fr' ? 'bg-body-secondary fw-bold text-dark' : 'text-white opacity-75' ?>"
+                       hreflang="fr" lang="fr">FR</a>
+                    <a href="/change_lang?lang=en&return=<?= htmlspecialchars($page, ENT_QUOTES) ?>"
+                       class="btn btn-xs py-1 px-3 <?= $lang === 'en' ? 'bg-body-secondary fw-bold text-dark' : 'text-white opacity-75' ?>"
+                       hreflang="en" lang="en">EN</a>
+                </nav>
+                <button id="darkModeToggleMobile" class="btn btn-link text-white p-0 fs-5 shadow-none"
+                        aria-label="Basculer entre mode clair et sombre">
+                    <?php if ($theme === 'dark'): ?>
+                        <i class="bi bi-moon-stars-fill text-warning" aria-hidden="true"></i>
+                    <?php else: ?>
+                        <i class="bi bi-sun-fill text-warning" aria-hidden="true"></i>
+                    <?php endif; ?>
+                </button>
+            </div>
         </div>
-        <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
-            <nav class="btn-group border border-secondary rounded-pill overflow-hidden" role="group" aria-label="Langue">
-                <a href="/change_lang?lang=fr&return=<?= htmlspecialchars($page, ENT_QUOTES) ?>"
-                   class="btn btn-xs py-1 px-3 <?= $lang === 'fr' ? 'bg-body-secondary fw-bold text-dark' : 'text-white opacity-75' ?>"
-                   hreflang="fr" lang="fr">FR</a>
-                <a href="/change_lang?lang=en&return=<?= htmlspecialchars($page, ENT_QUOTES) ?>"
-                   class="btn btn-xs py-1 px-3 <?= $lang === 'en' ? 'bg-body-secondary fw-bold text-dark' : 'text-white opacity-75' ?>"
-                   hreflang="en" lang="en">EN</a>
-            </nav>
-            <button id="darkModeToggleMobile" class="btn btn-link text-white p-0 fs-5 shadow-none"
-                    aria-label="Basculer entre mode clair et sombre">
-                <?php if ($theme === 'dark'): ?>
-                    <i class="bi bi-moon-stars-fill text-warning" aria-hidden="true"></i>
-                <?php else: ?>
-                    <i class="bi bi-sun-fill text-warning" aria-hidden="true"></i>
-                <?php endif; ?>
-            </button>
-        </div>
-    </div>
+
+    </div><!-- /sidebar-nav-wrapper -->
 
     <footer class="p-3 border-top border-secondary mx-2 mb-3">
         <a href="/profil" class="d-flex align-items-center user-block text-decoration-none text-white"
@@ -242,9 +255,9 @@ $sbCanAdmin       = UserModel::isPrivileged($sidebarRole);
                         'chef_projet' => '📋', 'regisseur' => '🎛️', 'commercial' => '💼',
                         'staff' => '👤', 'benevole' => '🤝',
                     ];
-                    $sRole = (string)($_SESSION['user_role'] ?? 'staff');
-                    $sBg   = $sidebarRoleColors[$sRole] ?? '#5d6d7e';
-                    $sIcon = $sidebarRoleIcons[$sRole]  ?? '👤';
+                    $sRole  = (string) ($_SESSION['user_role'] ?? 'staff');
+                    $sBg    = $sidebarRoleColors[$sRole] ?? '#5d6d7e';
+                    $sIcon  = $sidebarRoleIcons[$sRole]  ?? '👤';
                     $sLabel = htmlspecialchars(\App\Models\UserModel::roleLabel($sRole), ENT_QUOTES);
                     ?>
                     <span class="badge rounded-pill"
