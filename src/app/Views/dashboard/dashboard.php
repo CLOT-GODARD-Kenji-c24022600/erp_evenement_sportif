@@ -3,12 +3,15 @@
 /**
  * YES – Your Event Solution
  * @file dashboard.php
- * @version 2.2  –  2026
+ * @author CELESTINE Samuel
+ * @author CLOT-GODARD Kenji
+ * @version 2.1
+ * @since 2026
  *
  * Structure :
- *   - KPIs (événements / todos)
- *   - Grille principale : événements (table) + todolist côte à côte
- *   - Planning global (Gantt/liste) en dessous
+ * - KPIs (événements / todos)
+ * - Grille principale : événements (table) + todolist côte à côte
+ * - Planning global unifié (Gantt/liste) en dessous
  */
 
 declare(strict_types=1);
@@ -17,12 +20,22 @@ $statuts_colors = [
     'wip'      => 'warning',
     'en_cours' => 'primary',
     'valide'   => 'success',
+    'maj'      => 'info',
+    'devis'    => 'secondary',
+    'visuels'  => 'secondary',
+    'bat'      => 'secondary',
+    'prod'     => 'secondary',
     'annule'   => 'danger',
 ];
 $statuts_labels = [
     'wip'      => 'WIP',
     'en_cours' => 'En cours',
     'valide'   => 'Validé',
+    'maj'      => 'Maj',
+    'devis'    => 'Devis',
+    'visuels'  => 'Visuels',
+    'bat'      => 'BAT',
+    'prod'     => 'Prod',
     'annule'   => 'Annulé',
 ];
 
@@ -38,7 +51,6 @@ $totalEvents = count($evenements);
 
 <div class="container-fluid py-4">
 
-    <!-- ── Flash messages ─────────────────────────────────── -->
     <?php if ($todoMsg !== null): ?>
         <aside class="alert alert-<?= $todoType === 'success' ? 'success' : 'danger' ?> alert-dismissible fade show shadow-sm mb-4" role="alert">
             <i class="bi bi-<?= $todoType === 'success' ? 'check-circle-fill' : 'exclamation-triangle-fill' ?> me-2"></i>
@@ -63,7 +75,6 @@ $totalEvents = count($evenements);
         </aside>
     <?php endif; ?>
 
-    <!-- ── KPIs ──────────────────────────────────────────── -->
     <ul class="row row-cols-2 row-cols-md-4 g-3 list-unstyled mb-4">
         <?php foreach ([
             ['label' => 'Événements totaux',  'val' => $totalEvents,           'color' => 'primary', 'icon' => 'bi-calendar-event-fill'],
@@ -83,10 +94,8 @@ $totalEvents = count($evenements);
         <?php endforeach; ?>
     </ul>
 
-    <!-- ── Grille principale : Événements | Todolist ──────── -->
     <div class="row g-4 mb-4">
 
-        <!-- Colonne gauche : Événements -->
         <div class="col-lg-7">
             <section class="card border-0 shadow-sm rounded-3 h-100">
                 <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-3 pb-0 px-4">
@@ -171,18 +180,16 @@ $totalEvents = count($evenements);
             </section>
         </div>
 
-        <!-- Colonne droite : Todolist -->
         <div class="col-lg-5">
             <?php include __DIR__ . '/todolist.php'; ?>
         </div>
 
     </div>
 
-    <!-- ── Planning global ────────────────────────────────── -->
     <section class="card border-0 shadow-sm rounded-3" aria-labelledby="pg-heading">
         <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-3 pb-0 px-4">
             <h2 id="pg-heading" class="fw-bold fs-5 mb-0">
-                <i class="bi bi-bar-chart-steps me-2 text-info"></i>Planning global
+                <i class="bi bi-bar-chart-steps me-2 text-info"></i>Planning Global & Opérationnel
             </h2>
             <div class="d-flex gap-2">
                 <div class="d-flex gap-1">
@@ -202,26 +209,25 @@ $totalEvents = count($evenements);
                 <?php if ($canPlanningGlobal ?? false): ?>
                 <button class="btn btn-info btn-sm fw-semibold text-white shadow-sm rounded-3"
                         data-bs-toggle="modal" data-bs-target="#modalPgCreate">
-                    <i class="bi bi-plus-lg me-1"></i>Ajouter
+                    <i class="bi bi-plus-lg me-1"></i>Ajouter une tâche
                 </button>
                 <?php endif; ?>
             </div>
         </div>
         <div class="card-body p-0">
 
-            <!-- Vue liste -->
             <div id="pg-list-view" class="p-3">
             <?php if (empty($planningGlobal)): ?>
                 <p class="text-body-secondary text-center py-4 mb-0">
                     <i class="bi bi-calendar3 fs-2 d-block mb-2 opacity-50"></i>
-                    Aucune entrée dans le planning global.
+                    Aucune entrée dans le planning.
                 </p>
             <?php else: ?>
             <div class="table-responsive">
                 <table class="table table-hover mb-0 align-middle">
                     <thead class="table-light small">
                         <tr>
-                            <th class="ps-3">Titre</th>
+                            <th class="ps-3">Tâche</th>
                             <th>Statut</th>
                             <th>Lié à</th>
                             <th>Début</th>
@@ -236,11 +242,11 @@ $totalEvents = count($evenements);
                     ?>
                     <tr>
                         <td class="ps-3">
-                            <span class="d-inline-block rounded-circle me-2 align-middle flex-shrink-0"
-                                  style="width:10px;height:10px;background:<?= htmlspecialchars($pg['couleur'] ?? '#0d6efd', ENT_QUOTES) ?>"></span>
-                            <span class="fw-semibold"><?= htmlspecialchars((string)$pg['titre'], ENT_QUOTES) ?></span>
-                            <?php if (!empty($pg['description'])): ?>
-                            <br><small class="text-body-secondary ms-4"><?= htmlspecialchars((string)$pg['description'], ENT_QUOTES) ?></small>
+                            <span class="d-inline-block rounded-circle me-2 align-middle flex-shrink-0 bg-<?= $pgColor ?>"
+                                  style="width:10px;height:10px;"></span>
+                            <span class="fw-semibold"><?= htmlspecialchars((string)$pg['tache'], ENT_QUOTES) ?></span>
+                            <?php if (!empty($pg['note'])): ?>
+                            <br><small class="text-body-secondary ms-4"><?= htmlspecialchars((string)$pg['note'], ENT_QUOTES) ?></small>
                             <?php endif; ?>
                         </td>
                         <td>
@@ -258,6 +264,11 @@ $totalEvents = count($evenements);
                         <td class="small"><?= !empty($pg['date_debut']) ? date('d/m/Y', strtotime($pg['date_debut'])) : '—' ?></td>
                         <td class="small"><?= !empty($pg['date_fin'])   ? date('d/m/Y', strtotime($pg['date_fin']))   : '—' ?></td>
                         <td class="pe-3 text-end">
+                            <?php if (!empty($pg['event_id'])): ?>
+                            <a href="/operationnel?event_id=<?= (int)$pg['event_id'] ?>#pane-planning" class="btn btn-sm btn-outline-primary rounded-3 py-0 px-2 me-1" title="Voir dans l'événement">
+                                <i class="bi bi-box-arrow-in-right"></i>
+                            </a>
+                            <?php endif; ?>
                             <button class="btn btn-sm btn-outline-secondary rounded-3 py-0 px-2 me-1"
                                     onclick="openPgEdit(<?= htmlspecialchars(json_encode($pg), ENT_QUOTES) ?>)">
                                 <i class="bi bi-pencil"></i>
@@ -278,7 +289,6 @@ $totalEvents = count($evenements);
             <?php endif; ?>
             </div>
 
-            <!-- Vue Calendrier -->
             <div id="pg-calendar-view" style="display:none;" class="p-3">
                 <div class="card border-0 rounded-3">
                     <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center py-2 px-3">
@@ -311,7 +321,6 @@ $totalEvents = count($evenements);
                 </div>
             </div>
 
-            <!-- Vue Gantt -->
             <div id="pg-gantt-view" style="display:none;" class="p-3">
                 <?php if (empty($pgWithDates)): ?>
                 <div class="alert alert-info border-0 mb-0">
@@ -326,17 +335,11 @@ $totalEvents = count($evenements);
         </div>
     </section>
 
-</div><!-- /.container-fluid -->
-
-
-<!-- ════════════════════════════════════════════════════════
-     MODALS PLANNING GLOBAL
-════════════════════════════════════════════════════════ -->
-<div class="modal fade" id="modalPgCreate" tabindex="-1">
+</div><div class="modal fade" id="modalPgCreate" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow-lg rounded-4">
       <div class="modal-header border-0">
-        <h5 class="modal-title fw-bold"><i class="bi bi-calendar-plus me-2 text-info"></i>Nouvelle entrée planning global</h5>
+        <h5 class="modal-title fw-bold"><i class="bi bi-calendar-plus me-2 text-info"></i>Nouvelle tâche au planning</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
@@ -344,29 +347,24 @@ $totalEvents = count($evenements);
           <input type="hidden" name="pg_action" value="pg_create">
           <div class="row g-3">
             <div class="col-12">
-              <label class="form-label fw-semibold">Titre <span class="text-danger">*</span></label>
-              <input type="text" name="pg_titre" class="form-control rounded-3" required>
+              <label class="form-label fw-semibold">Tâche <span class="text-danger">*</span></label>
+              <input type="text" name="pg_tache" class="form-control rounded-3" required>
             </div>
-            <div class="col-md-8">
+            <div class="col-12">
               <label class="form-label fw-semibold">Statut</label>
               <select name="pg_statut" class="form-select rounded-3">
-                <option value="wip">WIP</option>
-                <option value="en_cours">En cours</option>
-                <option value="valide">Validé</option>
-                <option value="annule">Annulé</option>
+                <?php foreach ($statuts_labels as $sKey => $sLbl): ?>
+                <option value="<?= $sKey ?>"><?= $sLbl ?></option>
+                <?php endforeach; ?>
               </select>
             </div>
-            <div class="col-md-4">
-              <label class="form-label fw-semibold">Couleur</label>
-              <input type="color" name="pg_couleur" class="form-control form-control-color w-100 rounded-3" value="#0d6efd">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Date début</label>
+              <input type="date" name="pg_date_debut" class="form-control rounded-3">
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Date début <span class="text-danger">*</span></label>
-              <input type="date" name="pg_date_debut" class="form-control rounded-3" required>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Date fin <span class="text-danger">*</span></label>
-              <input type="date" name="pg_date_fin" class="form-control rounded-3" required>
+              <label class="form-label fw-semibold">Date fin</label>
+              <input type="date" name="pg_date_fin" class="form-control rounded-3">
             </div>
             <div class="col-md-6">
               <label class="form-label fw-semibold">Événement lié</label>
@@ -387,8 +385,8 @@ $totalEvents = count($evenements);
               </select>
             </div>
             <div class="col-12">
-              <label class="form-label fw-semibold">Description</label>
-              <textarea name="pg_description" class="form-control rounded-3" rows="2"></textarea>
+              <label class="form-label fw-semibold">Note / Description</label>
+              <textarea name="pg_note" class="form-control rounded-3" rows="2"></textarea>
             </div>
           </div>
           <div class="d-flex justify-content-end gap-2 mt-4">
@@ -405,7 +403,7 @@ $totalEvents = count($evenements);
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow-lg rounded-4">
       <div class="modal-header border-0">
-        <h5 class="modal-title fw-bold"><i class="bi bi-pencil me-2 text-primary"></i>Modifier l'entrée planning global</h5>
+        <h5 class="modal-title fw-bold"><i class="bi bi-pencil me-2 text-primary"></i>Modifier la tâche de planning</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
@@ -414,21 +412,16 @@ $totalEvents = count($evenements);
           <input type="hidden" name="pg_id" id="pge-id">
           <div class="row g-3">
             <div class="col-12">
-              <label class="form-label fw-semibold">Titre</label>
-              <input type="text" name="pg_titre" id="pge-titre" class="form-control rounded-3" required>
+              <label class="form-label fw-semibold">Tâche</label>
+              <input type="text" name="pg_tache" id="pge-tache" class="form-control rounded-3" required>
             </div>
-            <div class="col-md-8">
+            <div class="col-12">
               <label class="form-label fw-semibold">Statut</label>
               <select name="pg_statut" id="pge-statut" class="form-select rounded-3">
-                <option value="wip">WIP</option>
-                <option value="en_cours">En cours</option>
-                <option value="valide">Validé</option>
-                <option value="annule">Annulé</option>
+                <?php foreach ($statuts_labels as $sKey => $sLbl): ?>
+                <option value="<?= $sKey ?>"><?= $sLbl ?></option>
+                <?php endforeach; ?>
               </select>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label fw-semibold">Couleur</label>
-              <input type="color" name="pg_couleur" id="pge-couleur" class="form-control form-control-color w-100 rounded-3">
             </div>
             <div class="col-md-6">
               <label class="form-label fw-semibold">Date début</label>
@@ -457,8 +450,8 @@ $totalEvents = count($evenements);
               </select>
             </div>
             <div class="col-12">
-              <label class="form-label fw-semibold">Description</label>
-              <textarea name="pg_description" id="pge-desc" class="form-control rounded-3" rows="2"></textarea>
+              <label class="form-label fw-semibold">Note / Description</label>
+              <textarea name="pg_note" id="pge-note" class="form-control rounded-3" rows="2"></textarea>
             </div>
           </div>
           <div class="d-flex justify-content-end gap-2 mt-4">
@@ -471,7 +464,6 @@ $totalEvents = count($evenements);
   </div>
 </div>
 
-<!-- ════ Modal : Dupliquer un événement ════ -->
 <div class="modal fade" id="modalDuplicateEvent" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow-lg rounded-4">

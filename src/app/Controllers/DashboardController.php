@@ -3,8 +3,10 @@
 /**
  * YES - Your Event Solution
  * @file DashboardController.php
- * @version 1.2  –  2026
- * Ajout : Planning global (PlanningGlobalModel)
+ * @author CELESTINE Samuel
+ * @author CLOT-GODARD Kenji
+ * @version 2.1
+ * @since 2026
  */
 
 declare(strict_types=1);
@@ -14,7 +16,7 @@ namespace App\Controllers;
 use App\Models\EventModel;
 use App\Models\TodoModel;
 use App\Models\ProjectModel;
-use App\Models\PlanningGlobalModel;
+use App\Models\PlanningModel; // Remplacement ICI
 use App\Controllers\TodoController;
 use Core\Permission;
 
@@ -50,7 +52,7 @@ class DashboardController
             if (Permission::canPlanningGlobal(Permission::currentRole())) {
                 [$pgType, $pgMsg] = explode(':', $this->handlePlanningGlobal(), 2);
             } else {
-                [$pgType, $pgMsg] = ['error', 'Accès refusé : vous ne pouvez pas modifier le planning global.'];
+                [$pgType, $pgMsg] = ['error', 'Accès refusé : vous ne pouvez pas modifier le planning.'];
             }
             if (!$todoMsg) {
                 $todoMsg  = $pgMsg;
@@ -83,10 +85,10 @@ class DashboardController
             $projets = (new ProjectModel())->getAllSimple();
         } catch (\Exception $e) {}
 
-        // ── Planning global ───────────────────────────────────
+        // ── Planning (Opérationnel global) ────────────────────
         $planningGlobal = [];
         try {
-            $planningGlobal = (new PlanningGlobalModel())->getAll();
+            $planningGlobal = (new PlanningModel())->getAll();
         } catch (\Exception $e) {}
 
         $role = Permission::currentRole();
@@ -106,12 +108,12 @@ class DashboardController
         ];
     }
 
-    // ── Planning Global CRUD ──────────────────────────────────
+    // ── Planning Global CRUD (redirigé vers PlanningModel) ───
 
     private function handlePlanningGlobal(): string
     {
         $action = \Core\Security::sanitizeString($_POST['pg_action'] ?? '');
-        $model  = new PlanningGlobalModel();
+        $model  = new PlanningModel();
 
         return match($action) {
             'pg_create' => $this->pgCreate($model),
@@ -121,44 +123,48 @@ class DashboardController
         };
     }
 
-    private function pgCreate(PlanningGlobalModel $model): string
+    private function pgCreate(PlanningModel $model): string
     {
-        $titre = \Core\Security::sanitizeString($_POST['pg_titre'] ?? '');
-        if ($titre === '') return 'error:Le titre est obligatoire.';
+        $tache = \Core\Security::sanitizeString($_POST['pg_tache'] ?? '');
+        if ($tache === '') return 'error:La tâche est obligatoire.';
+        
         $ok = $model->create([
-            'titre'       => $titre,
-            'description' => \Core\Security::sanitizeString($_POST['pg_description'] ?? ''),
-            'couleur'     => \Core\Security::sanitizeString($_POST['pg_couleur']     ?? '#0d6efd'),
-            'date_debut'  => $_POST['pg_date_debut'] ?? '',
-            'date_fin'    => $_POST['pg_date_fin']   ?? '',
-            'statut'      => \Core\Security::sanitizeString($_POST['pg_statut']      ?? 'wip'),
-            'event_id'    => \Core\Security::sanitizeInt($_POST['pg_event_id']   ?? 0) ?: null,
-            'projet_id'   => \Core\Security::sanitizeInt($_POST['pg_projet_id']  ?? 0) ?: null,
+            'tache'      => $tache,
+            'note'       => \Core\Security::sanitizeString($_POST['pg_note'] ?? ''),
+            'statut'     => \Core\Security::sanitizeString($_POST['pg_statut'] ?? 'wip'),
+            'date_debut' => !empty($_POST['pg_date_debut']) ? $_POST['pg_date_debut'] : null,
+            'date_fin'   => !empty($_POST['pg_date_fin'])   ? $_POST['pg_date_fin']   : null,
+            'event_id'   => \Core\Security::sanitizeInt($_POST['pg_event_id'] ?? 0) ?: null,
+            'projet_id'  => \Core\Security::sanitizeInt($_POST['pg_projet_id'] ?? 0) ?: null,
+            'ordre'      => 0,
+            'contact_id' => null, // Peut être géré plus tard depuis le dashboard si besoin
         ]);
-        return $ok ? 'success:Entrée planning global ajoutée.' : 'error:Erreur lors de l\'ajout.';
+        return $ok ? 'success:Tâche ajoutée au planning.' : 'error:Erreur lors de l\'ajout.';
     }
 
-    private function pgUpdate(PlanningGlobalModel $model): string
+    private function pgUpdate(PlanningModel $model): string
     {
         $id = \Core\Security::sanitizeInt($_POST['pg_id'] ?? 0);
         if (!$id) return 'error:ID invalide.';
+        
         $ok = $model->update($id, [
-            'titre'       => \Core\Security::sanitizeString($_POST['pg_titre']       ?? ''),
-            'description' => \Core\Security::sanitizeString($_POST['pg_description'] ?? ''),
-            'couleur'     => \Core\Security::sanitizeString($_POST['pg_couleur']     ?? '#0d6efd'),
-            'date_debut'  => $_POST['pg_date_debut'] ?? '',
-            'date_fin'    => $_POST['pg_date_fin']   ?? '',
-            'statut'      => \Core\Security::sanitizeString($_POST['pg_statut']      ?? 'wip'),
-            'event_id'    => \Core\Security::sanitizeInt($_POST['pg_event_id']   ?? 0) ?: null,
-            'projet_id'   => \Core\Security::sanitizeInt($_POST['pg_projet_id']  ?? 0) ?: null,
+            'tache'      => \Core\Security::sanitizeString($_POST['pg_tache'] ?? ''),
+            'note'       => \Core\Security::sanitizeString($_POST['pg_note'] ?? ''),
+            'statut'     => \Core\Security::sanitizeString($_POST['pg_statut'] ?? 'wip'),
+            'date_debut' => !empty($_POST['pg_date_debut']) ? $_POST['pg_date_debut'] : null,
+            'date_fin'   => !empty($_POST['pg_date_fin'])   ? $_POST['pg_date_fin']   : null,
+            'event_id'   => \Core\Security::sanitizeInt($_POST['pg_event_id'] ?? 0) ?: null,
+            'projet_id'  => \Core\Security::sanitizeInt($_POST['pg_projet_id'] ?? 0) ?: null,
+            'ordre'      => 0,
+            'contact_id' => null, // Géré depuis l'opérationnel
         ]);
-        return $ok ? 'success:Planning global mis à jour.' : 'error:Erreur mise à jour.';
+        return $ok ? 'success:Tâche de planning mise à jour.' : 'error:Erreur mise à jour.';
     }
 
-    private function pgDelete(PlanningGlobalModel $model): string
+    private function pgDelete(PlanningModel $model): string
     {
         $id = \Core\Security::sanitizeInt($_POST['pg_id'] ?? 0);
         return $id && $model->delete($id)
-            ? 'success:Entrée supprimée.' : 'error:Erreur suppression.';
+            ? 'success:Tâche supprimée.' : 'error:Erreur suppression.';
     }
 }

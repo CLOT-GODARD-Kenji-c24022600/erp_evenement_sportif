@@ -32,10 +32,27 @@ class PlanningModel
         $this->db = Database::getConnection();
     }
 
+    // AJOUT : Pour afficher tout le planning sur le Dashboard
+    public function getAll(): array
+    {
+        try {
+            $stmt = $this->db->query(
+                'SELECT p.*, e.nom AS event_nom, pr.nom AS projet_nom, c.nom AS contact_nom 
+                 FROM ' . self::TABLE . ' p
+                 LEFT JOIN evenements e ON p.event_id = e.id
+                 LEFT JOIN projets pr ON p.projet_id = pr.id
+                 LEFT JOIN contacts c ON p.contact_id = c.id
+                 ORDER BY p.date_debut ASC, p.ordre ASC'
+            );
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException) {
+            return [];
+        }
+    }
+
     public function getByEvent(int $eventId): array
     {
         try {
-            // AJOUT : LEFT JOIN pour récupérer le nom du contact
             $stmt = $this->db->prepare(
                 'SELECT p.*, c.nom AS contact_nom 
                  FROM ' . self::TABLE . ' p
@@ -53,7 +70,6 @@ class PlanningModel
     public function getByProjet(int $projetId): array
     {
         try {
-            // AJOUT : LEFT JOIN pour récupérer le nom du contact
             $stmt = $this->db->prepare(
                 'SELECT p.*, c.nom AS contact_nom 
                  FROM ' . self::TABLE . ' p
@@ -71,7 +87,6 @@ class PlanningModel
     public function create(array $d): bool
     {
         try {
-            // AJOUT : colonne contact_id
             $stmt = $this->db->prepare(
                 'INSERT INTO ' . self::TABLE . '
                     (event_id, projet_id, tache, statut, date_debut, date_fin, note, ordre, contact_id)
@@ -97,7 +112,6 @@ class PlanningModel
     public function update(int $id, array $d): bool
     {
         try {
-            // AJOUT : mise à jour de la colonne contact_id
             $stmt = $this->db->prepare(
                 'UPDATE ' . self::TABLE . ' SET
                     tache=:tache, statut=:statut, date_debut=:date_debut,
