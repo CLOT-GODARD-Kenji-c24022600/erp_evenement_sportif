@@ -1,16 +1,19 @@
 /**
  * YES – Your Event Solution
  * @file operationnel.js
- * @version 2.1  –  2026
+ * @author CELESTINE Samuel
+ * @author CLOT-GODARD Kenji
+ * @version 2.1
+ * @since 2026
  *
  * Fonctionnalités :
- *  - Mémorisation onglet actif (localStorage)
- *  - Vue Liste / Calendrier / Gantt dans le planning
- *  - Calendrier mensuel interactif style emploi du temps
- *  - Diagramme de Gantt (canvas)
- *  - Remplissage auto contact depuis select
- *  - Calcul total facturation temps réel
- *  - Modals edit : Budget / Planning / Matériel / Facturation
+ * - Mémorisation onglet actif (localStorage)
+ * - Vue Liste / Calendrier / Gantt dans le planning
+ * - Calendrier mensuel interactif style emploi du temps
+ * - Diagramme de Gantt (canvas)
+ * - Remplissage auto contact depuis select
+ * - Calcul total facturation temps réel
+ * - Modals edit : Budget / Planning / Matériel / Facturation
  */
 
 (function () {
@@ -452,6 +455,7 @@
     set('pe-debut', d.date_debut ? d.date_debut.substring(0,10) : '');
     set('pe-fin',   d.date_fin   ? d.date_fin.substring(0,10)   : '');
     set('pe-note',d.note);
+    set('pe-contact',d.contact_id); // <--- LIGNE AJOUTEE ICI !
     modal('modalPlanningEdit').show();
   };
 

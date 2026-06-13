@@ -5,7 +5,10 @@
  * Vue : Opérationnel — Budget / Planning / Matériel / Facturation / Pré-production
  *
  * @file operationnel.php
- * @version 2.0  –  2026
+ * @author CELESTINE Samuel
+ * @author CLOT-GODARD Kenji
+ * @version 2.1
+ * @since 2026
  */
 
 declare(strict_types=1);
@@ -521,6 +524,7 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                             <tr>
                                 <th class="ps-3">#</th>
                                 <th>Tâche</th>
+                                <th>Assigné</th>
                                 <th>Statut</th>
                                 <th>Début</th>
                                 <th>Fin</th>
@@ -535,6 +539,13 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                         <tr>
                             <td class="ps-3 text-body-secondary small"><?= (int)$pl['ordre'] ?: '—' ?></td>
                             <td class="fw-medium"><?= htmlspecialchars((string)$pl['tache'], ENT_QUOTES) ?></td>
+                            <td class="small text-primary fw-semibold">
+                                <?php if (!empty($pl['contact_nom'])): ?>
+                                    <i class="bi bi-person-fill me-1"></i><?= htmlspecialchars((string)$pl['contact_nom'], ENT_QUOTES) ?>
+                                <?php else: ?>
+                                    <span class="text-body-secondary">—</span>
+                                <?php endif; ?>
+                            </td>
                             <td>
                                 <span class="badge rounded-pill bg-<?= $pSt['color'] ?>">
                                     <?= htmlspecialchars($pSt['label'], ENT_QUOTES) ?>
@@ -1207,6 +1218,17 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
               <label class="form-label fw-semibold">Tâche <span class="text-danger">*</span></label>
               <input type="text" name="tache" class="form-control rounded-3" required>
             </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold"><i class="bi bi-person-lines-fill me-1"></i>Contact assigné</label>
+              <select name="contact_id" class="form-select rounded-3">
+                <option value="">— Aucun contact assigné —</option>
+                <?php foreach ($contacts as $ct): ?>
+                <option value="<?= (int)$ct['id'] ?>">
+                    <?= htmlspecialchars((string)$ct['nom'], ENT_QUOTES) ?>
+                </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
             <div class="col-md-6">
               <label class="form-label fw-semibold">Statut</label>
               <select name="statut" class="form-select rounded-3">
@@ -1258,6 +1280,17 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
             <div class="col-12">
               <label class="form-label fw-semibold">Tâche</label>
               <input type="text" name="tache" id="pe-tache" class="form-control rounded-3" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold"><i class="bi bi-person-lines-fill me-1 text-primary"></i>Contact assigné</label>
+              <select name="contact_id" id="pe-contact" class="form-select rounded-3">
+                <option value="">— Aucun contact assigné —</option>
+                <?php foreach ($contacts as $ct): ?>
+                <option value="<?= (int)$ct['id'] ?>">
+                    <?= htmlspecialchars((string)$ct['nom'], ENT_QUOTES) ?>
+                </option>
+                <?php endforeach; ?>
+              </select>
             </div>
             <div class="col-md-6">
               <label class="form-label fw-semibold">Statut</label>
