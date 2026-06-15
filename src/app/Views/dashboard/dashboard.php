@@ -118,7 +118,7 @@ $totalEvents = count($evenements);
                     <?php else: ?>
                     <div class="table-responsive">
                         <table class="table table-hover mb-0 align-middle">
-                            <thead class="table-light small">
+                            <thead class="small">
                                 <tr>
                                     <th class="ps-4 fw-semibold">Événement</th>
                                     <th class="fw-semibold">Sport</th>
@@ -225,7 +225,7 @@ $totalEvents = count($evenements);
             <?php else: ?>
             <div class="table-responsive">
                 <table class="table table-hover mb-0 align-middle">
-                    <thead class="table-light small">
+                    <thead class="small">
                         <tr>
                             <th class="ps-3">Tâche</th>
                             <th>Statut</th>
@@ -335,7 +335,9 @@ $totalEvents = count($evenements);
         </div>
     </section>
 
-</div><div class="modal fade" id="modalPgCreate" tabindex="-1">
+</div>
+
+<div class="modal fade" id="modalPgCreate" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow-lg rounded-4">
       <div class="modal-header border-0">

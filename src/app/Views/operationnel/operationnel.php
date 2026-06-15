@@ -5,10 +5,7 @@
  * Vue : Opérationnel — Budget / Planning / Matériel / Facturation / Pré-production
  *
  * @file operationnel.php
- * @author CELESTINE Samuel
- * @author CLOT-GODARD Kenji
- * @version 2.1
- * @since 2026
+ * @version 2.0  –  2026
  */
 
 declare(strict_types=1);
@@ -20,15 +17,15 @@ function opsForm(int $eventId, int $projetId): string {
 }
 
 $planningStatuts = [
-    'wip'      => ['label' => 'WIP',      'color' => 'warning'],
-    'en_cours' => ['label' => 'En cours', 'color' => 'primary'],
-    'valide'   => ['label' => 'Validé',   'color' => 'success'],
-    'maj'      => ['label' => 'Maj',      'color' => 'info'],
-    'devis'    => ['label' => 'Devis',    'color' => 'secondary'],
-    'visuels'  => ['label' => 'Visuels',  'color' => 'secondary'],
-    'bat'      => ['label' => 'BAT',      'color' => 'secondary'],
-    'prod'     => ['label' => 'Prod',     'color' => 'secondary'],
-    'annule'   => ['label' => 'Annulé',   'color' => 'danger'],
+    'wip'      => ['label' => $t['ops_status_wip'],         'color' => 'warning'],
+    'en_cours' => ['label' => $t['ops_status_in_progress'], 'color' => 'primary'],
+    'valide'   => ['label' => $t['ops_status_validated'],   'color' => 'success'],
+    'maj'      => ['label' => $t['ops_status_update'],      'color' => 'info'],
+    'devis'    => ['label' => $t['ops_status_quote'],       'color' => 'secondary'],
+    'visuels'  => ['label' => $t['ops_status_visuals'],     'color' => 'secondary'],
+    'bat'      => ['label' => $t['ops_status_bat'],         'color' => 'secondary'],
+    'prod'     => ['label' => $t['ops_status_prod'],        'color' => 'secondary'],
+    'annule'   => ['label' => $t['ops_status_cancelled'],   'color' => 'danger'],
 ];
 
 $contextLabel = '';
@@ -60,6 +57,7 @@ $planningAvecDates = array_filter($planning, fn($p) => !empty($p['date_debut']))
      id="ops-container"
      data-restore-tab="<?= htmlspecialchars((string)($restoreTab ?? ''), ENT_QUOTES) ?>">
 
+    <!-- ── En-tête + sélecteur ──────────────────────────── -->
     <header class="d-flex flex-wrap align-items-center gap-3 mb-4">
         <hgroup class="flex-grow-1">
             <h1 class="fw-bold fs-4 mb-0">
@@ -72,6 +70,7 @@ $planningAvecDates = array_filter($planning, fn($p) => !empty($p['date_debut']))
             <p class="text-body-secondary small mb-0">Budget · Planning · Matériel · Facturation · Pré-production</p>
         </hgroup>
 
+        <!-- Sélecteur événement / projet -->
         <form method="GET" action="/operationnel" class="d-flex gap-2 flex-wrap align-items-center">
             <select name="event_id" class="form-select form-select-sm rounded-3" style="max-width:220px;"
                     onchange="this.form.submit()" aria-label="Choisir un événement">
@@ -118,6 +117,7 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
     </div>
     <?php else: ?>
 
+    <!-- ── Récap finance projet ──────────────────────────────── -->
     <?php if ($projetId > 0 && !empty($projetFinance)): ?>
     <div class="card border-0 shadow-sm rounded-3 mb-4">
         <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-3 px-4">
@@ -154,6 +154,7 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
     </div>
     <?php endif; ?>
 
+    <!-- Liens Drive/Maps rapides si événement -->
     <?php if ($eventId > 0 && $eventData): ?>
     <?php $hasLinks = !empty($eventData['drive_url']) || !empty($eventData['drive_doc_url']) || !empty($eventData['maps_url']); ?>
     <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
@@ -182,6 +183,7 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
     </div>
     <?php endif; ?>
 
+    <!-- ── Onglets ──────────────────────────────────────── -->
     <ul class="nav nav-tabs mb-4" id="opsTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active fw-semibold" id="tab-budget" data-bs-toggle="tab"
@@ -228,8 +230,12 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
 
     <div class="tab-content">
 
+        <!-- ══════════════════════════════════════════════
+             ONGLET BUDGET
+        ══════════════════════════════════════════════ -->
         <div class="tab-pane fade show active" id="pane-budget" role="tabpanel">
 
+            <!-- KPIs -->
             <ul class="row row-cols-2 row-cols-md-4 g-3 list-unstyled mb-4">
                 <?php foreach ([
                     ['label'=>'Produits prévisionnels', 'val'=>$budgetTotaux['total_produits_prev']??0, 'color'=>'success', 'icon'=>'bi-arrow-up-circle'],
@@ -251,41 +257,43 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                 <?php endforeach; ?>
             </ul>
 
+            <!-- KPI Facturation dans le budget -->
             <div class="alert alert-info border-0 shadow-sm mb-4 d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-receipt me-2"></i><strong>Total facturation réelle :</strong></span>
+                <span><i class="bi bi-receipt me-2"></i><strong><?= $t['ops_invoice_total'] ?> réelle :</strong></span>
                 <span class="fw-bold fs-5"><?= number_format($totalFacturation, 2, ',', ' ') ?> €</span>
             </div>
 
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="d-flex gap-2">
                     <a href="<?= exportUrl('budget', $eventId, $projetId, 'csv') ?>"
-                       class="btn btn-sm btn-outline-success rounded-3" title="Exporter en Excel/CSV">
+                       class="btn btn-sm btn-outline-success rounded-3" title="<?= $t['ops_export_csv'] ?>">
                         <i class="bi bi-file-earmark-excel me-1"></i>Excel
                     </a>
                     <a href="<?= exportUrl('budget', $eventId, $projetId, 'pdf') ?>"
-                       class="btn btn-sm btn-outline-danger rounded-3" title="Exporter en PDF"
+                       class="btn btn-sm btn-outline-danger rounded-3" title="<?= $t['ops_export_pdf'] ?>"
                        target="_blank">
                         <i class="bi bi-file-earmark-pdf me-1"></i>PDF
                     </a>
                 </div>
                 <button class="btn btn-primary btn-sm fw-semibold shadow-sm"
                         data-bs-toggle="modal" data-bs-target="#modalBudgetCreate">
-                    <i class="bi bi-plus-lg me-1"></i> Ajouter une ligne
+                    <?= $t['ops_budget_add'] ?>
                 </button>
             </div>
 
+            <!-- Produits -->
             <?php if (!empty($budgetProduits)): ?>
             <section class="card border-0 shadow-sm rounded-3 mb-4">
                 <div class="card-header bg-success-subtle border-0 fw-bold text-success rounded-top-3">
-                    <i class="bi bi-arrow-up-circle me-2"></i>Produits d'exploitation
+                    <i class="bi bi-arrow-up-circle me-2"></i><?= $t['ops_budget_income'] ?> d'exploitation
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
                         <thead class="table-light small">
                             <tr>
-                                <th class="ps-3">Catégorie</th><th>Sous-catégorie</th><th>Libellé</th>
+                                <th class="ps-3"><?= $t['ops_budget_th_category'] ?></th><th>Sous-catégorie</th><th><?= $t['ops_budget_th_label'] ?></th>
                                 <th>Fournisseur</th><th>Sponsor</th>
-                                <th class="text-end">Prévisionnel</th><th class="text-end">Comparatif</th>
+                                <th class="text-end"><?= $t['ops_budget_th_estimate'] ?></th><th class="text-end">Comparatif</th>
                                 <th class="text-end">Écart</th><th></th>
                             </tr>
                         </thead>
@@ -331,18 +339,19 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
             </section>
             <?php endif; ?>
 
+            <!-- Charges -->
             <?php if (!empty($budgetCharges)): ?>
             <section class="card border-0 shadow-sm rounded-3 mb-4">
                 <div class="card-header bg-danger-subtle border-0 fw-bold text-danger rounded-top-3">
-                    <i class="bi bi-arrow-down-circle me-2"></i>Charges d'exploitation
+                    <i class="bi bi-arrow-down-circle me-2"></i><?= $t['ops_budget_expenses'] ?> d'exploitation
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
                         <thead class="table-light small">
                             <tr>
-                                <th class="ps-3">Catégorie</th><th>Sous-catégorie</th><th>Libellé</th>
+                                <th class="ps-3"><?= $t['ops_budget_th_category'] ?></th><th>Sous-catégorie</th><th><?= $t['ops_budget_th_label'] ?></th>
                                 <th>Fournisseur</th><th>Sponsor</th>
-                                <th class="text-end">Prévisionnel</th><th class="text-end">Comparatif</th>
+                                <th class="text-end"><?= $t['ops_budget_th_estimate'] ?></th><th class="text-end">Comparatif</th>
                                 <th class="text-end">Écart</th><th></th>
                             </tr>
                         </thead>
@@ -401,6 +410,7 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
             </p>
             <?php endif; ?>
 
+            <!-- ── Récap matériel dans le budget ────────────────── -->
             <?php if ($totalMat > 0): ?>
             <hr class="my-4 opacity-25">
             <h5 class="fw-bold mb-3"><i class="bi bi-box-seam me-2 text-warning"></i>Budget matériel</h5>
@@ -442,6 +452,7 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
             </div>
             <?php endif; ?>
 
+            <!-- ── Récap facturation dans le budget ─────────────── -->
             <?php if ($totalFacturation > 0): ?>
             <hr class="my-4 opacity-25">
             <h5 class="fw-bold mb-3"><i class="bi bi-receipt me-2 text-info"></i>Facturation réelle</h5>
@@ -477,6 +488,9 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
 
         </div>
 
+        <!-- ══════════════════════════════════════════════
+             ONGLET PLANNING
+        ══════════════════════════════════════════════ -->
         <div class="tab-pane fade" id="pane-planning" role="tabpanel">
 
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -496,25 +510,26 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                 </div>
                 <div class="d-flex gap-2">
                     <a href="<?= exportUrl('planning', $eventId, $projetId, 'csv') ?>"
-                       class="btn btn-sm btn-outline-success rounded-3" title="Exporter en Excel/CSV">
+                       class="btn btn-sm btn-outline-success rounded-3" title="<?= $t['ops_export_csv'] ?>">
                         <i class="bi bi-file-earmark-excel me-1"></i>Excel
                     </a>
                     <a href="<?= exportUrl('planning', $eventId, $projetId, 'pdf') ?>"
-                       class="btn btn-sm btn-outline-danger rounded-3" title="Exporter en PDF"
+                       class="btn btn-sm btn-outline-danger rounded-3" title="<?= $t['ops_export_pdf'] ?>"
                        target="_blank">
                         <i class="bi bi-file-earmark-pdf me-1"></i>PDF
                     </a>
                     <button class="btn btn-primary btn-sm fw-semibold shadow-sm"
-                        data-bs-toggle="modal" data-bs-target="#modalPlanningCreate">
-                        <i class="bi bi-plus-lg me-1"></i> Ajouter une tâche
+                            data-bs-toggle="modal" data-bs-target="#modalPlanningCreate">
+                        <?= $t['ops_planning_add'] ?>
                     </button>
                 </div>
             </div>
 
+            <!-- Vue liste -->
             <div id="planning-list-view">
             <?php if (empty($planning)): ?>
             <p class="text-body-secondary text-center py-5">
-                <i class="bi bi-calendar-x fs-2 d-block mb-2 opacity-50"></i>Aucune tâche de planning.
+                <i class="bi bi-calendar-x fs-2 d-block mb-2 opacity-50"></i><?= $t['ops_planning_empty'] ?>
             </p>
             <?php else: ?>
             <div class="card border-0 shadow-sm rounded-3">
@@ -523,11 +538,10 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                         <thead class="table-dark small">
                             <tr>
                                 <th class="ps-3">#</th>
-                                <th>Tâche</th>
-                                <th>Assigné</th>
-                                <th>Statut</th>
-                                <th>Début</th>
-                                <th>Fin</th>
+                                <th><?= $t['ops_planning_th_task'] ?></th>
+                                <th><?= $t['ops_planning_th_status'] ?></th>
+                                <th><?= $t['ops_planning_th_start'] ?></th>
+                                <th><?= $t['ops_planning_th_end'] ?></th>
                                 <th>Note</th>
                                 <th></th>
                             </tr>
@@ -539,13 +553,6 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                         <tr>
                             <td class="ps-3 text-body-secondary small"><?= (int)$pl['ordre'] ?: '—' ?></td>
                             <td class="fw-medium"><?= htmlspecialchars((string)$pl['tache'], ENT_QUOTES) ?></td>
-                            <td class="small text-primary fw-semibold">
-                                <?php if (!empty($pl['contact_nom'])): ?>
-                                    <i class="bi bi-person-fill me-1"></i><?= htmlspecialchars((string)$pl['contact_nom'], ENT_QUOTES) ?>
-                                <?php else: ?>
-                                    <span class="text-body-secondary">—</span>
-                                <?php endif; ?>
-                            </td>
                             <td>
                                 <span class="badge rounded-pill bg-<?= $pSt['color'] ?>">
                                     <?= htmlspecialchars($pSt['label'], ENT_QUOTES) ?>
@@ -574,6 +581,7 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
             <?php endif; ?>
             </div>
 
+            <!-- ── Vue Calendrier ─────────────────────────── -->
             <div id="planning-calendar-view" style="display:none;">
                 <div class="card border-0 shadow-sm rounded-3">
                     <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center py-3 px-4">
@@ -602,6 +610,7 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                 </div>
             </div>
 
+            <!-- Vue Gantt -->
             <div id="planning-gantt-view" style="display:none;">
                 <?php if (empty($planningAvecDates)): ?>
                 <div class="alert alert-info border-0 shadow-sm">
@@ -616,8 +625,12 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
             </div>
         </div>
 
+        <!-- ══════════════════════════════════════════════
+             ONGLET MATÉRIEL
+        ══════════════════════════════════════════════ -->
         <div class="tab-pane fade" id="pane-materiel" role="tabpanel">
 
+            <!-- KPIs budget matériel -->
             <?php if ($totalMat > 0): ?>
             <ul class="row row-cols-3 g-3 list-unstyled mb-4">
                 <?php foreach ([
@@ -641,13 +654,13 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
             <div class="d-flex justify-content-end mb-3">
                 <button class="btn btn-warning btn-sm fw-semibold shadow-sm text-dark"
                         data-bs-toggle="modal" data-bs-target="#modalMaterielCreate">
-                    <i class="bi bi-plus-lg me-1"></i> Ajouter un matériel
+                    <?= $t['ops_material_add'] ?>
                 </button>
             </div>
 
             <?php if (empty($materiel)): ?>
             <p class="text-body-secondary text-center py-5">
-                <i class="bi bi-box-seam fs-2 d-block mb-2 opacity-50"></i>Aucun matériel enregistré.
+                <i class="bi bi-box-seam fs-2 d-block mb-2 opacity-50"></i><?= $t['ops_material_empty'] ?>
             </p>
             <?php else: ?>
             <div class="card border-0 shadow-sm rounded-3">
@@ -655,8 +668,8 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                     <table class="table table-hover mb-0">
                         <thead class="table-dark small">
                             <tr>
-                                <th class="ps-3">Nom</th><th>Catégorie</th><th>Qté</th>
-                                <th>Fournisseur</th><th>Budget</th>
+                                <th class="ps-3">Nom</th><th><?= $t['ops_budget_th_category'] ?></th><th>Qté</th>
+                                <th>Fournisseur</th><th><?= $t['ops_tab_budget'] ?></th>
                                 <th>Date In</th><th>Date Out</th><th>Commentaire</th><th></th>
                             </tr>
                         </thead>
@@ -667,7 +680,7 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                             <td>
                                 <?php if (!empty($mat['categorie_achat'])): ?>
                                 <span class="badge bg-<?= $mat['categorie_achat'] === 'loue' ? 'warning text-dark' : 'primary' ?>">
-                                    <?= $mat['categorie_achat'] === 'loue' ? 'Loué' : 'Acheté' ?>
+                                    <?= $mat['categorie_achat'] === 'loue' ? $t['ops_material_rented'] : $t['ops_material_purchased'] ?>
                                 </span>
                                 <?php else: ?>
                                 <span class="text-body-secondary small">—</span>
@@ -699,6 +712,9 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
             <?php endif; ?>
         </div>
 
+        <!-- ══════════════════════════════════════════════
+             ONGLET FACTURATION
+        ══════════════════════════════════════════════ -->
         <div class="tab-pane fade" id="pane-facturation" role="tabpanel">
 
             <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
@@ -710,17 +726,17 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                 </div>
                 <div class="d-flex gap-2">
                     <a href="<?= exportUrl('facturation', $eventId, $projetId, 'csv') ?>"
-                       class="btn btn-sm btn-outline-success rounded-3" title="Exporter en Excel/CSV">
+                       class="btn btn-sm btn-outline-success rounded-3" title="<?= $t['ops_export_csv'] ?>">
                         <i class="bi bi-file-earmark-excel me-1"></i>Excel
                     </a>
                     <a href="<?= exportUrl('facturation', $eventId, $projetId, 'pdf') ?>"
-                       class="btn btn-sm btn-outline-danger rounded-3" title="Exporter en PDF"
+                       class="btn btn-sm btn-outline-danger rounded-3" title="<?= $t['ops_export_pdf'] ?>"
                        target="_blank">
                         <i class="bi bi-file-earmark-pdf me-1"></i>PDF
                     </a>
                     <button class="btn btn-info btn-sm fw-semibold shadow-sm text-white"
                             data-bs-toggle="modal" data-bs-target="#modalFacturationCreate">
-                        <i class="bi bi-plus-lg me-1"></i> Ajouter une ligne
+                        <?= $t['ops_budget_add'] ?>
                     </button>
                 </div>
             </div>
@@ -735,7 +751,7 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                     <table class="table table-hover mb-0">
                         <thead class="table-dark small">
                             <tr>
-                                <th class="ps-3">Catégorie</th><th>Poste</th><th>Prestataire</th>
+                                <th class="ps-3"><?= $t['ops_budget_th_category'] ?></th><th>Poste</th><th><?= $t['ops_invoice_th_provider'] ?></th>
                                 <th>Contact</th><th>Tél</th><th>Mail</th>
                                 <th class="text-end">P.U</th><th class="text-end">Qté</th>
                                 <th class="text-end">Total</th>
@@ -843,9 +859,13 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
             <?php endif; ?>
         </div>
 
+        <!-- ══════════════════════════════════════════════
+             ONGLET PRÉ-PRODUCTION
+        ══════════════════════════════════════════════ -->
         <div class="tab-pane fade" id="pane-preprod" role="tabpanel">
 
             <?php if ($eventId > 0 && $eventData): ?>
+            <!-- Phases de production affichées depuis l'événement -->
             <div class="row g-4 mb-4">
                 <?php
                 $phases = [
@@ -887,6 +907,7 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                 <?php endforeach; ?>
             </div>
 
+            <!-- Lien pour modifier les dates dans gerer_event -->
             <div class="alert alert-light border shadow-sm d-flex justify-content-between align-items-center">
                 <span class="small text-body-secondary"><i class="bi bi-info-circle me-2"></i>Modifiez les dates de phases depuis la fiche événement.</span>
                 <a href="/gerer_event?id=<?= $eventId ?>" class="btn btn-sm btn-outline-primary rounded-3">
@@ -894,6 +915,7 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                 </a>
             </div>
 
+            <!-- Indicateur de synchronisation planning -->
             <div class="alert alert-success border-0 shadow-sm d-flex align-items-center gap-3 mb-3 flex-wrap">
                 <i class="bi bi-arrow-repeat text-success fs-4 flex-shrink-0"></i>
                 <div class="flex-grow-1">
@@ -919,6 +941,7 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                 </div>
             </div>
 
+            <!-- Timeline visuelle des phases -->
             <?php
             $allDates = [];
             foreach ($phases as $ph) {
@@ -970,6 +993,7 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
             <?php endif; ?>
         </div>
 
+        <!-- ══════ ONGLET CONTACTS ══════ -->
         <div class="tab-pane fade" id="pane-contacts-ops" role="tabpanel">
 
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -987,96 +1011,88 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                 <p>Aucun contact lié. Rendez-vous dans l'<a href="/annuaire">Annuaire</a> pour lier des contacts.</p>
             </div>
             <?php else: ?>
-            <div class="card border-0 shadow-sm rounded-3">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-dark small">
-                            <tr>
-                                <th scope="col" class="ps-3">Nom</th>
-                                <th scope="col">Rôle / Poste</th>
-                                <th scope="col">Société</th>
-                                <th scope="col">Téléphone</th>
-                                <th scope="col">Email</th>
-                                <th scope="col">Note</th>
-                                <th scope="col" class="text-end pe-3">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($contactsLies as $cl): ?>
-                                <tr>
-                                    <td class="ps-3">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0"
-                                                 style="width: 32px; height: 32px; font-size: .8rem;">
-                                                <?= mb_strtoupper(mb_substr($cl['nom'], 0, 1)) ?>
-                                            </div>
-                                            <span class="fw-bold text-dark small">
-                                                <?= htmlspecialchars((string)$cl['nom'], ENT_QUOTES) ?>
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td class="small">
-                                        <?php if (!empty($cl['lien_role'])): ?>
-                                            <span class="badge bg-info-subtle text-info rounded-pill">
-                                                <?= htmlspecialchars((string)$cl['lien_role'], ENT_QUOTES) ?>
-                                            </span>
-                                        <?php else: ?>
-                                            <span class="text-muted">—</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="small text-body-secondary">
-                                        <?= !empty($cl['societe']) ? htmlspecialchars((string)$cl['societe'], ENT_QUOTES) : '—' ?>
-                                    </td>
-                                    <td class="small">
-                                        <?php if (!empty($cl['telephone'])): ?>
-                                            <a href="tel:<?= htmlspecialchars($cl['telephone'], ENT_QUOTES) ?>" class="text-decoration-none text-secondary">
-                                                <i class="bi bi-telephone me-1"></i><?= htmlspecialchars($cl['telephone'], ENT_QUOTES) ?>
-                                            </a>
-                                        <?php else: ?>
-                                            <span class="text-muted">—</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="small">
-                                        <?php if (!empty($cl['mail'])): ?>
-                                            <a href="mailto:<?= htmlspecialchars($cl['mail'], ENT_QUOTES) ?>" class="text-decoration-none">
-                                                <i class="bi bi-envelope me-1"></i><?= htmlspecialchars($cl['mail'], ENT_QUOTES) ?>
-                                            </a>
-                                        <?php else: ?>
-                                            <span class="text-muted">—</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="small text-body-secondary fst-italic">
-                                        <?= !empty($cl['lien_note']) ? htmlspecialchars((string)$cl['lien_note'], ENT_QUOTES) : '—' ?>
-                                    </td>
-                                    <td class="text-end pe-3">
-                                        <form method="POST" class="d-inline" onsubmit="return confirm('Détacher ce contact ?')">
-                                            <?= opsForm($eventId, $projetId) ?>
-                                            <input type="hidden" name="ops_action" value="contact_detach">
-                                            <input type="hidden" name="lien_id"   value="<?= (int)$cl['lien_id'] ?>">
-                                            <input type="hidden" name="lien_type" value="<?= $eventId > 0 ? 'event' : 'projet' ?>">
-                                            <button class="btn btn-sm btn-outline-danger py-0 px-2" title="Détacher">
-                                                <i class="bi bi-x-lg"></i>
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+                <?php foreach ($contactsLies as $cl): ?>
+                <div class="col">
+                    <article class="card border-0 shadow-sm rounded-3 h-100">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-start gap-3">
+                                <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0"
+                                     style="width:40px;height:40px;font-size:.9rem;">
+                                    <?= mb_strtoupper(mb_substr($cl['nom'], 0, 1)) ?>
+                                </div>
+                                <div class="flex-grow-1 min-width-0">
+                                    <p class="fw-bold mb-0 small"><?= htmlspecialchars((string)$cl['nom'], ENT_QUOTES) ?></p>
+                                    <?php if (!empty($cl['lien_role'])): ?>
+                                    <span class="badge bg-info-subtle text-info rounded-pill small">
+                                        <?= htmlspecialchars((string)$cl['lien_role'], ENT_QUOTES) ?>
+                                    </span>
+                                    <?php endif; ?>
+                                    <?php if (!empty($cl['societe'])): ?>
+                                    <p class="text-body-secondary small mb-0">
+                                        <i class="bi bi-building me-1"></i><?= htmlspecialchars((string)$cl['societe'], ENT_QUOTES) ?>
+                                    </p>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <ul class="list-unstyled small text-body-secondary mt-2 mb-0">
+                                <?php if (!empty($cl['telephone'])): ?>
+                                <li><i class="bi bi-telephone me-1 text-primary"></i>
+                                    <a href="tel:<?= htmlspecialchars($cl['telephone'], ENT_QUOTES) ?>" class="text-decoration-none">
+                                        <?= htmlspecialchars($cl['telephone'], ENT_QUOTES) ?>
+                                    </a>
+                                </li>
+                                <?php endif; ?>
+                                <?php if (!empty($cl['mail'])): ?>
+                                <li><i class="bi bi-envelope me-1 text-primary"></i>
+                                    <a href="mailto:<?= htmlspecialchars($cl['mail'], ENT_QUOTES) ?>" class="text-decoration-none">
+                                        <?= htmlspecialchars($cl['mail'], ENT_QUOTES) ?>
+                                    </a>
+                                </li>
+                                <?php endif; ?>
+                                <?php if (!empty($cl['lien_note'])): ?>
+                                <li class="fst-italic text-body-secondary">
+                                    <i class="bi bi-chat-left-text me-1"></i><?= htmlspecialchars((string)$cl['lien_note'], ENT_QUOTES) ?>
+                                </li>
+                                <?php endif; ?>
+                            </ul>
+                        </div>
+                        <footer class="card-footer bg-transparent border-top p-2 text-end">
+                            <form method="POST" class="d-inline"
+                                  onsubmit="return confirm('Détacher ce contact ?')">
+                                <?= opsForm($eventId, $projetId) ?>
+                                <input type="hidden" name="ops_action" value="contact_detach">
+                                <input type="hidden" name="lien_id"   value="<?= (int)$cl['lien_id'] ?>">
+                                <input type="hidden" name="lien_type" value="<?= $eventId > 0 ? 'event' : 'projet' ?>">
+                                <button class="btn btn-sm btn-outline-danger rounded-3 py-0 px-2">
+                                    <i class="bi bi-x-lg me-1"></i>Détacher
+                                </button>
+                            </form>
+                        </footer>
+                    </article>
                 </div>
+                <?php endforeach; ?>
             </div>
             <?php endif; ?>
 
         </div>
 
-    </div><?php endif; // contexte sélectionné ?>
+    </div><!-- /.tab-content -->
+    <?php endif; // contexte sélectionné ?>
 
-</div><?php
+</div><!-- /.container-fluid -->
+
+
+<!-- ══════════════════════════════════════════════════════
+     MODALS
+══════════════════════════════════════════════════════ -->
+<?php
 $statuts_planning_opts = ['wip','en_cours','valide','maj','devis','visuels','bat','prod','annule'];
 $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé','maj'=>'Maj',
                           'devis'=>'Devis','visuels'=>'Visuels','bat'=>'BAT','prod'=>'Prod','annule'=>'Annulé'];
 ?>
 
+<!-- ── Modal Budget Create ─────────────────────────── -->
 <div class="modal fade" id="modalBudgetCreate" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content border-0 shadow-lg rounded-4">
@@ -1097,7 +1113,7 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
               </select>
             </div>
             <div class="col-md-4">
-              <label class="form-label fw-semibold">Catégorie</label>
+              <label class="form-label fw-semibold"><?= $t['ops_budget_th_category'] ?></label>
               <input type="text" name="categorie" class="form-control rounded-3" placeholder="ex: Hébergement">
             </div>
             <div class="col-md-4">
@@ -1139,6 +1155,7 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
   </div>
 </div>
 
+<!-- ── Modal Budget Edit ──────────────────────────── -->
 <div class="modal fade" id="modalBudgetEdit" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content border-0 shadow-lg rounded-4">
@@ -1160,7 +1177,7 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
               </select>
             </div>
             <div class="col-md-4">
-              <label class="form-label fw-semibold">Catégorie</label>
+              <label class="form-label fw-semibold"><?= $t['ops_budget_th_category'] ?></label>
               <input type="text" name="categorie" id="be-cat" class="form-control rounded-3">
             </div>
             <div class="col-md-4">
@@ -1168,7 +1185,7 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
               <input type="text" name="sous_categorie" id="be-scat" class="form-control rounded-3">
             </div>
             <div class="col-12">
-              <label class="form-label fw-semibold">Libellé</label>
+              <label class="form-label fw-semibold"><?= $t['ops_budget_th_label'] ?></label>
               <input type="text" name="libelle" id="be-lib" class="form-control rounded-3" required>
             </div>
             <div class="col-md-6">
@@ -1202,6 +1219,7 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
   </div>
 </div>
 
+<!-- ── Modal Planning Create ──────────────────────── -->
 <div class="modal fade" id="modalPlanningCreate" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow-lg rounded-4">
@@ -1218,19 +1236,8 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
               <label class="form-label fw-semibold">Tâche <span class="text-danger">*</span></label>
               <input type="text" name="tache" class="form-control rounded-3" required>
             </div>
-            <div class="col-12">
-              <label class="form-label fw-semibold"><i class="bi bi-person-lines-fill me-1"></i>Contact assigné</label>
-              <select name="contact_id" class="form-select rounded-3">
-                <option value="">— Aucun contact assigné —</option>
-                <?php foreach ($contacts as $ct): ?>
-                <option value="<?= (int)$ct['id'] ?>">
-                    <?= htmlspecialchars((string)$ct['nom'], ENT_QUOTES) ?>
-                </option>
-                <?php endforeach; ?>
-              </select>
-            </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Statut</label>
+              <label class="form-label fw-semibold"><?= $t['ops_planning_th_status'] ?></label>
               <select name="statut" class="form-select rounded-3">
                 <?php foreach ($statuts_planning_opts as $s): ?>
                 <option value="<?= $s ?>"><?= $statuts_labels[$s] ?></option>
@@ -1264,6 +1271,7 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
   </div>
 </div>
 
+<!-- ── Modal Planning Edit ────────────────────────── -->
 <div class="modal fade" id="modalPlanningEdit" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow-lg rounded-4">
@@ -1278,22 +1286,11 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
           <input type="hidden" name="ligne_id" id="pe-id">
           <div class="row g-3">
             <div class="col-12">
-              <label class="form-label fw-semibold">Tâche</label>
+              <label class="form-label fw-semibold"><?= $t['ops_planning_th_task'] ?></label>
               <input type="text" name="tache" id="pe-tache" class="form-control rounded-3" required>
             </div>
-            <div class="col-12">
-              <label class="form-label fw-semibold"><i class="bi bi-person-lines-fill me-1 text-primary"></i>Contact assigné</label>
-              <select name="contact_id" id="pe-contact" class="form-select rounded-3">
-                <option value="">— Aucun contact assigné —</option>
-                <?php foreach ($contacts as $ct): ?>
-                <option value="<?= (int)$ct['id'] ?>">
-                    <?= htmlspecialchars((string)$ct['nom'], ENT_QUOTES) ?>
-                </option>
-                <?php endforeach; ?>
-              </select>
-            </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Statut</label>
+              <label class="form-label fw-semibold"><?= $t['ops_planning_th_status'] ?></label>
               <select name="statut" id="pe-statut" class="form-select rounded-3">
                 <?php foreach ($statuts_planning_opts as $s): ?>
                 <option value="<?= $s ?>"><?= $statuts_labels[$s] ?></option>
@@ -1327,6 +1324,7 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
   </div>
 </div>
 
+<!-- ── Modal Matériel Create ──────────────────────── -->
 <div class="modal fade" id="modalMaterielCreate" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content border-0 shadow-lg rounded-4">
@@ -1348,11 +1346,11 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
               <input type="number" step="0.5" name="quantite" class="form-control rounded-3" value="1">
             </div>
             <div class="col-md-3">
-              <label class="form-label fw-semibold">Catégorie</label>
+              <label class="form-label fw-semibold"><?= $t['ops_budget_th_category'] ?></label>
               <select name="categorie_achat" class="form-select rounded-3">
                 <option value="">— Non défini —</option>
-                <option value="loue">Loué</option>
-                <option value="achete">Acheté</option>
+                <option value="loue"><?= $t['ops_material_rented'] ?></option>
+                <option value="achete"><?= $t['ops_material_purchased'] ?></option>
               </select>
             </div>
             <div class="col-md-6">
@@ -1386,6 +1384,7 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
   </div>
 </div>
 
+<!-- ── Modal Matériel Edit ────────────────────────── -->
 <div class="modal fade" id="modalMaterielEdit" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content border-0 shadow-lg rounded-4">
@@ -1408,11 +1407,11 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
               <input type="number" step="0.5" name="quantite" id="me-qte" class="form-control rounded-3">
             </div>
             <div class="col-md-3">
-              <label class="form-label fw-semibold">Catégorie</label>
+              <label class="form-label fw-semibold"><?= $t['ops_budget_th_category'] ?></label>
               <select name="categorie_achat" id="me-cat" class="form-select rounded-3">
                 <option value="">— Non défini —</option>
-                <option value="loue">Loué</option>
-                <option value="achete">Acheté</option>
+                <option value="loue"><?= $t['ops_material_rented'] ?></option>
+                <option value="achete"><?= $t['ops_material_purchased'] ?></option>
               </select>
             </div>
             <div class="col-md-6">
@@ -1446,6 +1445,7 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
   </div>
 </div>
 
+<!-- ── Modal Facturation Create ───────────────────── -->
 <div class="modal fade" id="modalFacturationCreate" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-xl">
     <div class="modal-content border-0 shadow-lg rounded-4">
@@ -1459,6 +1459,7 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
           <input type="hidden" name="ops_action" value="facturation_create">
           <div class="row g-3">
 
+            <!-- Contact existant -->
             <div class="col-12">
               <label class="form-label fw-semibold"><i class="bi bi-person-lines-fill me-1 text-primary"></i>Contact existant (optionnel)</label>
               <select name="contact_id" id="fc-contact-select" class="form-select rounded-3" onchange="fillContactFromSelect(this,'fc')">
@@ -1475,11 +1476,11 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
               </select>
             </div>
 
-            <div class="col-md-4"><label class="form-label fw-semibold">Catégorie</label>
+            <div class="col-md-4"><label class="form-label fw-semibold"><?= $t['ops_budget_th_category'] ?></label>
               <input type="text" name="categorie" class="form-control rounded-3" placeholder="ex: Hébergement"></div>
             <div class="col-md-4"><label class="form-label fw-semibold">Poste</label>
               <input type="text" name="poste" class="form-control rounded-3" placeholder="ex: Logement"></div>
-            <div class="col-md-4"><label class="form-label fw-semibold">Prestataire</label>
+            <div class="col-md-4"><label class="form-label fw-semibold"><?= $t['ops_invoice_th_provider'] ?></label>
               <input type="text" name="prestataire" class="form-control rounded-3"></div>
             <div class="col-md-4"><label class="form-label fw-semibold">Contact</label>
               <input type="text" name="contact" id="fc-contact" class="form-control rounded-3"></div>
@@ -1520,6 +1521,7 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
   </div>
 </div>
 
+<!-- ── Modal Facturation Edit ─────────────────────── -->
 <div class="modal fade" id="modalFacturationEdit" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-xl">
     <div class="modal-content border-0 shadow-lg rounded-4">
@@ -1535,6 +1537,7 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
           <input type="hidden" name="fichier_existing" id="fe-fichier-existing">
           <div class="row g-3">
 
+            <!-- Contact existant edit -->
             <div class="col-12">
               <label class="form-label fw-semibold"><i class="bi bi-person-lines-fill me-1 text-primary"></i>Contact existant</label>
               <select name="contact_id" id="fe-contact-select" class="form-select rounded-3" onchange="fillContactFromSelect(this,'fe')">
@@ -1551,9 +1554,9 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
               </select>
             </div>
 
-            <div class="col-md-4"><label class="form-label fw-semibold">Catégorie</label><input type="text" name="categorie"   id="fe-cat"  class="form-control rounded-3"></div>
+            <div class="col-md-4"><label class="form-label fw-semibold"><?= $t['ops_budget_th_category'] ?></label><input type="text" name="categorie"   id="fe-cat"  class="form-control rounded-3"></div>
             <div class="col-md-4"><label class="form-label fw-semibold">Poste</label><input type="text" name="poste"           id="fe-poste" class="form-control rounded-3"></div>
-            <div class="col-md-4"><label class="form-label fw-semibold">Prestataire</label><input type="text" name="prestataire" id="fe-prest" class="form-control rounded-3"></div>
+            <div class="col-md-4"><label class="form-label fw-semibold"><?= $t['ops_invoice_th_provider'] ?></label><input type="text" name="prestataire" id="fe-prest" class="form-control rounded-3"></div>
             <div class="col-md-4"><label class="form-label fw-semibold">Contact</label><input type="text" name="contact"       id="fe-cont" class="form-control rounded-3"></div>
             <div class="col-md-4"><label class="form-label fw-semibold">Téléphone</label><input type="text" name="telephone"   id="fe-tel"  class="form-control rounded-3"></div>
             <div class="col-md-4"><label class="form-label fw-semibold">Mail</label><input type="email" name="mail"            id="fe-mail" class="form-control rounded-3"></div>
@@ -1590,6 +1593,7 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
   </div>
 </div>
 
+<!-- ── Modal Drive / Maps ──────────────────────────── -->
 <?php if ($eventId > 0): ?>
 <div class="modal fade" id="modalDriveLinks" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
@@ -1631,6 +1635,7 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
 </div>
 <?php endif; ?>
 
+<!-- Données Gantt injectées pour le JS -->
 <script>
 window.OPS_PLANNING_DATA = <?= json_encode(array_values($planningAvecDates), JSON_HEX_TAG) ?>;
 window.OPS_PLANNING_STATUTS = <?= json_encode($planningStatuts, JSON_HEX_TAG) ?>;

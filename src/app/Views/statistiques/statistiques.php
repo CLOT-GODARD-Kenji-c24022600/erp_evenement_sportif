@@ -8,7 +8,7 @@
  * @file statistiques.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.1
+ * @version 1.2
  * @since 2026
  */
 
@@ -24,12 +24,12 @@ $fmt = fn(float $n): string => number_format($n, 2, ',', ' ') . ' €';
         <div>
             <h1 class="h3 fw-bold mb-0">
                 <i class="bi bi-bar-chart-line-fill text-primary me-2" aria-hidden="true"></i>
-                Statistiques & Reporting
+                <?= $t['stats_title'] ?>
             </h1>
-            <p class="text-muted small mb-0 mt-1">Vue d'ensemble de l'activité YES</p>
+            <p class="text-muted small mb-0 mt-1"><?= $t['stats_subtitle'] ?></p>
         </div>
         <button id="btn-refresh-stats" class="btn btn-outline-primary btn-sm rounded-3 d-flex align-items-center gap-2">
-            <i class="bi bi-arrow-repeat" aria-hidden="true"></i>Actualiser
+            <i class="bi bi-arrow-repeat" aria-hidden="true"></i><?= $t['stats_btn_refresh'] ?>
         </button>
     </div>
 
@@ -37,14 +37,14 @@ $fmt = fn(float $n): string => number_format($n, 2, ',', ' ') . ' €';
     <div class="row g-3 mb-4">
         <?php
         $kpiCards = [
-            ['icon' => 'bi-calendar-event-fill', 'color' => 'primary',   'label' => 'Événements',        'key' => 'nb_evenements',  'type' => 'int'],
-            ['icon' => 'bi-kanban-fill',          'color' => 'info',      'label' => 'Projets',           'key' => 'nb_projets',     'type' => 'int'],
-            ['icon' => 'bi-people-fill',          'color' => 'success',   'label' => 'Contacts',          'key' => 'nb_contacts',    'type' => 'int'],
-            ['icon' => 'bi-receipt',              'color' => 'warning',   'label' => 'Total facturé',     'key' => 'total_facture',  'type' => 'money'],
-            ['icon' => 'bi-graph-up-arrow',       'color' => 'success',   'label' => 'Produits budget',   'key' => 'total_produits', 'type' => 'money'],
-            ['icon' => 'bi-graph-down-arrow',     'color' => 'danger',    'label' => 'Charges budget',    'key' => 'total_charges',  'type' => 'money'],
-            ['icon' => 'bi-check2-circle',        'color' => 'success',   'label' => 'Tâches terminées',  'key' => 'taux_todos',     'type' => 'pct'],
-            ['icon' => 'bi-person-check-fill',    'color' => 'secondary', 'label' => 'Utilisateurs actifs','key' => 'nb_users',      'type' => 'int'],
+            ['icon' => 'bi-calendar-event-fill', 'color' => 'primary',   'label' => $t['stats_kpi_events'],      'key' => 'nb_evenements',  'type' => 'int'],
+            ['icon' => 'bi-kanban-fill',          'color' => 'info',      'label' => $t['stats_kpi_projects'],    'key' => 'nb_projets',     'type' => 'int'],
+            ['icon' => 'bi-people-fill',          'color' => 'success',   'label' => $t['stats_kpi_contacts'],    'key' => 'nb_contacts',    'type' => 'int'],
+            ['icon' => 'bi-receipt',              'color' => 'warning',   'label' => $t['stats_kpi_invoiced'],    'key' => 'total_facture',  'type' => 'money'],
+            ['icon' => 'bi-graph-up-arrow',       'color' => 'success',   'label' => $t['stats_kpi_income'],      'key' => 'total_produits', 'type' => 'money'],
+            ['icon' => 'bi-graph-down-arrow',     'color' => 'danger',    'label' => $t['stats_kpi_expenses'],    'key' => 'total_charges',  'type' => 'money'],
+            ['icon' => 'bi-check2-circle',        'color' => 'success',   'label' => $t['stats_kpi_tasks_done'],  'key' => 'taux_todos',     'type' => 'pct'],
+            ['icon' => 'bi-person-check-fill',    'color' => 'secondary', 'label' => $t['stats_kpi_users'],       'key' => 'nb_users',       'type' => 'int'],
         ];
         foreach ($kpiCards as $c):
             $val     = $kpis[$c['key']] ?? 0;
@@ -77,12 +77,12 @@ $fmt = fn(float $n): string => number_format($n, 2, ',', ' ') . ' €';
                 <div class="card-header bg-transparent border-0 pt-3 pb-0 px-4">
                     <h2 class="h6 fw-bold mb-0">
                         <i class="bi bi-bar-chart-fill text-primary me-2" aria-hidden="true"></i>
-                        Événements par mois
-                        <span class="text-muted fw-normal small">(12 derniers mois)</span>
+                        <?= $t['stats_chart_events_month'] ?>
+                        <span class="text-muted fw-normal small">(12 <?= $lang === 'fr' ? 'derniers mois' : 'last months' ?>)</span>
                     </h2>
                 </div>
                 <div class="card-body px-3 pb-3">
-                    <canvas id="chart-events-mois" height="220" aria-label="Graphique événements par mois"></canvas>
+                    <canvas id="chart-events-mois" height="220" aria-label="<?= $t['stats_chart_events_month'] ?>"></canvas>
                 </div>
             </div>
         </div>
@@ -91,12 +91,12 @@ $fmt = fn(float $n): string => number_format($n, 2, ',', ' ') . ' €';
                 <div class="card-header bg-transparent border-0 pt-3 pb-0 px-4">
                     <h2 class="h6 fw-bold mb-0">
                         <i class="bi bi-graph-up text-success me-2" aria-hidden="true"></i>
-                        Facturation par mois
-                        <span class="text-muted fw-normal small">(12 derniers mois)</span>
+                        <?= $lang === 'fr' ? 'Facturation par mois' : 'Invoicing per month' ?>
+                        <span class="text-muted fw-normal small">(12 <?= $lang === 'fr' ? 'derniers mois' : 'last months' ?>)</span>
                     </h2>
                 </div>
                 <div class="card-body px-3 pb-3">
-                    <canvas id="chart-fact-mois" height="220" aria-label="Graphique facturation par mois"></canvas>
+                    <canvas id="chart-fact-mois" height="220"></canvas>
                 </div>
             </div>
         </div>
@@ -109,12 +109,12 @@ $fmt = fn(float $n): string => number_format($n, 2, ',', ' ') . ' €';
                 <div class="card-header bg-transparent border-0 pt-3 pb-0 px-4">
                     <h2 class="h6 fw-bold mb-0">
                         <i class="bi bi-cash-stack text-warning me-2" aria-hidden="true"></i>
-                        Budget par événement
-                        <span class="text-muted fw-normal small">(top 8 — prévisionnel)</span>
+                        <?= $t['stats_chart_budget'] ?>
+                        <span class="text-muted fw-normal small">(top 8 — <?= $lang === 'fr' ? 'prévisionnel' : 'estimated' ?>)</span>
                     </h2>
                 </div>
                 <div class="card-body px-3 pb-3">
-                    <canvas id="chart-budget" height="260" aria-label="Graphique budget par événement"></canvas>
+                    <canvas id="chart-budget" height="260"></canvas>
                 </div>
             </div>
         </div>
@@ -123,17 +123,17 @@ $fmt = fn(float $n): string => number_format($n, 2, ',', ' ') . ' €';
                 <div class="card-header bg-transparent border-0 pt-3 pb-0 px-4">
                     <h2 class="h6 fw-bold mb-0">
                         <i class="bi bi-check2-all text-success me-2" aria-hidden="true"></i>
-                        Taux de complétion
+                        <?= $lang === 'fr' ? 'Taux de complétion' : 'Completion rate' ?>
                     </h2>
                 </div>
                 <div class="card-body d-flex gap-4 align-items-center justify-content-around flex-wrap pb-3">
                     <div class="text-center">
-                        <canvas id="chart-donut-todo" width="130" height="130" aria-label="Complétion des tâches"></canvas>
-                        <p class="small text-muted mt-2 fw-semibold mb-0">Tâches</p>
+                        <canvas id="chart-donut-todo" width="130" height="130"></canvas>
+                        <p class="small text-muted mt-2 fw-semibold mb-0"><?= $t['stats_chart_tasks'] ?></p>
                     </div>
                     <div class="text-center">
-                        <canvas id="chart-donut-planning" width="130" height="130" aria-label="Complétion du planning"></canvas>
-                        <p class="small text-muted mt-2 fw-semibold mb-0">Planning</p>
+                        <canvas id="chart-donut-planning" width="130" height="130"></canvas>
+                        <p class="small text-muted mt-2 fw-semibold mb-0"><?= $lang === 'fr' ? 'Planning' : 'Planning' ?></p>
                     </div>
                 </div>
             </div>
@@ -147,11 +147,11 @@ $fmt = fn(float $n): string => number_format($n, 2, ',', ' ') . ' €';
                 <div class="card-header bg-transparent border-0 pt-3 pb-0 px-4">
                     <h2 class="h6 fw-bold mb-0">
                         <i class="bi bi-trophy-fill text-warning me-2" aria-hidden="true"></i>
-                        Top 5 prestataires <span class="text-muted fw-normal small">(montant facturé)</span>
+                        <?= $t['stats_top_providers'] ?> <span class="text-muted fw-normal small">(<?= $t['stats_top_providers_sub'] ?>)</span>
                     </h2>
                 </div>
                 <div class="card-body px-3 pb-3">
-                    <canvas id="chart-prestataires" height="200" aria-label="Graphique top prestataires"></canvas>
+                    <canvas id="chart-prestataires" height="200"></canvas>
                 </div>
             </div>
         </div>
@@ -160,7 +160,7 @@ $fmt = fn(float $n): string => number_format($n, 2, ',', ' ') . ' €';
                 <div class="card-header bg-transparent border-0 pt-3 pb-0 px-4">
                     <h2 class="h6 fw-bold mb-0">
                         <i class="bi bi-list-ol text-info me-2" aria-hidden="true"></i>
-                        Détail top prestataires
+                        <?= $lang === 'fr' ? 'Détail top prestataires' : 'Top providers detail' ?>
                     </h2>
                 </div>
                 <div class="card-body px-0 pb-2">
@@ -168,8 +168,8 @@ $fmt = fn(float $n): string => number_format($n, 2, ',', ' ') . ' €';
                         <thead class="table-light">
                             <tr>
                                 <th class="ps-4" style="width:40px">#</th>
-                                <th>Prestataire</th>
-                                <th class="text-end pe-4">Montant</th>
+                                <th><?= $lang === 'fr' ? 'Prestataire' : 'Provider' ?></th>
+                                <th class="text-end pe-4"><?= $lang === 'fr' ? 'Montant' : 'Amount' ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -184,7 +184,7 @@ $fmt = fn(float $n): string => number_format($n, 2, ',', ' ') . ' €';
                             <?php else: ?>
                                 <tr>
                                     <td colspan="3" class="text-center text-muted py-4 small">
-                                        <i class="bi bi-inbox me-2" aria-hidden="true"></i>Aucune donnée de facturation
+                                        <i class="bi bi-inbox me-2" aria-hidden="true"></i><?= $t['stats_no_invoice_data'] ?>
                                     </td>
                                 </tr>
                             <?php endif; ?>

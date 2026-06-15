@@ -100,7 +100,7 @@ declare(strict_types=1);
         <section class="col-xl-8 col-lg-7">
 
             <article class="card shadow-sm border-0 mb-4">
-                <header class="card-header bg-white py-3">
+                <header class="card-header py-3">
                     <h2 class="mb-0 fw-bold text-primary h5">
                         <?= htmlspecialchars($t['profile_info_title'], ENT_QUOTES) ?>
                     </h2>
@@ -155,7 +155,7 @@ declare(strict_types=1);
                             <label for="statut_presence" class="form-label small fw-bold">
                                 <?= htmlspecialchars($t['profile_field_status'], ENT_QUOTES) ?>
                             </label>
-                            <select id="statut_presence" name="statut_presence" class="form-select bg-light">
+                            <select id="statut_presence" name="statut_presence" class="form-select">
                                 <option value="online"  <?= (($user['statut_presence'] ?? 'online') === 'online')  ? 'selected' : '' ?>>
                                     <?= htmlspecialchars($t['profile_status_online'], ENT_QUOTES) ?>
                                 </option>
@@ -179,7 +179,7 @@ declare(strict_types=1);
             </article>
 
             <article class="card shadow-sm border-0">
-                <header class="card-header bg-white py-3">
+                <header class="card-header py-3">
                     <h2 class="mb-0 fw-bold h5 text-danger">
                         <i class="bi bi-shield-lock me-2" aria-hidden="true"></i>
                         <?= htmlspecialchars($t['profile_security_title'], ENT_QUOTES) ?>

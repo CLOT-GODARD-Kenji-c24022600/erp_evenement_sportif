@@ -30,7 +30,7 @@ declare(strict_types=1);
                 <?= htmlspecialchars($t['staff_search_ph'], ENT_QUOTES) ?>
             </label>
             <div class="input-group shadow-sm staff-search-wrapper">
-                <span class="input-group-text bg-white border-end-0">
+                <span class="input-group-text border-end-0">
                     <i class="bi bi-search text-muted" aria-hidden="true"></i>
                 </span>
                 <input type="search" id="searchInput" class="form-control border-start-0 ps-0"
