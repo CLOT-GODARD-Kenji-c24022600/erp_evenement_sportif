@@ -17,15 +17,15 @@ function opsForm(int $eventId, int $projetId): string {
 }
 
 $planningStatuts = [
-    'wip'      => ['label' => 'WIP',      'color' => 'warning'],
-    'en_cours' => ['label' => 'En cours', 'color' => 'primary'],
-    'valide'   => ['label' => 'Validé',   'color' => 'success'],
-    'maj'      => ['label' => 'Maj',      'color' => 'info'],
-    'devis'    => ['label' => 'Devis',    'color' => 'secondary'],
-    'visuels'  => ['label' => 'Visuels',  'color' => 'secondary'],
-    'bat'      => ['label' => 'BAT',      'color' => 'secondary'],
-    'prod'     => ['label' => 'Prod',     'color' => 'secondary'],
-    'annule'   => ['label' => 'Annulé',   'color' => 'danger'],
+    'wip'      => ['label' => $t['ops_status_wip'],         'color' => 'warning'],
+    'en_cours' => ['label' => $t['ops_status_in_progress'], 'color' => 'primary'],
+    'valide'   => ['label' => $t['ops_status_validated'],   'color' => 'success'],
+    'maj'      => ['label' => $t['ops_status_update'],      'color' => 'info'],
+    'devis'    => ['label' => $t['ops_status_quote'],       'color' => 'secondary'],
+    'visuels'  => ['label' => $t['ops_status_visuals'],     'color' => 'secondary'],
+    'bat'      => ['label' => $t['ops_status_bat'],         'color' => 'secondary'],
+    'prod'     => ['label' => $t['ops_status_prod'],        'color' => 'secondary'],
+    'annule'   => ['label' => $t['ops_status_cancelled'],   'color' => 'danger'],
 ];
 
 $contextLabel = '';
@@ -259,25 +259,25 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
 
             <!-- KPI Facturation dans le budget -->
             <div class="alert alert-info border-0 shadow-sm mb-4 d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-receipt me-2"></i><strong>Total facturation réelle :</strong></span>
+                <span><i class="bi bi-receipt me-2"></i><strong><?= $t['ops_invoice_total'] ?> réelle :</strong></span>
                 <span class="fw-bold fs-5"><?= number_format($totalFacturation, 2, ',', ' ') ?> €</span>
             </div>
 
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="d-flex gap-2">
                     <a href="<?= exportUrl('budget', $eventId, $projetId, 'csv') ?>"
-                       class="btn btn-sm btn-outline-success rounded-3" title="Exporter en Excel/CSV">
+                       class="btn btn-sm btn-outline-success rounded-3" title="<?= $t['ops_export_csv'] ?>">
                         <i class="bi bi-file-earmark-excel me-1"></i>Excel
                     </a>
                     <a href="<?= exportUrl('budget', $eventId, $projetId, 'pdf') ?>"
-                       class="btn btn-sm btn-outline-danger rounded-3" title="Exporter en PDF"
+                       class="btn btn-sm btn-outline-danger rounded-3" title="<?= $t['ops_export_pdf'] ?>"
                        target="_blank">
                         <i class="bi bi-file-earmark-pdf me-1"></i>PDF
                     </a>
                 </div>
                 <button class="btn btn-primary btn-sm fw-semibold shadow-sm"
                         data-bs-toggle="modal" data-bs-target="#modalBudgetCreate">
-                    <i class="bi bi-plus-lg me-1"></i> Ajouter une ligne
+                    <?= $t['ops_budget_add'] ?>
                 </button>
             </div>
 
@@ -285,15 +285,15 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
             <?php if (!empty($budgetProduits)): ?>
             <section class="card border-0 shadow-sm rounded-3 mb-4">
                 <div class="card-header bg-success-subtle border-0 fw-bold text-success rounded-top-3">
-                    <i class="bi bi-arrow-up-circle me-2"></i>Produits d'exploitation
+                    <i class="bi bi-arrow-up-circle me-2"></i><?= $t['ops_budget_income'] ?> d'exploitation
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
                         <thead class="table-light small">
                             <tr>
-                                <th class="ps-3">Catégorie</th><th>Sous-catégorie</th><th>Libellé</th>
+                                <th class="ps-3"><?= $t['ops_budget_th_category'] ?></th><th>Sous-catégorie</th><th><?= $t['ops_budget_th_label'] ?></th>
                                 <th>Fournisseur</th><th>Sponsor</th>
-                                <th class="text-end">Prévisionnel</th><th class="text-end">Comparatif</th>
+                                <th class="text-end"><?= $t['ops_budget_th_estimate'] ?></th><th class="text-end">Comparatif</th>
                                 <th class="text-end">Écart</th><th></th>
                             </tr>
                         </thead>
@@ -343,15 +343,15 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
             <?php if (!empty($budgetCharges)): ?>
             <section class="card border-0 shadow-sm rounded-3 mb-4">
                 <div class="card-header bg-danger-subtle border-0 fw-bold text-danger rounded-top-3">
-                    <i class="bi bi-arrow-down-circle me-2"></i>Charges d'exploitation
+                    <i class="bi bi-arrow-down-circle me-2"></i><?= $t['ops_budget_expenses'] ?> d'exploitation
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
                         <thead class="table-light small">
                             <tr>
-                                <th class="ps-3">Catégorie</th><th>Sous-catégorie</th><th>Libellé</th>
+                                <th class="ps-3"><?= $t['ops_budget_th_category'] ?></th><th>Sous-catégorie</th><th><?= $t['ops_budget_th_label'] ?></th>
                                 <th>Fournisseur</th><th>Sponsor</th>
-                                <th class="text-end">Prévisionnel</th><th class="text-end">Comparatif</th>
+                                <th class="text-end"><?= $t['ops_budget_th_estimate'] ?></th><th class="text-end">Comparatif</th>
                                 <th class="text-end">Écart</th><th></th>
                             </tr>
                         </thead>
@@ -510,17 +510,17 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                 </div>
                 <div class="d-flex gap-2">
                     <a href="<?= exportUrl('planning', $eventId, $projetId, 'csv') ?>"
-                       class="btn btn-sm btn-outline-success rounded-3" title="Exporter en Excel/CSV">
+                       class="btn btn-sm btn-outline-success rounded-3" title="<?= $t['ops_export_csv'] ?>">
                         <i class="bi bi-file-earmark-excel me-1"></i>Excel
                     </a>
                     <a href="<?= exportUrl('planning', $eventId, $projetId, 'pdf') ?>"
-                       class="btn btn-sm btn-outline-danger rounded-3" title="Exporter en PDF"
+                       class="btn btn-sm btn-outline-danger rounded-3" title="<?= $t['ops_export_pdf'] ?>"
                        target="_blank">
                         <i class="bi bi-file-earmark-pdf me-1"></i>PDF
                     </a>
                     <button class="btn btn-primary btn-sm fw-semibold shadow-sm"
                             data-bs-toggle="modal" data-bs-target="#modalPlanningCreate">
-                        <i class="bi bi-plus-lg me-1"></i> Ajouter une tâche
+                        <?= $t['ops_planning_add'] ?>
                     </button>
                 </div>
             </div>
@@ -529,7 +529,7 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
             <div id="planning-list-view">
             <?php if (empty($planning)): ?>
             <p class="text-body-secondary text-center py-5">
-                <i class="bi bi-calendar-x fs-2 d-block mb-2 opacity-50"></i>Aucune tâche de planning.
+                <i class="bi bi-calendar-x fs-2 d-block mb-2 opacity-50"></i><?= $t['ops_planning_empty'] ?>
             </p>
             <?php else: ?>
             <div class="card border-0 shadow-sm rounded-3">
@@ -538,10 +538,10 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                         <thead class="table-dark small">
                             <tr>
                                 <th class="ps-3">#</th>
-                                <th>Tâche</th>
-                                <th>Statut</th>
-                                <th>Début</th>
-                                <th>Fin</th>
+                                <th><?= $t['ops_planning_th_task'] ?></th>
+                                <th><?= $t['ops_planning_th_status'] ?></th>
+                                <th><?= $t['ops_planning_th_start'] ?></th>
+                                <th><?= $t['ops_planning_th_end'] ?></th>
                                 <th>Note</th>
                                 <th></th>
                             </tr>
@@ -654,13 +654,13 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
             <div class="d-flex justify-content-end mb-3">
                 <button class="btn btn-warning btn-sm fw-semibold shadow-sm text-dark"
                         data-bs-toggle="modal" data-bs-target="#modalMaterielCreate">
-                    <i class="bi bi-plus-lg me-1"></i> Ajouter un matériel
+                    <?= $t['ops_material_add'] ?>
                 </button>
             </div>
 
             <?php if (empty($materiel)): ?>
             <p class="text-body-secondary text-center py-5">
-                <i class="bi bi-box-seam fs-2 d-block mb-2 opacity-50"></i>Aucun matériel enregistré.
+                <i class="bi bi-box-seam fs-2 d-block mb-2 opacity-50"></i><?= $t['ops_material_empty'] ?>
             </p>
             <?php else: ?>
             <div class="card border-0 shadow-sm rounded-3">
@@ -668,8 +668,8 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                     <table class="table table-hover mb-0">
                         <thead class="table-dark small">
                             <tr>
-                                <th class="ps-3">Nom</th><th>Catégorie</th><th>Qté</th>
-                                <th>Fournisseur</th><th>Budget</th>
+                                <th class="ps-3">Nom</th><th><?= $t['ops_budget_th_category'] ?></th><th>Qté</th>
+                                <th>Fournisseur</th><th><?= $t['ops_tab_budget'] ?></th>
                                 <th>Date In</th><th>Date Out</th><th>Commentaire</th><th></th>
                             </tr>
                         </thead>
@@ -680,7 +680,7 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                             <td>
                                 <?php if (!empty($mat['categorie_achat'])): ?>
                                 <span class="badge bg-<?= $mat['categorie_achat'] === 'loue' ? 'warning text-dark' : 'primary' ?>">
-                                    <?= $mat['categorie_achat'] === 'loue' ? 'Loué' : 'Acheté' ?>
+                                    <?= $mat['categorie_achat'] === 'loue' ? $t['ops_material_rented'] : $t['ops_material_purchased'] ?>
                                 </span>
                                 <?php else: ?>
                                 <span class="text-body-secondary small">—</span>
@@ -726,17 +726,17 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                 </div>
                 <div class="d-flex gap-2">
                     <a href="<?= exportUrl('facturation', $eventId, $projetId, 'csv') ?>"
-                       class="btn btn-sm btn-outline-success rounded-3" title="Exporter en Excel/CSV">
+                       class="btn btn-sm btn-outline-success rounded-3" title="<?= $t['ops_export_csv'] ?>">
                         <i class="bi bi-file-earmark-excel me-1"></i>Excel
                     </a>
                     <a href="<?= exportUrl('facturation', $eventId, $projetId, 'pdf') ?>"
-                       class="btn btn-sm btn-outline-danger rounded-3" title="Exporter en PDF"
+                       class="btn btn-sm btn-outline-danger rounded-3" title="<?= $t['ops_export_pdf'] ?>"
                        target="_blank">
                         <i class="bi bi-file-earmark-pdf me-1"></i>PDF
                     </a>
                     <button class="btn btn-info btn-sm fw-semibold shadow-sm text-white"
                             data-bs-toggle="modal" data-bs-target="#modalFacturationCreate">
-                        <i class="bi bi-plus-lg me-1"></i> Ajouter une ligne
+                        <?= $t['ops_budget_add'] ?>
                     </button>
                 </div>
             </div>
@@ -751,7 +751,7 @@ function exportUrl(string $type, int $eventId, int $projetId, string $format): s
                     <table class="table table-hover mb-0">
                         <thead class="table-dark small">
                             <tr>
-                                <th class="ps-3">Catégorie</th><th>Poste</th><th>Prestataire</th>
+                                <th class="ps-3"><?= $t['ops_budget_th_category'] ?></th><th>Poste</th><th><?= $t['ops_invoice_th_provider'] ?></th>
                                 <th>Contact</th><th>Tél</th><th>Mail</th>
                                 <th class="text-end">P.U</th><th class="text-end">Qté</th>
                                 <th class="text-end">Total</th>
@@ -1113,7 +1113,7 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
               </select>
             </div>
             <div class="col-md-4">
-              <label class="form-label fw-semibold">Catégorie</label>
+              <label class="form-label fw-semibold"><?= $t['ops_budget_th_category'] ?></label>
               <input type="text" name="categorie" class="form-control rounded-3" placeholder="ex: Hébergement">
             </div>
             <div class="col-md-4">
@@ -1177,7 +1177,7 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
               </select>
             </div>
             <div class="col-md-4">
-              <label class="form-label fw-semibold">Catégorie</label>
+              <label class="form-label fw-semibold"><?= $t['ops_budget_th_category'] ?></label>
               <input type="text" name="categorie" id="be-cat" class="form-control rounded-3">
             </div>
             <div class="col-md-4">
@@ -1185,7 +1185,7 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
               <input type="text" name="sous_categorie" id="be-scat" class="form-control rounded-3">
             </div>
             <div class="col-12">
-              <label class="form-label fw-semibold">Libellé</label>
+              <label class="form-label fw-semibold"><?= $t['ops_budget_th_label'] ?></label>
               <input type="text" name="libelle" id="be-lib" class="form-control rounded-3" required>
             </div>
             <div class="col-md-6">
@@ -1237,7 +1237,7 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
               <input type="text" name="tache" class="form-control rounded-3" required>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Statut</label>
+              <label class="form-label fw-semibold"><?= $t['ops_planning_th_status'] ?></label>
               <select name="statut" class="form-select rounded-3">
                 <?php foreach ($statuts_planning_opts as $s): ?>
                 <option value="<?= $s ?>"><?= $statuts_labels[$s] ?></option>
@@ -1286,11 +1286,11 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
           <input type="hidden" name="ligne_id" id="pe-id">
           <div class="row g-3">
             <div class="col-12">
-              <label class="form-label fw-semibold">Tâche</label>
+              <label class="form-label fw-semibold"><?= $t['ops_planning_th_task'] ?></label>
               <input type="text" name="tache" id="pe-tache" class="form-control rounded-3" required>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Statut</label>
+              <label class="form-label fw-semibold"><?= $t['ops_planning_th_status'] ?></label>
               <select name="statut" id="pe-statut" class="form-select rounded-3">
                 <?php foreach ($statuts_planning_opts as $s): ?>
                 <option value="<?= $s ?>"><?= $statuts_labels[$s] ?></option>
@@ -1346,11 +1346,11 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
               <input type="number" step="0.5" name="quantite" class="form-control rounded-3" value="1">
             </div>
             <div class="col-md-3">
-              <label class="form-label fw-semibold">Catégorie</label>
+              <label class="form-label fw-semibold"><?= $t['ops_budget_th_category'] ?></label>
               <select name="categorie_achat" class="form-select rounded-3">
                 <option value="">— Non défini —</option>
-                <option value="loue">Loué</option>
-                <option value="achete">Acheté</option>
+                <option value="loue"><?= $t['ops_material_rented'] ?></option>
+                <option value="achete"><?= $t['ops_material_purchased'] ?></option>
               </select>
             </div>
             <div class="col-md-6">
@@ -1407,11 +1407,11 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
               <input type="number" step="0.5" name="quantite" id="me-qte" class="form-control rounded-3">
             </div>
             <div class="col-md-3">
-              <label class="form-label fw-semibold">Catégorie</label>
+              <label class="form-label fw-semibold"><?= $t['ops_budget_th_category'] ?></label>
               <select name="categorie_achat" id="me-cat" class="form-select rounded-3">
                 <option value="">— Non défini —</option>
-                <option value="loue">Loué</option>
-                <option value="achete">Acheté</option>
+                <option value="loue"><?= $t['ops_material_rented'] ?></option>
+                <option value="achete"><?= $t['ops_material_purchased'] ?></option>
               </select>
             </div>
             <div class="col-md-6">
@@ -1476,11 +1476,11 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
               </select>
             </div>
 
-            <div class="col-md-4"><label class="form-label fw-semibold">Catégorie</label>
+            <div class="col-md-4"><label class="form-label fw-semibold"><?= $t['ops_budget_th_category'] ?></label>
               <input type="text" name="categorie" class="form-control rounded-3" placeholder="ex: Hébergement"></div>
             <div class="col-md-4"><label class="form-label fw-semibold">Poste</label>
               <input type="text" name="poste" class="form-control rounded-3" placeholder="ex: Logement"></div>
-            <div class="col-md-4"><label class="form-label fw-semibold">Prestataire</label>
+            <div class="col-md-4"><label class="form-label fw-semibold"><?= $t['ops_invoice_th_provider'] ?></label>
               <input type="text" name="prestataire" class="form-control rounded-3"></div>
             <div class="col-md-4"><label class="form-label fw-semibold">Contact</label>
               <input type="text" name="contact" id="fc-contact" class="form-control rounded-3"></div>
@@ -1554,9 +1554,9 @@ $statuts_labels        = ['wip'=>'WIP','en_cours'=>'En cours','valide'=>'Validé
               </select>
             </div>
 
-            <div class="col-md-4"><label class="form-label fw-semibold">Catégorie</label><input type="text" name="categorie"   id="fe-cat"  class="form-control rounded-3"></div>
+            <div class="col-md-4"><label class="form-label fw-semibold"><?= $t['ops_budget_th_category'] ?></label><input type="text" name="categorie"   id="fe-cat"  class="form-control rounded-3"></div>
             <div class="col-md-4"><label class="form-label fw-semibold">Poste</label><input type="text" name="poste"           id="fe-poste" class="form-control rounded-3"></div>
-            <div class="col-md-4"><label class="form-label fw-semibold">Prestataire</label><input type="text" name="prestataire" id="fe-prest" class="form-control rounded-3"></div>
+            <div class="col-md-4"><label class="form-label fw-semibold"><?= $t['ops_invoice_th_provider'] ?></label><input type="text" name="prestataire" id="fe-prest" class="form-control rounded-3"></div>
             <div class="col-md-4"><label class="form-label fw-semibold">Contact</label><input type="text" name="contact"       id="fe-cont" class="form-control rounded-3"></div>
             <div class="col-md-4"><label class="form-label fw-semibold">Téléphone</label><input type="text" name="telephone"   id="fe-tel"  class="form-control rounded-3"></div>
             <div class="col-md-4"><label class="form-label fw-semibold">Mail</label><input type="email" name="mail"            id="fe-mail" class="form-control rounded-3"></div>

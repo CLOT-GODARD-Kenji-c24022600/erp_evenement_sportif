@@ -24,13 +24,13 @@ declare(strict_types=1);
         <hgroup class="flex-grow-1">
             <h1 class="fw-bold fs-4 mb-0">
                 <i class="bi bi-person-lines-fill me-2 text-primary"></i>
-                Annuaire
+                <?= $t['dir_page_title'] ?>
             </h1>
-            <p class="text-body-secondary small mb-0">Contacts externes · Membres de l'équipe</p>
+            <p class="text-body-secondary small mb-0"><?= $t['dir_page_subtitle'] ?></p>
         </hgroup>
         <button class="btn btn-primary btn-sm fw-semibold shadow-sm"
                 data-bs-toggle="modal" data-bs-target="#modalContactCreate">
-            <i class="bi bi-person-plus-fill me-1"></i> Ajouter un contact
+            <i class="bi bi-person-plus-fill me-1"></i> <?= $t['dir_add_contact_btn'] ?>
         </button>
     </header>
 
@@ -49,7 +49,7 @@ declare(strict_types=1);
                 <i class="bi bi-search text-body-secondary"></i>
             </span>
             <input type="search" id="annuaire-search" class="form-control border-start-0 rounded-end-3"
-                   placeholder="Rechercher dans l'annuaire…" aria-label="Rechercher">
+                   placeholder="<?= $t['dir_search_ph'] ?>" aria-label="Rechercher">
         </div>
     </div>
 
@@ -59,7 +59,7 @@ declare(strict_types=1);
             <button class="nav-link active fw-semibold" data-bs-toggle="tab"
                     data-bs-target="#pane-membres" type="button" role="tab">
                 <i class="bi bi-people-fill me-1 text-primary"></i>
-                Membres de l'équipe
+                <?= $t['dir_tab_members'] ?>
                 <span class="badge bg-primary ms-1"><?= count($usersInterne) ?></span>
             </button>
         </li>
@@ -67,7 +67,7 @@ declare(strict_types=1);
             <button class="nav-link fw-semibold" data-bs-toggle="tab"
                     data-bs-target="#pane-contacts" type="button" role="tab">
                 <i class="bi bi-person-rolodex me-1 text-secondary"></i>
-                Contacts externes
+                <?= $t['dir_tab_contacts'] ?>
                 <span class="badge bg-secondary ms-1"><?= count($contacts) ?></span>
             </button>
         </li>
@@ -83,7 +83,7 @@ declare(strict_types=1);
             <?php if (empty($usersInterne)): ?>
             <p class="text-body-secondary text-center py-5">
                 <i class="bi bi-people fs-2 d-block mb-2 opacity-50"></i>
-                Aucun membre approuvé dans l'équipe.
+                <?= $t['dir_no_members'] ?>
             </p>
             <?php else: ?>
             <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4" id="membres-grid">
@@ -142,7 +142,7 @@ declare(strict_types=1);
                                 <?php if (!empty($u['contact_urgence'])): ?>
                                 <li class="mb-1">
                                     <i class="bi bi-heart-pulse-fill me-2 text-danger"></i>
-                                    Urgence : <?= htmlspecialchars($u['contact_urgence'], ENT_QUOTES) ?>
+                                    <?= $t['dir_emergency'] ?> : <?= htmlspecialchars($u['contact_urgence'], ENT_QUOTES) ?>
                                     <?= !empty($u['tel_urgence']) ? ' — '.htmlspecialchars($u['tel_urgence'], ENT_QUOTES) : '' ?>
                                 </li>
                                 <?php endif; ?>
@@ -184,7 +184,7 @@ declare(strict_types=1);
                             <footer class="d-flex justify-content-end gap-2">
                                 <button type="button"
                                         class="btn btn-sm btn-outline-secondary rounded-3"
-                                        title="Copier vers contacts externes"
+                                        title="<?= $t['dir_copy_to_contacts'] ?>"
                                         onclick="openTransferModal(<?= htmlspecialchars(json_encode($u), ENT_QUOTES) ?>)">
                                     <i class="bi bi-box-arrow-right"></i>
                                 </button>
@@ -212,7 +212,7 @@ declare(strict_types=1);
             <?php if (empty($contacts)): ?>
             <p class="text-body-secondary text-center py-5">
                 <i class="bi bi-person-rolodex fs-2 d-block mb-2 opacity-50"></i>
-                Aucun contact externe. Ajoute le premier !
+                <?= $t['dir_no_contacts'] ?>
             </p>
             <?php else: ?>
             <div class="card border-0 shadow-sm rounded-3">
@@ -220,11 +220,11 @@ declare(strict_types=1);
                     <table class="table table-hover mb-0" id="contacts-table">
                         <thead class="table-dark small">
                             <tr>
-                                <th class="ps-3">Nom</th>
-                                <th>Infos / Rôle</th>
-                                <th>Téléphone</th>
+                                <th class="ps-3"><?= $lang === 'fr' ? 'Nom' : 'Name' ?></th>
+                                <th><?= $lang === 'fr' ? 'Infos / Rôle' : 'Info / Role' ?></th>
+                                <th><?= $t['dir_th_phone'] ?></th>
                                 <th>Mail</th>
-                                <th>Urgence</th>
+                                <th><?= $t['dir_emergency'] ?></th>
                                 <th>T-Shirt</th>
                                 <th>Pointure</th>
                                 <th>Poids</th>
@@ -273,7 +273,7 @@ declare(strict_types=1);
                                 <span class="badge rounded-pill bg-<?= $c['type'] === 'staff' ? 'primary' : 'secondary' ?>-subtle
                                              text-<?= $c['type'] === 'staff' ? 'primary' : 'secondary' ?>
                                              border border-<?= $c['type'] === 'staff' ? 'primary' : 'secondary' ?>-subtle">
-                                    <?= $c['type'] === 'staff' ? 'Staff' : 'Contact' ?>
+                                    <?= $c['type'] === 'staff' ? $t['dir_role_staff'] : $t['dir_role_contact'] ?>
                                 </span>
                             </td>
                             <td class="small text-body-secondary" style="max-width:180px;">
@@ -290,7 +290,7 @@ declare(strict_types=1);
                                     <i class="bi bi-pencil"></i>
                                 </button>
                                 <form method="POST" action="/annuaire" class="d-inline"
-                                      onsubmit="return confirm('Supprimer ce contact ?')">
+                                      onsubmit="return confirm('<?= $t['dir_confirm_delete'] ?>')">
                                     <input type="hidden" name="contact_action" value="delete">
                                     <input type="hidden" name="contact_id" value="<?= (int)$c['id'] ?>">
                                     <button class="btn btn-sm btn-outline-danger py-0 px-2">

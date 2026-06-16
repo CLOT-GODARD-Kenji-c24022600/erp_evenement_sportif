@@ -3,7 +3,10 @@
 /**
  * YES – Your Event Solution
  * @file OperationnelController.php
- * @version 2.0  –  2026
+ * @author CELESTINE Samuel
+ * @author CLOT-GODARD Kenji
+ * @version 2.1
+ * @since 2026
  */
 
 declare(strict_types=1);
@@ -18,7 +21,6 @@ use App\Models\EventModel;
 use App\Models\ProjectModel;
 use App\Models\ContactModel;
 use Core\Security;
-
 
 class OperationnelController
 {
@@ -37,23 +39,19 @@ class OperationnelController
 
     public function index(): array
     {
-        // ✅ Mémorisation de la dernière page visitée (event_id / projet_id)
         $eventId  = Security::sanitizeInt($_GET['event_id']  ?? $_SESSION['ops_last_event']  ?? 0);
         $projetId = Security::sanitizeInt($_GET['projet_id'] ?? $_SESSION['ops_last_projet'] ?? 0);
 
-        // Lire le message flash depuis la session (après redirect POST→GET)
         $msg  = $_SESSION['ops_msg']  ?? null;
         $type = $_SESSION['ops_type'] ?? 'success';
         unset($_SESSION['ops_msg'], $_SESSION['ops_type']);
 
-        // Si POST : handlePost fait la redirect lui-même (exit)
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['ops_action'])) {
             $eventId  = Security::sanitizeInt($_POST['event_id']  ?? $eventId);
             $projetId = Security::sanitizeInt($_POST['projet_id'] ?? $projetId);
             $this->handlePost($eventId, $projetId);
         }
 
-        // Mémoriser le contexte en session pour "rester sur la même page"
         if ($eventId > 0)  $_SESSION['ops_last_event']  = $eventId;
         if ($projetId > 0) $_SESSION['ops_last_projet'] = $projetId;
 
@@ -62,7 +60,6 @@ class OperationnelController
         try { $evenements = (new EventModel())->getAll(); }        catch (\Exception $e) {}
         try { $projets    = (new ProjectModel())->getAllSimple(); } catch (\Exception $e) {}
 
-        // Contacts pour la facturation
         $contacts = [];
         try { $contacts = (new ContactModel())->getAll(); } catch (\Exception $e) {}
 
@@ -94,7 +91,6 @@ class OperationnelController
                 $budgetTotaux   = $this->budget->getTotauxProjet($projetId);
                 $materielTotaux = $this->materiel->getBudgetTotauxProjet($projetId);
                 $contactsLies   = (new ContactModel())->getByProjet($projetId);
-                // Récap finance projet
                 $projetData = (new ProjectModel())->findById($projetId);
                 if ($projetData) {
                     $projetFinance = [
@@ -110,7 +106,6 @@ class OperationnelController
             $type = 'error';
         }
 
-        // Lire et effacer l'onglet à restaurer
         $restoreTab = $_SESSION['ops_restore_tab'] ?? null;
         unset($_SESSION['ops_restore_tab']);
 
@@ -148,40 +143,31 @@ class OperationnelController
             $activeTab = '#pane-budget';
         }
 
-        // Stocker l'onglet en session pour le récupérer après redirect SPA
         $_SESSION['ops_restore_tab'] = $activeTab;
         $tabParam = ltrim($activeTab, '#');
 
-        // Gestion upload fichier facturation
         if (in_array($action, ['facturation_create', 'facturation_update'], true)) {
             $_POST['fichier'] = $this->handleFacturationUpload();
         }
 
         $result = match($action) {
-            // Planning
             'planning_create' => $this->planningCreate($eventId, $projetId),
             'planning_update' => $this->planningUpdate(),
             'planning_delete' => $this->planningDelete(),
             'planning_statut' => $this->planningStatut(),
-            // Matériel
             'materiel_create' => $this->materielCreate($eventId, $projetId),
             'materiel_update' => $this->materielUpdate(),
             'materiel_delete' => $this->materielDelete(),
-            // Facturation
             'facturation_create' => $this->facturationCreate($eventId, $projetId),
             'facturation_update' => $this->facturationUpdate(),
             'facturation_delete' => $this->facturationDelete(),
             'facturation_toggle' => $this->facturationToggle(),
-            // Préproduction
             'preprod_sync'       => $this->preprodSync($eventId),
-            // Budget
             'budget_sync_fact'   => $this->budgetSyncFacturation($eventId, $projetId),
             'budget_sync_mat'    => $this->budgetSyncMateriel($eventId, $projetId),
-            // Budget
             'budget_create' => $this->budgetCreate($eventId, $projetId),
             'budget_update' => $this->budgetUpdate(),
             'budget_delete' => $this->budgetDelete(),
-            // Événement — liaisons Google Drive / Maps
             'event_drive_update' => $this->eventDriveUpdate($eventId),
             'contact_detach'     => $this->contactDetach(),
             default => 'error:Action inconnue.',
@@ -197,12 +183,9 @@ class OperationnelController
         exit;
     }
 
-    // ── Gestion upload fichier facturation ───────────────────
-
     private function handleFacturationUpload(): ?string
     {
         if (empty($_FILES['fichier_upload']['name'])) {
-            // Conserver l'ancien fichier si présent dans POST
             return Security::sanitizeString($_POST['fichier_existing'] ?? '') ?: null;
         }
 
@@ -224,8 +207,6 @@ class OperationnelController
         return null;
     }
 
-    // ── Event Drive / Maps ────────────────────────────────────
-
     private function eventDriveUpdate(int $eventId): string
     {
         if ($eventId <= 0) return 'error:Événement non sélectionné.';
@@ -241,12 +222,14 @@ class OperationnelController
         return $model->update($eventId, $data) ? 'success:Liens Drive/Maps mis à jour.' : 'error:Erreur lors de la mise à jour.';
     }
 
-    // ── Planning ─────────────────────────────────────────────
-
     private function planningCreate(int $eventId, int $projetId): string
     {
         $tache = Security::sanitizeString($_POST['tache'] ?? '');
         if ($tache === '') return 'error:La tâche est obligatoire.';
+        
+        // AJOUT : on récupère l'ID du contact
+        $contactId = Security::sanitizeInt($_POST['contact_id'] ?? 0);
+
         $ok = $this->planning->create([
             'event_id'   => $eventId  ?: null,
             'projet_id'  => $projetId ?: null,
@@ -256,6 +239,7 @@ class OperationnelController
             'date_fin'   => $_POST['date_fin']   ?: null,
             'note'       => Security::sanitizeString($_POST['note'] ?? ''),
             'ordre'      => (int) ($_POST['ordre'] ?? 0),
+            'contact_id' => $contactId ?: null, // AJOUT : on l'envoie au Modèle
         ]);
         return $ok ? 'success:Tâche de planning ajoutée.' : 'error:Erreur lors de l\'ajout.';
     }
@@ -264,6 +248,10 @@ class OperationnelController
     {
         $id = Security::sanitizeInt($_POST['ligne_id'] ?? 0);
         if (!$id) return 'error:ID invalide.';
+        
+        // AJOUT : on récupère l'ID du contact
+        $contactId = Security::sanitizeInt($_POST['contact_id'] ?? 0);
+
         $ok = $this->planning->update($id, [
             'tache'      => Security::sanitizeString($_POST['tache'] ?? ''),
             'statut'     => $_POST['statut']     ?? 'wip',
@@ -271,6 +259,7 @@ class OperationnelController
             'date_fin'   => $_POST['date_fin']   ?: null,
             'note'       => Security::sanitizeString($_POST['note'] ?? ''),
             'ordre'      => (int) ($_POST['ordre'] ?? 0),
+            'contact_id' => $contactId ?: null, // AJOUT : on l'envoie au Modèle
         ]);
         return $ok ? 'success:Tâche mise à jour.' : 'error:Erreur lors de la mise à jour.';
     }
@@ -289,8 +278,6 @@ class OperationnelController
         return $id && $this->planning->updateStatut($id, $statut)
             ? 'success:Statut mis à jour.' : 'error:Statut invalide.';
     }
-
-    // ── Matériel ─────────────────────────────────────────────
 
     private function materielCreate(int $eventId, int $projetId): string
     {
@@ -361,18 +348,14 @@ class OperationnelController
         $id = Security::sanitizeInt($_POST['ligne_id'] ?? 0);
         if (!$id) return 'error:ID invalide.';
 
-        // Supprimer la ligne budget liée avant de supprimer le matériel
         $this->budget->syncMaterielToBudget($id, 0, '', '', '', null, null, true);
 
         return $this->materiel->delete($id)
             ? 'success:Matériel supprimé.' : 'error:Erreur suppression.';
     }
 
-    // ── Facturation ──────────────────────────────────────────
-
     private function facturationCreate(int $eventId, int $projetId): string
     {
-        // Si un contact existant est sélectionné, remplir auto les champs
         $contactId = Security::sanitizeInt($_POST['contact_id'] ?? 0);
         $contact   = Security::sanitizeString($_POST['contact']     ?? '');
         $tel       = Security::sanitizeString($_POST['telephone']   ?? '');
@@ -409,7 +392,6 @@ class OperationnelController
         ]);
 
         if ($ok) {
-            // Synchroniser vers le budget
             $newId   = $this->facturation->getLastInsertId();
             $montant = (float)($_POST['prix_unitaire'] ?? 0) * (float)($_POST['quantite'] ?? 1);
             $this->budget->syncFacturationToBudget(
@@ -446,7 +428,6 @@ class OperationnelController
             } catch (\Exception) {}
         }
 
-        // Conserver fichier existant si pas de nouvel upload
         $fichier = $_POST['fichier'] ?? null;
 
         $ok = $this->facturation->update($id, [
@@ -467,7 +448,6 @@ class OperationnelController
         ]);
 
         if ($ok) {
-            // Synchroniser vers le budget (récupérer event_id/projet_id depuis la ligne)
             $row     = $this->facturation->findById($id);
             $montant = (float)($_POST['prix_unitaire'] ?? 0) * (float)($_POST['quantite'] ?? 1);
             $this->budget->syncFacturationToBudget(
@@ -488,7 +468,6 @@ class OperationnelController
         $id = Security::sanitizeInt($_POST['ligne_id'] ?? 0);
         if (!$id) return 'error:ID invalide.';
 
-        // Supprimer la ligne budget liée avant de supprimer la facturation
         $this->budget->syncFacturationToBudget($id, 0, '', '', null, null, true);
 
         return $this->facturation->delete($id)
@@ -505,7 +484,6 @@ class OperationnelController
             return 'error:Paramètres invalides.';
         }
 
-        // Récupérer la valeur actuelle et l'inverser
         $row = $this->facturation->findById($id);
         if (!$row) return 'error:Ligne introuvable.';
 
@@ -513,8 +491,6 @@ class OperationnelController
         $ok = $this->facturation->update($id, array_merge($row, [$field => $newVal]));
         return $ok ? 'success:Statut mis à jour.' : 'error:Erreur mise à jour.';
     }
-
-    // ── Préproduction ────────────────────────────────────────
 
     private function preprodSync(int $eventId): string
     {
@@ -551,7 +527,6 @@ class OperationnelController
             ],
         ];
 
-        // Compter les phases qui ont des dates
         $count = count(array_filter($phases, fn($p) => $p['debut'] || $p['fin']));
         if ($count === 0) {
             return 'error:Aucune phase avec des dates à synchroniser. Définissez d\'abord les dates dans la fiche événement.';
@@ -610,8 +585,6 @@ class OperationnelController
         return 'success:' . count($avecBudget) . ' matériel(s) synchronisé(s) dans le budget.';
     }
 
-    // ── Budget ───────────────────────────────────────────────
-
     private function budgetCreate(int $eventId, int $projetId): string
     {
         $libelle = Security::sanitizeString($_POST['libelle'] ?? '');
@@ -656,7 +629,6 @@ class OperationnelController
         return $id && $this->budget->delete($id)
             ? 'success:Ligne supprimée.' : 'error:Erreur suppression.';
     }
-    // ── Contact détachement ──────────────────────────────
 
     private function contactDetach(): string
     {

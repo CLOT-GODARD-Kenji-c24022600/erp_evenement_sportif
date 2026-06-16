@@ -28,7 +28,7 @@ $title = "Plan du site - YES";
     <div class="row g-4">
         <div class="col-md-4">
             <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                <div class="card-header border-bottom-0 pt-4 pb-0">
                     <h2 class="h5 fw-bold"><i class="bi bi-globe me-2 text-secondary"></i>Espace Public</h2>
                 </div>
                 <div class="card-body">
@@ -43,7 +43,7 @@ $title = "Plan du site - YES";
 
         <div class="col-md-4">
             <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                <div class="card-header border-bottom-0 pt-4 pb-0">
                     <h2 class="h5 fw-bold"><i class="bi bi-person-badge me-2 text-secondary"></i>Espace Utilisateur</h2>
                 </div>
                 <div class="card-body">
@@ -58,7 +58,7 @@ $title = "Plan du site - YES";
 
         <div class="col-md-4">
             <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                <div class="card-header border-bottom-0 pt-4 pb-0">
                     <h2 class="h5 fw-bold"><i class="bi bi-shield-lock me-2 text-secondary"></i>Espace Staff</h2>
                 </div>
                 <div class="card-body">

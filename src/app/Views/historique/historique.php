@@ -6,33 +6,33 @@
  * @file historique.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 2.1
+ * @version 2.2
  * @since 2026
  */
 
 declare(strict_types=1);
 
 $actionLabels = [
-    'create'    => ['label' => 'Création',    'class' => 'bg-success'],
-    'update'    => ['label' => 'Modification', 'class' => 'bg-warning text-dark'],
-    'delete'    => ['label' => 'Suppression',  'class' => 'bg-danger'],
-    'duplicate' => ['label' => 'Duplication',  'class' => 'bg-info text-dark'],
-    'login'     => ['label' => 'Connexion',    'class' => 'bg-primary'],
-    'logout'    => ['label' => 'Déconnexion',  'class' => 'bg-secondary'],
-    'approve'   => ['label' => 'Approbation',  'class' => 'bg-success'],
-    'reject'    => ['label' => 'Rejet',        'class' => 'bg-danger'],
+    'create'    => ['label' => $t['hist_action_create'],    'class' => 'bg-success'],
+    'update'    => ['label' => $t['hist_action_update'],    'class' => 'bg-warning text-dark'],
+    'delete'    => ['label' => $t['hist_action_delete'],    'class' => 'bg-danger'],
+    'duplicate' => ['label' => $t['hist_action_duplicate'], 'class' => 'bg-info text-dark'],
+    'login'     => ['label' => $t['hist_action_login'],     'class' => 'bg-primary'],
+    'logout'    => ['label' => $t['hist_action_logout'],    'class' => 'bg-secondary'],
+    'approve'   => ['label' => $t['hist_action_approve'],   'class' => 'bg-success'],
+    'reject'    => ['label' => $t['hist_action_reject'],    'class' => 'bg-danger'],
 ];
 
 $entiteLabels = [
-    'evenement'   => '📅 Événement',
-    'projet'      => '📁 Projet',
-    'budget'      => '💰 Budget',
-    'facture'     => '🧾 Facture',
-    'todo'        => '✅ Tâche',
-    'planning'    => '🗓 Planning',
-    'materiel'    => '🔧 Matériel',
-    'utilisateur' => '👤 Utilisateur',
-    'contact'     => '📞 Contact',
+    'evenement'   => $t['hist_entity_evenement'],
+    'projet'      => $t['hist_entity_projet'],
+    'budget'      => $t['hist_entity_budget'],
+    'facture'     => $t['hist_entity_facture'],
+    'todo'        => $t['hist_entity_todo'],
+    'planning'    => $t['hist_entity_planning'],
+    'materiel'    => $t['hist_entity_materiel'],
+    'utilisateur' => $t['hist_entity_utilisateur'],
+    'contact'     => $t['hist_entity_contact'],
 ];
 ?>
 
@@ -42,12 +42,12 @@ $entiteLabels = [
     <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
         <div>
             <h1 class="h4 fw-bold mb-0">
-                <i class="bi bi-clock-history text-primary me-2"></i>Historique des actions
+                <i class="bi bi-clock-history text-primary me-2"></i><?= $t['hist_title'] ?>
             </h1>
-            <p class="text-muted small mb-0 mt-1">Traçabilité complète des opérations effectuées dans YES</p>
+            <p class="text-muted small mb-0 mt-1"><?= $t['hist_subtitle'] ?></p>
         </div>
         <span class="badge bg-secondary rounded-pill fs-6">
-            <?= count($logs) ?> entrée<?= count($logs) > 1 ? 's' : '' ?>
+            <?= count($logs) ?> <?= count($logs) > 1 ? $t['hist_entries'] : $t['hist_entry'] ?>
         </span>
     </div>
 
@@ -57,10 +57,10 @@ $entiteLabels = [
 
             <div class="col-12 col-sm-6 col-lg-3">
                 <label class="form-label small fw-semibold text-muted text-uppercase mb-1">
-                    <i class="bi bi-tag me-1"></i>Type d'entité
+                    <i class="bi bi-tag me-1"></i><?= $t['hist_filter_entity'] ?>
                 </label>
                 <select name="entite" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="">— Toutes les entités —</option>
+                    <option value=""><?= $t['hist_filter_all_entities'] ?></option>
                     <?php foreach ($entites as $e): ?>
                         <option value="<?= htmlspecialchars($e, ENT_QUOTES) ?>"
                             <?= $entite === $e ? 'selected' : '' ?>>
@@ -72,10 +72,10 @@ $entiteLabels = [
 
             <div class="col-12 col-sm-6 col-lg-3">
                 <label class="form-label small fw-semibold text-muted text-uppercase mb-1">
-                    <i class="bi bi-person me-1"></i>Utilisateur
+                    <i class="bi bi-person me-1"></i><?= $t['hist_filter_user'] ?>
                 </label>
                 <select name="user_id" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="0">— Tous les utilisateurs —</option>
+                    <option value="0"><?= $t['hist_filter_all_users'] ?></option>
                     <?php foreach ($users as $u): ?>
                         <option value="<?= (int)$u['user_id'] ?>"
                             <?= $userId === (int)$u['user_id'] ? 'selected' : '' ?>>
@@ -87,7 +87,7 @@ $entiteLabels = [
 
             <div class="col-12 col-sm-6 col-lg-2">
                 <label class="form-label small fw-semibold text-muted text-uppercase mb-1">
-                    <i class="bi bi-calendar me-1"></i>Depuis
+                    <i class="bi bi-calendar me-1"></i><?= $t['hist_filter_date_from'] ?>
                 </label>
                 <input type="date" name="date_from" class="form-control form-control-sm"
                        value="<?= htmlspecialchars($dateFrom, ENT_QUOTES) ?>"
@@ -96,7 +96,7 @@ $entiteLabels = [
 
             <div class="col-12 col-sm-6 col-lg-2">
                 <label class="form-label small fw-semibold text-muted text-uppercase mb-1">
-                    <i class="bi bi-calendar-check me-1"></i>Jusqu'au
+                    <i class="bi bi-calendar-check me-1"></i><?= $t['hist_filter_date_to'] ?>
                 </label>
                 <input type="date" name="date_to" class="form-control form-control-sm"
                        value="<?= htmlspecialchars($dateTo, ENT_QUOTES) ?>"
@@ -106,11 +106,11 @@ $entiteLabels = [
             <div class="col-12 col-lg-2 d-flex align-items-end">
                 <?php if ($entite || $userId || $dateFrom || $dateTo): ?>
                     <a href="/historique" class="btn btn-outline-secondary btn-sm w-100">
-                        <i class="bi bi-x-circle me-1"></i>Effacer les filtres
+                        <i class="bi bi-x-circle me-1"></i><?= $t['hist_btn_reset'] ?>
                     </a>
                 <?php else: ?>
                     <button type="submit" class="btn btn-primary btn-sm w-100">
-                        <i class="bi bi-funnel me-1"></i>Filtrer
+                        <i class="bi bi-funnel me-1"></i><?= $t['hist_btn_apply'] ?>
                     </button>
                 <?php endif; ?>
             </div>
@@ -122,7 +122,7 @@ $entiteLabels = [
         <div class="card border-0 shadow-sm">
             <div class="card-body text-center py-5 text-muted">
                 <i class="bi bi-inbox fs-1 d-block mb-3 opacity-50"></i>
-                <p class="mb-0">Aucune entrée d'historique pour ces critères.</p>
+                <p class="mb-0"><?= $t['hist_empty'] ?></p>
             </div>
         </div>
     <?php else: ?>
@@ -131,12 +131,12 @@ $entiteLabels = [
                 <table class="table table-hover table-sm align-middle mb-0" id="historiqueTable">
                     <thead class="table-light">
                         <tr>
-                            <th class="ps-3" style="width:155px;">Date &amp; heure</th>
-                            <th style="width:120px;">Utilisateur</th>
-                            <th style="width:105px;">Action</th>
-                            <th style="width:115px;">Entité</th>
-                            <th>Objet</th>
-                            <th class="text-center" style="width:80px;">Détails</th>
+                            <th class="ps-3" style="width:155px;"><?= $t['hist_th_date'] ?></th>
+                            <th style="width:120px;"><?= $t['hist_th_user'] ?></th>
+                            <th style="width:105px;"><?= $t['hist_th_action'] ?></th>
+                            <th style="width:115px;"><?= $t['hist_th_entity'] ?></th>
+                            <th><?= $t['hist_th_detail'] ?></th>
+                            <th class="text-center" style="width:80px;"><?= $t['hist_th_details'] ?></th>
                             <th class="pe-3 d-none d-xl-table-cell" style="width:105px;">IP</th>
                         </tr>
                     </thead>
@@ -195,10 +195,10 @@ $entiteLabels = [
 
                         <?php if ($hasDetails): ?>
                         <tr class="collapse" id="detail-<?= $logId ?>">
-                            <td colspan="7" class="bg-light p-0">
+                            <td colspan="7" class="p-0" style="background:var(--bs-secondary-bg);">
                                 <div class="p-3">
                                     <p class="text-muted small fw-semibold text-uppercase mb-2">
-                                        <i class="bi bi-code-square me-1"></i>Détails de l'opération
+                                        <i class="bi bi-code-square me-1"></i><?= $t['hist_detail_label'] ?>
                                     </p>
                                     <?= renderDiff($details) ?>
                                 </div>

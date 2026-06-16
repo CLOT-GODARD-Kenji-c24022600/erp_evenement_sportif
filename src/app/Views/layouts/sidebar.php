@@ -44,7 +44,7 @@ $sbCanAdmin       = UserModel::isPrivileged($sidebarRole);
     <header class="d-flex align-items-center sidebar-header p-4 mb-2 position-relative">
         <a href="/dashboard" class="text-white text-decoration-none d-flex align-items-center logo-link"
            aria-label="Accueil – <?= htmlspecialchars($t['app_name'], ENT_QUOTES) ?>">
-            <figure class="bg-white rounded-2 d-flex align-items-center justify-content-center flex-shrink-0 overflow-hidden shadow-sm logo-box mb-0">
+            <figure class="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0 overflow-hidden shadow-sm logo-box mb-0" style="background:#fff;">
                 <img src="assets/img/YES-Your-Event-Solution.png" alt="Logo YES" width="35" height="35"
                      style="object-fit: contain;">
             </figure>

@@ -40,7 +40,7 @@ declare(strict_types=1);
         </aside>
 
     <?php elseif (empty($resultats_staff) && empty($resultats_events) && empty($resultats_projets)): ?>
-        <section class="text-center py-5 bg-white rounded shadow-sm border-0 mt-4">
+        <section class="text-center py-5 rounded shadow-sm border-0 mt-4">
             <i class="bi bi-emoji-frown fs-1 text-muted" aria-hidden="true"></i>
             <h2 class="mt-3 text-muted fw-bold h5"><?= htmlspecialchars($t['search_no_result'], ENT_QUOTES) ?></h2>
             <p class="text-muted">
@@ -119,7 +119,7 @@ declare(strict_types=1);
                                 </span>
                             <?php endif; ?>
                         </section>
-                        <footer class="card-footer bg-white border-top-0 pb-4 px-4">
+                        <footer class="card-footer border-top-0 pb-4 px-4">
                             <a href="/projet_detail?id=<?= (int) $projet['id'] ?>"
                                class="btn btn-sm btn-warning px-4 rounded-pill stretched-link text-white fw-bold">
                                 <?= htmlspecialchars($t['search_btn_open'], ENT_QUOTES) ?>
@@ -167,7 +167,7 @@ declare(strict_types=1);
                                 </span>
                             <?php endif; ?>
                         </section>
-                        <footer class="card-footer bg-white border-top-0 pb-4 px-4">
+                        <footer class="card-footer border-top-0 pb-4 px-4">
                             <a href="/gerer_event?id=<?= (int) $event['id'] ?>"
                                class="btn btn-sm btn-success px-4 rounded-pill stretched-link">
                                 <?= htmlspecialchars($t['search_btn_details'], ENT_QUOTES) ?>

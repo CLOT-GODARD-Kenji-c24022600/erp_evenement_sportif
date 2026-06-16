@@ -69,9 +69,16 @@ const YesRouter = (() => {
     s.dataset.spaPage = '1';
 
     s.onload = () => {
-      if (typeof window.YesPageInit === 'function') {
-        window.YesPageInit();
-      }
+      // On attend que le navigateur ait calculé le layout complet avant
+      // d'initialiser les graphiques canvas (sinon clientWidth = 0).
+      // setTimeout(0) sort du call-stack, rAF attend le prochain paint.
+      setTimeout(() => {
+        requestAnimationFrame(() => {
+          if (typeof window.YesPageInit === 'function') {
+            window.YesPageInit();
+          }
+        });
+      }, 0);
     };
 
     s.onerror = () => {
