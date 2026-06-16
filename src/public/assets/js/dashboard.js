@@ -1,12 +1,13 @@
 /**
  * YES – Your Event Solution
  * @file dashboard.js
- * @version 2.6
+ * @version 2.7
  *
  * FIX SPA & DATA :
  * - Forçage de lecture des variables PHP
  * - Délai de rendu Canvas pour correction de la largeur invisible
  * - Correction d'affichage des noms dans le calendrier/gantt (titre vs nom vs tache)
+ * - INJECTION : Ajout automatique des tâches de la To-do dans le calendrier/Gantt
  */
 
 (() => {
@@ -352,6 +353,31 @@
     document.querySelectorAll('#spa-content script:not([src])').forEach(s => {
       try { eval(s.textContent); } catch (e) {}
     });
+
+    // --- 🚀 INJECTION DES TODOS DANS LE CALENDRIER ---
+    // On sauvegarde les données d'origine pour ne pas dupliquer à chaque aller-retour SPA
+    if (!window._PG_DATA_ORIGINAL) {
+      window._PG_DATA_ORIGINAL = JSON.parse(JSON.stringify(window.PG_DATA || []));
+    }
+    window.PG_DATA = JSON.parse(JSON.stringify(window._PG_DATA_ORIGINAL));
+
+    // On parcourt toutes les tâches de la to-do list affichées dans la page
+    document.querySelectorAll('.todo-item').forEach(todo => {
+      const due = todo.dataset.due;
+      // S'il y a une date d'échéance valide, on l'ajoute au calendrier
+      if (due && due !== '0000-00-00' && due !== '') {
+        window.PG_DATA.push({
+          id: 'todo-' + todo.dataset.id,
+          titre: '✅ ' + (todo.dataset.title || 'Tâche'),
+          statut: todo.dataset.status || 'wip',
+          couleur: '#6f42c1', // Violet pour bien différencier
+          date_debut: due,
+          date_fin: due,
+          description: todo.dataset.desc || ''
+        });
+      }
+    });
+    // -------------------------------------------------
 
     _pageInit();
 
