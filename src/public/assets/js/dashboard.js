@@ -1,21 +1,16 @@
 /**
  * YES – Your Event Solution
  * @file dashboard.js
- * @author CELESTINE Samuel
- * @author CLOT-GODARD Kenji
- * @version 2.5
- * @since 2026
+ * @version 2.6
  *
- * FIX SPA définitif :
- * - Pas de cloneNode/replaceWith — on utilise des flags data-* pour éviter les doubles listeners
- * - YesPageInit() compatible SPA routeur
- * - Todolist : tri, pagination, filtres, recherche
- * - Planning global : Gantt + Calendrier (unifié avec planning_lignes)
+ * FIX SPA & DATA :
+ * - Forçage de lecture des variables PHP
+ * - Délai de rendu Canvas pour correction de la largeur invisible
+ * - Correction d'affichage des noms dans le calendrier/gantt (titre vs nom vs tache)
  */
 
-'use strict';
-
-(function () {
+(() => {
+  'use strict';
 
   /* ════════════════════════════════════════════════════
    * 1. TODOLIST
@@ -118,9 +113,7 @@
         }
       }
 
-      const totalVisible = showingDone
-        ? doneItems.filter(i => i.style.display !== 'none').length
-        : total;
+      const totalVisible = showingDone ? doneItems.filter(i => i.style.display !== 'none').length : total;
       if (noResults) noResults.style.display = totalVisible === 0 ? '' : 'none';
 
       renderPagination(total, totalPages, start, end);
@@ -130,17 +123,13 @@
       const sorted = [...items];
       switch (state.sort) {
         case 'priority-desc':
-          return sorted.sort((a, b) =>
-            parseInt(b.dataset.priority || '1') - parseInt(a.dataset.priority || '1'));
+          return sorted.sort((a, b) => parseInt(b.dataset.priority || '1') - parseInt(a.dataset.priority || '1'));
         case 'priority-asc':
-          return sorted.sort((a, b) =>
-            parseInt(a.dataset.priority || '1') - parseInt(b.dataset.priority || '1'));
+          return sorted.sort((a, b) => parseInt(a.dataset.priority || '1') - parseInt(b.dataset.priority || '1'));
         case 'date-asc':
-          return sorted.sort((a, b) =>
-            (a.dataset.due || '9999-12-31').localeCompare(b.dataset.due || '9999-12-31'));
+          return sorted.sort((a, b) => (a.dataset.due || '9999-12-31').localeCompare(b.dataset.due || '9999-12-31'));
         case 'date-desc':
-          return sorted.sort((a, b) =>
-            (b.dataset.due || '0000-01-01').localeCompare(a.dataset.due || '0000-01-01'));
+          return sorted.sort((a, b) => (b.dataset.due || '0000-01-01').localeCompare(a.dataset.due || '0000-01-01'));
         default:
           return sorted;
       }
@@ -148,10 +137,8 @@
 
     function renderPagination(total, totalPages, start, end) {
       if (!paginationNav || !paginationInfo || !paginationPgs) return;
-      if (total <= ITEMS_PER_PAGE) {
-        paginationNav.style.display = 'none';
-        return;
-      }
+      if (total <= ITEMS_PER_PAGE) { paginationNav.style.display = 'none'; return; }
+      
       paginationNav.style.display = 'flex';
       paginationInfo.textContent  = `${start + 1}–${Math.min(end, total)} sur ${total} tâches`;
       paginationPgs.innerHTML     = '';
@@ -161,13 +148,9 @@
       for (let i = 1; i <= totalPages; i++) {
         if (i === 1 || i === totalPages || (i >= state.page - delta && i <= state.page + delta)) {
           paginationPgs.appendChild(mkPageBtn(i, i, false, i === state.page));
-        } else if (
-          (i === state.page - delta - 1 && i > 1) ||
-          (i === state.page + delta + 1 && i < totalPages)
-        ) {
+        } else if ((i === state.page - delta - 1 && i > 1) || (i === state.page + delta + 1 && i < totalPages)) {
           const li = document.createElement('li');
-          li.className = 'page-item disabled';
-          li.innerHTML = '<span class="page-link">…</span>';
+          li.className = 'page-item disabled'; li.innerHTML = '<span class="page-link">…</span>';
           paginationPgs.appendChild(li);
         }
       }
@@ -189,14 +172,11 @@
       btn.parentNode.replaceChild(fresh, btn);
       fresh.addEventListener('click', () => {
         document.querySelectorAll('[data-todo-filter]').forEach(b => {
-          b.classList.remove('active');
-          b.setAttribute('aria-selected', 'false');
+          b.classList.remove('active'); b.setAttribute('aria-selected', 'false');
         });
-        fresh.classList.add('active');
-        fresh.setAttribute('aria-selected', 'true');
+        fresh.classList.add('active'); fresh.setAttribute('aria-selected', 'true');
         state.categoryFilter = fresh.dataset.todoFilter;
-        state.page = 1;
-        applyFilters();
+        state.page = 1; applyFilters();
       });
     });
 
@@ -205,14 +185,11 @@
       btn.parentNode.replaceChild(fresh, btn);
       fresh.addEventListener('click', () => {
         document.querySelectorAll('[data-todo-status-filter]').forEach(b => {
-          b.classList.remove('todo-stat-active');
-          b.setAttribute('aria-pressed', 'false');
+          b.classList.remove('todo-stat-active'); b.setAttribute('aria-pressed', 'false');
         });
-        fresh.classList.add('todo-stat-active');
-        fresh.setAttribute('aria-pressed', 'true');
+        fresh.classList.add('todo-stat-active'); fresh.setAttribute('aria-pressed', 'true');
         state.statusFilter = fresh.dataset.todoStatusFilter;
-        state.page = 1;
-        applyFilters();
+        state.page = 1; applyFilters();
       });
     });
 
@@ -221,9 +198,7 @@
       const freshSearch = searchEl.cloneNode(true);
       searchEl.parentNode.replaceChild(freshSearch, searchEl);
       freshSearch.addEventListener('input', function () {
-        state.search = this.value.trim();
-        state.page   = 1;
-        applyFilters();
+        state.search = this.value.trim(); state.page = 1; applyFilters();
       });
     }
 
@@ -233,32 +208,21 @@
       sortEl.parentNode.replaceChild(freshSort, sortEl);
       freshSort.value = 'default';
       freshSort.addEventListener('change', function () {
-        state.sort = this.value;
-        state.page = 1;
-        applyFilters();
+        state.sort = this.value; state.page = 1; applyFilters();
       });
     }
 
     applyFilters();
   }
 
-  document.addEventListener('DOMContentLoaded', _pageInit);
-  window.YesPageInit = _pageInit;
-
   /* ════════════════════════════════════════════════════
-   * 2. PLANNING GLOBAL UNIFIÉ — Liste / Gantt / Calendrier
+   * 2. PLANNING GLOBAL — Liste / Gantt / Calendrier
    * ════════════════════════════════════════════════════ */
 
   const MOIS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin',
                    'Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-  const PG_COLORS = { 
-    wip:'#ffc107', en_cours:'#0d6efd', valide:'#198754', maj:'#0dcaf0', 
-    devis:'#6c757d', visuels:'#6c757d', bat:'#adb5bd', prod:'#6c757d', annule:'#dc3545' 
-  };
-  const PG_LABELS = { 
-    wip:'WIP', en_cours:'En cours', valide:'Validé', maj:'Maj',
-    devis:'Devis', visuels:'Visuels', bat:'BAT', prod:'Prod', annule:'Annulé' 
-  };
+  const PG_COLORS = { wip:'#ffc107', en_cours:'#0d6efd', valide:'#198754', annule:'#dc3545' };
+  const PG_LABELS = { wip:'WIP', en_cours:'En cours', valide:'Validé', annule:'Annulé' };
 
   window.switchPgView = function (view) {
     ['list','gantt','calendar'].forEach(v => {
@@ -273,10 +237,14 @@
 
   window.openPgEdit = function (data) {
     const s = (id, val) => { const el = document.getElementById(id); if (el) el.value = val||''; };
-    s('pge-id', data.id); s('pge-tache', data.tache); s('pge-statut', data.statut||'wip');
+    s('pge-id', data.id); 
+    // Fallback multiple pour être sûr de choper le nom
+    s('pge-titre', data.titre || data.nom || data.tache); 
+    s('pge-statut', data.statut||'wip');
+    s('pge-couleur', data.couleur||'#0d6efd');
     s('pge-debut', data.date_debut ? data.date_debut.substring(0,10) : '');
     s('pge-fin',   data.date_fin   ? data.date_fin.substring(0,10)   : '');
-    s('pge-event', data.event_id||''); s('pge-projet', data.projet_id||''); s('pge-note', data.note||'');
+    s('pge-event', data.event_id||''); s('pge-projet', data.projet_id||''); s('pge-desc', data.description||'');
     bootstrap.Modal.getOrCreateInstance(document.getElementById('modalPgEdit')).show();
   };
 
@@ -297,13 +265,20 @@
     for(let d=0;d<=nd;d+=ti){const x=LW+PAD+d*(CW/nd),dt=new Date(minTs+d*86400000);ctx.fillStyle=isDark?'#adb5bd':'#6c757d';ctx.fillText(dt.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}),x,14);ctx.strokeStyle=isDark?'#2d2d3d':'#dee2e6';ctx.lineWidth=1;ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(x,20);ctx.lineTo(x,H);ctx.stroke();ctx.setLineDash([]);}
     const to=(Date.now()-minTs)/totalMs;if(to>=0&&to<=1){const tx=LW+PAD+to*CW;ctx.strokeStyle='#dc3545';ctx.lineWidth=2;ctx.setLineDash([5,3]);ctx.beginPath();ctx.moveTo(tx,20);ctx.lineTo(tx,H-12);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#dc3545';ctx.font='bold 9px system-ui';ctx.fillText('Auj.',tx,H-2);}
     tasks.forEach((t,i)=>{
-      const y=24+i*RH, c=PG_COLORS[t.statut]||'#0d6efd';
-      ctx.fillStyle=isDark?(i%2===0?'#1e1e2e':'#252535'):(i%2===0?'#fff':'#f8f9fa');ctx.fillRect(0,y,W,RH);
-      ctx.fillStyle=isDark?'#e9ecef':'#212529';ctx.font='12px system-ui,sans-serif';ctx.textAlign='left';ctx.textBaseline='middle';
-      ctx.fillText(_tr(ctx,t.tache||'—',LW-PAD*2),PAD,y+RH/2);
+      const y=24+i*RH,c=t.couleur||'#0d6efd';
+      ctx.fillStyle=isDark?(i%2===0?'#1e1e2e':'#252535'):(i%2===0?'#fff':'#f8f9fa');
+      ctx.fillRect(0,y,W,RH);
+      ctx.fillStyle=isDark?'#e9ecef':'#212529';
+      ctx.font='12px system-ui,sans-serif';
+      ctx.textAlign='left';
+      ctx.textBaseline='middle';
+      
+      // La rustine est ici : on cherche titre, sinon nom, sinon tache
+      const taskName = t.titre || t.nom || t.tache || '—';
+      ctx.fillText(_tr(ctx, taskName, LW-PAD*2), PAD, y+RH/2);
+      
       const db=new Date(t.date_debut).getTime(),fn=t.date_fin?new Date(t.date_fin).getTime():db+86400000,bx=LW+PAD+((db-minTs)/totalMs)*CW,bw=Math.max(4,((fn-db)/totalMs)*CW);
-      ctx.shadowColor='rgba(0,0,0,.12)';ctx.shadowBlur=4;ctx.shadowOffsetY=2;_rr(ctx,bx,y+(RH-BH)/2,bw,BH,5,c);
-      ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+      ctx.shadowColor='rgba(0,0,0,.12)';ctx.shadowBlur=4;ctx.shadowOffsetY=2;_rr(ctx,bx,y+(RH-BH)/2,bw,BH,5,c);ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.shadowOffsetY=0;
       if(bw>40){ctx.fillStyle='#fff';ctx.font='bold 9px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(PG_LABELS[t.statut]||t.statut,bx+bw/2,y+RH/2);}
     });
     ctx.strokeStyle=isDark?'#343a40':'#dee2e6';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(LW,0);ctx.lineTo(LW,H);ctx.stroke();
@@ -326,10 +301,18 @@
       const cell=document.createElement('div');
       cell.style.cssText=`min-height:80px;border-radius:8px;padding:5px;background:${isT?(isDark?'#1a3a5c':'#e8f4fd'):(isDark?'#252535':'#fff')};border:${isT?'2px solid #0d6efd':'1px solid '+(isDark?'#343a40':'#dee2e6')};cursor:${dt.length?'pointer':'default'};overflow:hidden;transition:background .15s;`;
       const num=document.createElement('div');num.style.cssText=`font-size:12px;font-weight:${isT?'bold':'500'};color:${isT?'#0d6efd':(isDark?'#e9ecef':'#212529')};margin-bottom:3px;`;num.textContent=day;cell.appendChild(num);
+      
       dt.slice(0,2).forEach(t=>{
-        const bg=PG_COLORS[t.statut]||'#0d6efd';
-        const p=document.createElement('div');p.style.cssText=`background:${bg}33;border-left:3px solid ${bg};border-radius:3px;padding:1px 4px;margin-bottom:2px;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${isDark?'#e9ecef':'#212529'};font-weight:500;`;p.textContent=t.tache||'—';cell.appendChild(p);
+        const bg=t.couleur||PG_COLORS[t.statut]||'#0d6efd';
+        const p=document.createElement('div');
+        p.style.cssText=`background:${bg}33;border-left:3px solid ${bg};border-radius:3px;padding:1px 4px;margin-bottom:2px;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${isDark?'#e9ecef':'#212529'};font-weight:500;`;
+        
+        // La rustine est ici : on cherche titre, sinon nom, sinon tache
+        p.textContent = t.titre || t.nom || t.tache || '—';
+        
+        cell.appendChild(p);
       });
+      
       if(dt.length>2){const m=document.createElement('div');m.style.cssText='font-size:9px;color:#6c757d;font-style:italic;';m.textContent=`+${dt.length-2} autre${dt.length-2>1?'s':''}`;cell.appendChild(m);}
       if(dt.length)cell.addEventListener('click',()=>showPgDay(day,ds,dt));
       grid.appendChild(cell);
@@ -344,9 +327,14 @@
     title.innerHTML=`<i class="bi bi-calendar3 me-2 text-primary"></i>${jours[d.getDay()]} ${day} ${MOIS_FR[pgCal.month]} ${pgCal.year}`;
     list.innerHTML='';
     tasks.forEach(t=>{
-      const c=PG_COLORS[t.statut]||'#0d6efd',l=PG_LABELS[t.statut]||t.statut;
-      const li=document.createElement('li');li.className='list-group-item d-flex justify-content-between align-items-center py-2';
-      li.innerHTML=`<div><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c};margin-right:8px;"></span><strong>${_esc(t.tache||'—')}</strong>${t.note?`<br><small class="text-body-secondary ms-4">${_esc(t.note)}</small>`:''}</div><span class="badge rounded-pill" style="background:${c};">${_esc(l)}</span>`;
+      const c=t.couleur||PG_COLORS[t.statut]||'#0d6efd',l=PG_LABELS[t.statut]||t.statut;
+      const li=document.createElement('li');
+      li.className='list-group-item d-flex justify-content-between align-items-center py-2';
+      
+      // Et enfin, la rustine ici aussi :
+      const taskName = t.titre || t.nom || t.tache || '—';
+      
+      li.innerHTML=`<div><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c};margin-right:8px;"></span><strong>${_esc(taskName)}</strong>${t.description?`<br><small class="text-body-secondary ms-4">${_esc(t.description)}</small>`:''}</div><span class="badge rounded-pill" style="background:${c};">${_esc(l)}</span>`;
       list.appendChild(li);
     });
     box.style.display='block';box.scrollIntoView({behavior:'smooth',block:'nearest'});
@@ -356,6 +344,45 @@
   function _tr(ctx,text,maxW){if(ctx.measureText(text).width<=maxW)return text;while(text.length>0&&ctx.measureText(text+'…').width>maxW)text=text.slice(0,-1);return text+'…';}
   function _esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-  window.addEventListener('resize',()=>{const gv=document.getElementById('pg-gantt-view');if(gv&&gv.style.display!=='none')drawPgGantt();});
+  /* ════════════════════════════════════════════════════
+   * 3. INITIALISATION & SECURITE
+   * ════════════════════════════════════════════════════ */
+  window.YesPageInit = function dashboardInit() {
+    // 1. HACK SPA : Forcer la lecture des données PHP
+    document.querySelectorAll('#spa-content script:not([src])').forEach(s => {
+      try { eval(s.textContent); } catch (e) {}
+    });
+
+    _pageInit();
+
+    // 2. Délai pour s'assurer que les conteneurs ont une vraie largeur
+    setTimeout(() => {
+      const gv = document.getElementById('pg-gantt-view');
+      if (gv && gv.style.display !== 'none') drawPgGantt();
+      
+      const cv = document.getElementById('pg-calendar-view');
+      if (!cv || cv.style.display !== 'none') { 
+        pgCal.rendered = false; 
+        renderPgCalendar(); 
+      }
+    }, 150);
+  };
+
+  const currentScript = document.currentScript;
+  if (!currentScript || currentScript.dataset.spaPage !== '1') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', window.YesPageInit);
+    } else {
+      requestAnimationFrame(window.YesPageInit);
+    }
+  }
+
+  if (!window._dashboardResizeBound) {
+    window.addEventListener('resize', () => {
+      const gv = document.getElementById('pg-gantt-view');
+      if (gv && gv.style.display !== 'none') drawPgGantt();
+    });
+    window._dashboardResizeBound = true;
+  }
 
 })();

@@ -1,22 +1,15 @@
 /**
  * YES – Your Event Solution
  * @file operationnel.js
- * @author CELESTINE Samuel
- * @author CLOT-GODARD Kenji
- * @version 2.1
- * @since 2026
+ * @version 2.2
  *
- * Fonctionnalités :
- * - Mémorisation onglet actif (localStorage)
- * - Vue Liste / Calendrier / Gantt dans le planning
- * - Calendrier mensuel interactif style emploi du temps
- * - Diagramme de Gantt (canvas)
- * - Remplissage auto contact depuis select
- * - Calcul total facturation temps réel
- * - Modals edit : Budget / Planning / Matériel / Facturation
+ * Correctifs SPA & Data : 
+ * - IIFE + Protection des listeners
+ * - Hack SPA : Évaluation forcée des données PHP (window.OPS_PLANNING_DATA)
+ * - Délai de rendu Canvas pour éviter la largeur à 0
  */
 
-(function () {
+(() => {
   'use strict';
 
   /* ── Constantes ──────────────────────────────────── */
@@ -29,20 +22,21 @@
     const tabEls = document.querySelectorAll('#opsTabs [data-bs-toggle="tab"]');
     if (!tabEls.length) return;
 
-    // Priorité : data-restore-tab (session PHP) > localStorage
     const container  = document.getElementById('ops-container');
     const restoreTab = container ? container.dataset.restoreTab : '';
     const stored     = localStorage.getItem(TAB_KEY);
     const target     = restoreTab || stored || '#pane-budget';
 
-    // Persister immédiatement en localStorage (cas data-restore-tab)
     if (target) localStorage.setItem(TAB_KEY, target);
 
     const triggerEl = document.querySelector(`#opsTabs [data-bs-target="${target}"]`);
     if (triggerEl) bootstrap.Tab.getOrCreateInstance(triggerEl).show();
 
     tabEls.forEach(el => {
-      el.addEventListener('shown.bs.tab', e => {
+      const freshEl = el.cloneNode(true);
+      el.parentNode.replaceChild(freshEl, el);
+      
+      freshEl.addEventListener('shown.bs.tab', e => {
         const t = e.target.getAttribute('data-bs-target');
         localStorage.setItem(TAB_KEY, t);
         updateActiveTabInputs(t);
@@ -60,7 +54,6 @@
     return active ? active.getAttribute('data-bs-target') : '#pane-budget';
   }
 
-  /* Mettre à jour active_tab juste avant chaque soumission de formulaire */
   function hookFormSubmits() {
     document.querySelectorAll('form[method="POST"]').forEach(form => {
       if (form.dataset.tabHooked) return;
@@ -68,7 +61,6 @@
       form.addEventListener('submit', () => {
         const tab = getCurrentTab();
         localStorage.setItem(TAB_KEY, tab);
-        // Mettre à jour tous les champs js-active-tab dans TOUS les formulaires
         document.querySelectorAll('.js-active-tab').forEach(i => i.value = tab);
       });
     });
@@ -88,16 +80,15 @@
       el.style.display = active ? 'block' : 'none';
       btn && btn.classList.toggle('active', active);
     });
-    if (view === 'gantt')     setTimeout(drawGantt, 80);
+    if (view === 'gantt')    setTimeout(window.drawGantt, 80);
     if (view === 'calendar')  { calState.rendered = false; renderCalendar(); }
   };
 
   function onPlanningTabShown() {
-    // Vérifier quelle vue est active
     const calView = document.getElementById('planning-calendar-view');
     if (calView && calView.style.display !== 'none') renderCalendar();
     const ganttView = document.getElementById('planning-gantt-view');
-    if (ganttView && ganttView.style.display !== 'none') drawGantt();
+    if (ganttView && ganttView.style.display !== 'none') window.drawGantt();
   }
 
   /* ─────────────────────────────────────────────────────
@@ -106,7 +97,6 @@
   const MOIS_FR   = ['Janvier','Février','Mars','Avril','Mai','Juin',
                      'Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 
-  /* Couleurs par statut */
   const STATUT_BG = {
     wip:      '#ffc107', en_cours: '#0d6efd', valide:  '#198754',
     maj:      '#0dcaf0', devis:    '#6c757d', visuels: '#6c757d',
@@ -119,7 +109,7 @@
 
   const calState = {
     year:     new Date().getFullYear(),
-    month:    new Date().getMonth(),   // 0-based
+    month:    new Date().getMonth(),
     rendered: false,
     selected: null,
   };
@@ -144,28 +134,24 @@
     const tasks = window.OPS_PLANNING_DATA || [];
     const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
 
-    /* 1er jour du mois (0=dim, 1=lun…) → offset lundi-based */
-    const firstDay = new Date(year, month, 1).getDay();   // 0-6 (dim=0)
-    const offset   = firstDay === 0 ? 6 : firstDay - 1;  // lundi = 0
+    const firstDay = new Date(year, month, 1).getDay();
+    const offset   = firstDay === 0 ? 6 : firstDay - 1;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const today = new Date();
 
     grid.innerHTML = '';
 
-    /* Cellules vides avant le 1er */
     for (let i = 0; i < offset; i++) {
       const empty = document.createElement('div');
       empty.style.cssText = 'min-height:90px;border-radius:8px;';
       grid.appendChild(empty);
     }
 
-    /* Cellules de chaque jour */
     for (let day = 1; day <= daysInMonth; day++) {
       const cell     = document.createElement('div');
       const dateStr  = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
       const isToday  = today.getFullYear()===year && today.getMonth()===month && today.getDate()===day;
 
-      // Tâches dont la date de début ou la plage tombe sur ce jour
       const dayTs   = new Date(dateStr).getTime();
       const dayTasks = tasks.filter(t => {
         if (!t.date_debut) return false;
@@ -176,22 +162,17 @@
 
       cell.style.cssText = `
         min-height:90px; border-radius:8px; padding:6px;
-        background:${isToday
-          ? (isDark ? '#1a3a5c' : '#e8f4fd')
-          : (isDark ? '#252535' : '#fff')};
+        background:${isToday ? (isDark ? '#1a3a5c' : '#e8f4fd') : (isDark ? '#252535' : '#fff')};
         border:${isToday ? '2px solid #0d6efd' : '1px solid ' + (isDark ? '#343a40' : '#dee2e6')};
         cursor:${dayTasks.length ? 'pointer' : 'default'};
-        transition:background .15s;
-        overflow:hidden;
+        transition:background .15s; overflow:hidden;
       `;
 
-      /* Numéro du jour */
       const numEl = document.createElement('div');
       numEl.style.cssText = `font-weight:${isToday?'bold':'500'};font-size:13px;margin-bottom:4px;color:${isToday?'#0d6efd':(isDark?'#e9ecef':'#212529')}`;
       numEl.textContent = day;
       cell.appendChild(numEl);
 
-      /* Pastilles de tâches (max 3 visibles) */
       const maxVisible = 3;
       dayTasks.slice(0, maxVisible).forEach(t => {
         const pill = document.createElement('div');
@@ -200,8 +181,7 @@
           background:${bg}22; border-left:3px solid ${bg};
           border-radius:4px; padding:2px 5px; margin-bottom:2px;
           font-size:10px; white-space:nowrap; overflow:hidden;
-          text-overflow:ellipsis; color:${isDark?'#e9ecef':'#212529'};
-          font-weight:500;
+          text-overflow:ellipsis; color:${isDark?'#e9ecef':'#212529'}; font-weight:500;
         `;
         pill.textContent = t.tache || '—';
         pill.title = `${t.tache} (${STATUT_LABEL[t.statut] || t.statut})`;
@@ -215,23 +195,18 @@
         cell.appendChild(more);
       }
 
-      /* Clic → détail du jour */
       if (dayTasks.length > 0) {
         cell.addEventListener('click', () => showDayDetail(day, dateStr, dayTasks));
         cell.addEventListener('mouseenter', () => cell.style.background = isDark ? '#2a2a4a' : '#f0f7ff');
         cell.addEventListener('mouseleave', () => {
           if (calState.selected !== dateStr) {
-            cell.style.background = isToday
-              ? (isDark ? '#1a3a5c' : '#e8f4fd')
-              : (isDark ? '#252535' : '#fff');
+            cell.style.background = isToday ? (isDark ? '#1a3a5c' : '#e8f4fd') : (isDark ? '#252535' : '#fff');
           }
         });
       }
-
       grid.appendChild(cell);
     }
 
-    /* Masquer le détail si le mois change */
     if (detailBox) detailBox.style.display = 'none';
     calState.rendered = true;
     calState.selected = null;
@@ -261,8 +236,7 @@
           ${t.note ? `<br><small class="text-body-secondary ms-4">${escHtml(t.note)}</small>` : ''}
         </div>
         <div class="text-end small text-body-secondary">
-          <span class="badge rounded-pill" style="background:${bg};">${escHtml(label)}</span>
-          <br>
+          <span class="badge rounded-pill" style="background:${bg};">${escHtml(label)}</span><br>
           ${t.date_debut ? fmtDate(t.date_debut) : ''}
           ${t.date_fin && t.date_fin !== t.date_debut ? ' → ' + fmtDate(t.date_fin) : ''}
         </div>
@@ -329,7 +303,6 @@
     ctx.fillStyle = isDark ? '#1e1e2e' : '#f8f9fa';
     ctx.fillRect(0, 0, W, H);
 
-    /* Axe */
     const nbDays   = Math.ceil(totalMs / 86400000) + 1;
     const tickInt  = Math.max(1, Math.ceil(nbDays / 10));
     ctx.font       = '11px system-ui,sans-serif';
@@ -346,7 +319,6 @@
       ctx.setLineDash([]);
     }
 
-    /* Aujourd'hui */
     const todayOff = (Date.now() - minTs) / totalMs;
     if (todayOff >= 0 && todayOff <= 1) {
       const tx = LABEL_W + PAD + todayOff * CHART_W;
@@ -357,7 +329,6 @@
       ctx.fillText('Auj.', tx, H - 4);
     }
 
-    /* Barres */
     tasks.forEach((task, i) => {
       const y     = 24 + i * ROW_H;
       const color = colorMap[task.statut] || '#6c757d';
@@ -455,7 +426,6 @@
     set('pe-debut', d.date_debut ? d.date_debut.substring(0,10) : '');
     set('pe-fin',   d.date_fin   ? d.date_fin.substring(0,10)   : '');
     set('pe-note',d.note);
-    set('pe-contact',d.contact_id); // <--- LIGNE AJOUTEE ICI !
     modal('modalPlanningEdit').show();
   };
 
@@ -495,14 +465,13 @@
   };
 
   /* ─────────────────────────────────────────────────────
-   * 8. INIT
+   * 8. INIT & SECURITE SPA
    * ───────────────────────────────────────────────────── */
-  document.addEventListener('DOMContentLoaded', () => {
+  function _init() {
     initTabMemory();
     updateFcTotal();
     updateFeTotal();
 
-    // Initialiser immédiatement avec l'onglet actif (data-restore-tab prioritaire, sinon localStorage, sinon budget)
     const container  = document.getElementById('ops-container');
     const restoreTab = container ? container.dataset.restoreTab : '';
     const cur = restoreTab || localStorage.getItem(TAB_KEY) || '#pane-budget';
@@ -510,14 +479,50 @@
 
     hookFormSubmits();
 
-    // Observer pour les nouveaux formulaires dans les modals
-    const observer = new MutationObserver(hookFormSubmits);
-    observer.observe(document.body, { childList: true, subtree: true });
+    if (container && !container.dataset.observerBound) {
+      const observer = new MutationObserver(hookFormSubmits);
+      observer.observe(container, { childList: true, subtree: true });
+      container.dataset.observerBound = '1';
+    }
+  }
 
+  // ── SPA entry-point
+  window.YesPageInit = function opsInit() {
+    // 1. HACK SPA : Forcer la lecture des données PHP injectées dans les scripts inline
+    document.querySelectorAll('#spa-content script:not([src])').forEach(s => {
+      try { eval(s.textContent); } catch (e) {}
+    });
+
+    _init();
+
+    // 2. Laisser le temps à Bootstrap d'afficher l'onglet, puis forcer le rendu
+    setTimeout(() => {
+      const currentTab = document.querySelector('#opsTabs .nav-link.active');
+      if (currentTab && currentTab.getAttribute('data-bs-target') === '#pane-planning') {
+        const calView = document.getElementById('planning-calendar-view');
+        if (calView && calView.style.display !== 'none') renderCalendar();
+        
+        const ganttView = document.getElementById('planning-gantt-view');
+        if (ganttView && ganttView.style.display !== 'none') window.drawGantt();
+      }
+    }, 150);
+  };
+
+  const currentScript = document.currentScript;
+  if (!currentScript || currentScript.dataset.spaPage !== '1') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', window.YesPageInit);
+    } else {
+      requestAnimationFrame(window.YesPageInit);
+    }
+  }
+
+  if (!window._opsResizeBound) {
     window.addEventListener('resize', () => {
-      if (document.getElementById('planning-gantt-view')?.style.display !== 'none') drawGantt();
+      if (document.getElementById('planning-gantt-view')?.style.display !== 'none') window.drawGantt();
       if (document.getElementById('planning-calendar-view')?.style.display !== 'none') { calState.rendered=false; renderCalendar(); }
     });
-  });
+    window._opsResizeBound = true;
+  }
 
 })();
