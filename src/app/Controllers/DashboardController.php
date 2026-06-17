@@ -2,10 +2,11 @@
 
 /**
  * YES - Your Event Solution
+ *
  * @file DashboardController.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 2.1
+ * @version 2.2
  * @since 2026
  */
 
@@ -16,7 +17,8 @@ namespace App\Controllers;
 use App\Models\EventModel;
 use App\Models\TodoModel;
 use App\Models\ProjectModel;
-use App\Models\PlanningModel; // Remplacement ICI
+use App\Models\PlanningModel;
+use App\Models\HistoriqueModel;
 use App\Controllers\TodoController;
 use Core\Permission;
 
@@ -128,18 +130,27 @@ class DashboardController
         $tache = \Core\Security::sanitizeString($_POST['pg_tache'] ?? '');
         if ($tache === '') return 'error:La tâche est obligatoire.';
         
+        $eventId  = \Core\Security::sanitizeInt($_POST['pg_event_id'] ?? 0) ?: null;
+        $projetId = \Core\Security::sanitizeInt($_POST['pg_projet_id'] ?? 0) ?: null;
+
         $ok = $model->create([
             'tache'      => $tache,
             'note'       => \Core\Security::sanitizeString($_POST['pg_note'] ?? ''),
             'statut'     => \Core\Security::sanitizeString($_POST['pg_statut'] ?? 'wip'),
             'date_debut' => !empty($_POST['pg_date_debut']) ? $_POST['pg_date_debut'] : null,
             'date_fin'   => !empty($_POST['pg_date_fin'])   ? $_POST['pg_date_fin']   : null,
-            'event_id'   => \Core\Security::sanitizeInt($_POST['pg_event_id'] ?? 0) ?: null,
-            'projet_id'  => \Core\Security::sanitizeInt($_POST['pg_projet_id'] ?? 0) ?: null,
+            'event_id'   => $eventId,
+            'projet_id'  => $projetId,
             'ordre'      => 0,
-            'contact_id' => null, // Peut être géré plus tard depuis le dashboard si besoin
+            'contact_id' => null,
         ]);
-        return $ok ? 'success:Tâche ajoutée au planning.' : 'error:Erreur lors de l\'ajout.';
+
+        if ($ok) {
+            $newId = $model->getLastInsertId();
+            HistoriqueModel::log('create', 'planning', $newId, "Création globale de la tâche : {$tache}", ['event_id' => $eventId, 'projet_id' => $projetId]);
+            return 'success:Tâche ajoutée au planning.';
+        }
+        return 'error:Erreur lors de l\'ajout.';
     }
 
     private function pgUpdate(PlanningModel $model): string
@@ -147,24 +158,43 @@ class DashboardController
         $id = \Core\Security::sanitizeInt($_POST['pg_id'] ?? 0);
         if (!$id) return 'error:ID invalide.';
         
+        $tache    = \Core\Security::sanitizeString($_POST['pg_tache'] ?? '');
+        $eventId  = \Core\Security::sanitizeInt($_POST['pg_event_id'] ?? 0) ?: null;
+        $projetId = \Core\Security::sanitizeInt($_POST['pg_projet_id'] ?? 0) ?: null;
+
         $ok = $model->update($id, [
-            'tache'      => \Core\Security::sanitizeString($_POST['pg_tache'] ?? ''),
+            'tache'      => $tache,
             'note'       => \Core\Security::sanitizeString($_POST['pg_note'] ?? ''),
             'statut'     => \Core\Security::sanitizeString($_POST['pg_statut'] ?? 'wip'),
             'date_debut' => !empty($_POST['pg_date_debut']) ? $_POST['pg_date_debut'] : null,
             'date_fin'   => !empty($_POST['pg_date_fin'])   ? $_POST['pg_date_fin']   : null,
-            'event_id'   => \Core\Security::sanitizeInt($_POST['pg_event_id'] ?? 0) ?: null,
-            'projet_id'  => \Core\Security::sanitizeInt($_POST['pg_projet_id'] ?? 0) ?: null,
+            'event_id'   => $eventId,
+            'projet_id'  => $projetId,
             'ordre'      => 0,
-            'contact_id' => null, // Géré depuis l'opérationnel
+            'contact_id' => null,
         ]);
-        return $ok ? 'success:Tâche de planning mise à jour.' : 'error:Erreur mise à jour.';
+
+        if ($ok) {
+            HistoriqueModel::log('update', 'planning', $id, "Modification globale de la tâche : {$tache}", ['event_id' => $eventId, 'projet_id' => $projetId]);
+            return 'success:Tâche de planning mise à jour.';
+        }
+        return 'error:Erreur mise à jour.';
     }
 
     private function pgDelete(PlanningModel $model): string
     {
         $id = \Core\Security::sanitizeInt($_POST['pg_id'] ?? 0);
-        return $id && $model->delete($id)
-            ? 'success:Tâche supprimée.' : 'error:Erreur suppression.';
+        if (!$id) return 'error:ID invalide.';
+
+        $old = $model->findById($id);
+        $tacheNom = $old ? $old['tache'] : '';
+        $eventId  = $old ? ($old['event_id'] ? (int)$old['event_id'] : null) : null;
+        $projetId = $old ? ($old['projet_id'] ? (int)$old['projet_id'] : null) : null;
+
+        if ($model->delete($id)) {
+            HistoriqueModel::log('delete', 'planning', $id, "Suppression globale de la tâche : {$tacheNom}", ['event_id' => $eventId, 'projet_id' => $projetId]);
+            return 'success:Tâche supprimée.';
+        }
+        return 'error:Erreur suppression.';
     }
 }

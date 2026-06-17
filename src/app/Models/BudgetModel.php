@@ -3,7 +3,7 @@
 /**
  * YES – Your Event Solution
  * @file BudgetModel.php
- * @version 1.1  –  2026
+ * @version 1.2  –  2026
  */
 
 declare(strict_types=1);
@@ -24,6 +24,23 @@ class BudgetModel
     }
 
     // ── Lecture ───────────────────────────────────────────────
+
+    public function findById(int $id): ?array
+    {
+        try {
+            $stmt = $this->db->prepare('SELECT * FROM budget_lignes WHERE id = :id');
+            $stmt->execute(['id' => $id]);
+            $res = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $res ?: null;
+        } catch (PDOException) {
+            return null;
+        }
+    }
+
+    public function getLastInsertId(): int
+    {
+        return (int) $this->db->lastInsertId();
+    }
 
     public function getByProjet(int $projetId): array
     {
