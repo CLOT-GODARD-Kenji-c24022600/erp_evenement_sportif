@@ -6,7 +6,7 @@
  * @file TodoController.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.1
+ * @version 1.2
  * @since 2026
  */
 
@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Models\TodoModel;
+use App\Models\HistoriqueModel;
 use Core\Permission;
 use Core\Security;
 use Core\Session;
@@ -59,20 +60,28 @@ class TodoController
             return 'error:Le titre est obligatoire.';
         }
 
-        $this->model->create([
+        $eventId  = !empty($_POST['event_id'])  ? Security::sanitizeInt($_POST['event_id'])  : null;
+        $projetId = !empty($_POST['projet_id']) ? Security::sanitizeInt($_POST['projet_id']) : null;
+
+        $ok = $this->model->create([
             'title'       => $title,
             'description' => Security::sanitizeString($_POST['description'] ?? ''),
             'category'    => $_POST['category']    ?? 'general',
             'priority'    => Security::sanitizeInt($_POST['priority']    ?? 1),
             'due_date'    => !empty($_POST['due_date'])    ? $_POST['due_date']                           : null,
-            'event_id'    => !empty($_POST['event_id'])    ? Security::sanitizeInt($_POST['event_id'])    : null,
-            'projet_id'   => !empty($_POST['projet_id'])   ? Security::sanitizeInt($_POST['projet_id'])   : null,
+            'event_id'    => $eventId,
+            'projet_id'   => $projetId,
             'assigned_to' => !empty($_POST['assigned_to']) ? Security::sanitizeInt($_POST['assigned_to']) : null,
             'status'      => $_POST['status'] ?? 'en_attente',
             'created_by'  => $userId,
         ]);
 
-        return 'success:Tâche créée avec succès !';
+        if ($ok) {
+            $newId = $this->model->getLastInsertId();
+            HistoriqueModel::log('create', 'todo', $newId, "Création de la tâche Todo : {$title}", ['event_id' => $eventId, 'projet_id' => $projetId]);
+            return 'success:Tâche créée avec succès !';
+        }
+        return 'error:Erreur lors de la création.';
     }
 
     private function setStatus(): string
@@ -84,9 +93,16 @@ class TodoController
             return 'error:Données invalides.';
         }
 
-        $this->model->setStatus($id, $status);
+        $ok = $this->model->setStatus($id, $status);
 
-        return 'success:Statut mis à jour.';
+        if ($ok) {
+            $todo = $this->model->findById($id);
+            $eid  = $todo ? ($todo['event_id'] ? (int)$todo['event_id'] : null) : null;
+            $pid  = $todo ? ($todo['projet_id'] ? (int)$todo['projet_id'] : null) : null;
+            HistoriqueModel::log('set_status', 'todo', $id, "Changement de statut à '{$status}'", ['event_id' => $eid, 'projet_id' => $pid]);
+            return 'success:Statut mis à jour.';
+        }
+        return 'error:Erreur lors du changement de statut.';
     }
 
     private function delete(): string
@@ -97,9 +113,16 @@ class TodoController
             return 'error:Identifiant invalide.';
         }
 
-        $this->model->delete($id);
+        $todo  = $this->model->findById($id);
+        $title = $todo ? $todo['title'] : '';
+        $eid   = $todo ? ($todo['event_id'] ? (int)$todo['event_id'] : null) : null;
+        $pid   = $todo ? ($todo['projet_id'] ? (int)$todo['projet_id'] : null) : null;
 
-        return 'success:Tâche supprimée.';
+        if ($this->model->delete($id)) {
+            HistoriqueModel::log('delete', 'todo', $id, "Suppression de la tâche Todo : {$title}", ['event_id' => $eid, 'projet_id' => $pid]);
+            return 'success:Tâche supprimée.';
+        }
+        return 'error:Erreur lors de la suppression.';
     }
 
     private function edit(): string
@@ -111,18 +134,25 @@ class TodoController
             return 'error:Données invalides.';
         }
 
-        $this->model->update($id, [
+        $eventId  = !empty($_POST['event_id'])  ? Security::sanitizeInt($_POST['event_id'])  : null;
+        $projetId = !empty($_POST['projet_id']) ? Security::sanitizeInt($_POST['projet_id']) : null;
+
+        $ok = $this->model->update($id, [
             'title'       => $title,
             'description' => Security::sanitizeString($_POST['description'] ?? ''),
             'category'    => $_POST['category']    ?? 'general',
             'priority'    => Security::sanitizeInt($_POST['priority']    ?? 1),
             'due_date'    => !empty($_POST['due_date'])    ? $_POST['due_date']                           : null,
-            'event_id'    => !empty($_POST['event_id'])    ? Security::sanitizeInt($_POST['event_id'])    : null,
-            'projet_id'   => !empty($_POST['projet_id'])   ? Security::sanitizeInt($_POST['projet_id'])   : null,
+            'event_id'    => $eventId,
+            'projet_id'   => $projetId,
             'assigned_to' => !empty($_POST['assigned_to']) ? Security::sanitizeInt($_POST['assigned_to']) : null,
             'status'      => $_POST['status'] ?? 'en_attente',
         ]);
 
-        return 'success:Tâche modifiée avec succès.';
+        if ($ok) {
+            HistoriqueModel::log('update', 'todo', $id, "Modification de la tâche Todo : {$title}", ['event_id' => $eventId, 'projet_id' => $projetId]);
+            return 'success:Tâche modifiée avec succès.';
+        }
+        return 'error:Erreur lors de la modification.';
     }
 }

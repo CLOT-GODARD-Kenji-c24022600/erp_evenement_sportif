@@ -5,7 +5,7 @@
  * @file PlanningModel.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 2.2
+ * @version 2.3
  * @since 2026
  */
 
@@ -30,6 +30,23 @@ class PlanningModel
     public function __construct()
     {
         $this->db = Database::getConnection();
+    }
+
+    public function findById(int $id): ?array
+    {
+        try {
+            $stmt = $this->db->prepare('SELECT * FROM ' . self::TABLE . ' WHERE id = :id');
+            $stmt->execute(['id' => $id]);
+            $res = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $res ?: null;
+        } catch (PDOException) {
+            return null;
+        }
+    }
+
+    public function getLastInsertId(): int
+    {
+        return (int) $this->db->lastInsertId();
     }
 
     // AJOUT : Pour afficher tout le planning sur le Dashboard (pour ton prochain ticket)

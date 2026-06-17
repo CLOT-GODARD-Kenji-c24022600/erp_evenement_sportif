@@ -6,7 +6,7 @@
  * @file TodoModel.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 1.1
+ * @version 1.2
  * @since 2026
  */
 
@@ -24,6 +24,23 @@ class TodoModel
     public function __construct()
     {
         $this->db = Database::getConnection();
+    }
+
+    public function findById(int $id): ?array
+    {
+        try {
+            $stmt = $this->db->prepare('SELECT * FROM todos WHERE id = :id');
+            $stmt->execute(['id' => $id]);
+            $res = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $res ?: null;
+        } catch (\PDOException) {
+            return null;
+        }
+    }
+
+    public function getLastInsertId(): int
+    {
+        return (int) $this->db->lastInsertId();
     }
 
     public function getAllTodos(): array

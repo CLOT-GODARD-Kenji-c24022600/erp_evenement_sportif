@@ -5,7 +5,7 @@
  * @file OperationnelController.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 2.2
+ * @version 2.3
  * @since 2026
  */
 
@@ -20,6 +20,7 @@ use App\Models\FacturationModel;
 use App\Models\EventModel;
 use App\Models\ProjectModel;
 use App\Models\ContactModel;
+use App\Models\HistoriqueModel;
 use Core\Security;
 
 class OperationnelController
@@ -219,7 +220,12 @@ class OperationnelController
             'drive_doc_url' => Security::sanitizeString($_POST['drive_doc_url'] ?? ''),
             'maps_url'      => Security::sanitizeString($_POST['maps_url']      ?? ''),
         ]);
-        return $model->update($eventId, $data) ? 'success:Liens Drive/Maps mis à jour.' : 'error:Erreur lors de la mise à jour.';
+        
+        if ($model->update($eventId, $data)) {
+            HistoriqueModel::log('update_links', 'evenement', $eventId, "Mise à jour des liens Drive / Maps", ['event_id' => $eventId]);
+            return 'success:Liens Drive/Maps mis à jour.';
+        }
+        return 'error:Erreur lors de la mise à jour.';
     }
 
     private function planningCreate(int $eventId, int $projetId): string
@@ -240,7 +246,13 @@ class OperationnelController
             'ordre'      => (int) ($_POST['ordre'] ?? 0),
             'contact_id' => $contactId ?: null,
         ]);
-        return $ok ? 'success:Tâche de planning ajoutée.' : 'error:Erreur lors de l\'ajout.';
+
+        if ($ok) {
+            $newId = $this->planning->getLastInsertId();
+            HistoriqueModel::log('create', 'planning', $newId, "Ajout de la tâche : {$tache}", ['event_id' => $eventId ?: null, 'projet_id' => $projetId ?: null]);
+            return 'success:Tâche de planning ajoutée.';
+        }
+        return 'error:Erreur lors de l\'ajout.';
     }
 
     private function planningUpdate(): string
@@ -248,10 +260,11 @@ class OperationnelController
         $id = Security::sanitizeInt($_POST['ligne_id'] ?? 0);
         if (!$id) return 'error:ID invalide.';
         
+        $tache     = Security::sanitizeString($_POST['tache'] ?? '');
         $contactId = Security::sanitizeInt($_POST['contact_id'] ?? 0);
 
         $ok = $this->planning->update($id, [
-            'tache'      => Security::sanitizeString($_POST['tache'] ?? ''),
+            'tache'      => $tache,
             'statut'     => $_POST['statut']     ?? 'wip',
             'date_debut' => $_POST['date_debut'] ?: null,
             'date_fin'   => $_POST['date_fin']   ?: null,
@@ -259,28 +272,54 @@ class OperationnelController
             'ordre'      => (int) ($_POST['ordre'] ?? 0),
             'contact_id' => $contactId ?: null,
         ]);
-        return $ok ? 'success:Tâche mise à jour.' : 'error:Erreur lors de la mise à jour.';
+
+        if ($ok) {
+            $row = $this->planning->findById($id);
+            $eid = $row ? ($row['event_id'] ? (int)$row['event_id'] : null) : null;
+            $pid = $row ? ($row['projet_id'] ? (int)$row['projet_id'] : null) : null;
+            HistoriqueModel::log('update', 'planning', $id, "Mise à jour de la tâche : {$tache}", ['event_id' => $eid, 'projet_id' => $pid]);
+            return 'success:Tâche mise à jour.';
+        }
+        return 'error:Erreur lors de la mise à jour.';
     }
 
     private function planningDelete(): string
     {
         $id = Security::sanitizeInt($_POST['ligne_id'] ?? 0);
-        return $id && $this->planning->delete($id)
-            ? 'success:Ligne supprimée.' : 'error:Erreur suppression.';
+        if (!$id) return 'error:ID invalide.';
+
+        $row = $this->planning->findById($id);
+        $tache = $row ? $row['tache'] : '';
+        $eid = $row ? ($row['event_id'] ? (int)$row['event_id'] : null) : null;
+        $pid = $row ? ($row['projet_id'] ? (int)$row['projet_id'] : null) : null;
+
+        if ($this->planning->delete($id)) {
+            HistoriqueModel::log('delete', 'planning', $id, "Suppression de la tâche : {$tache}", ['event_id' => $eid, 'projet_id' => $pid]);
+            return 'success:Ligne supprimée.';
+        }
+        return 'error:Erreur suppression.';
     }
 
     private function planningStatut(): string
     {
         $id     = Security::sanitizeInt($_POST['ligne_id'] ?? 0);
         $statut = Security::sanitizeString($_POST['statut'] ?? '');
-        return $id && $this->planning->updateStatut($id, $statut)
-            ? 'success:Statut mis à jour.' : 'error:Statut invalide.';
+
+        if ($id && $this->planning->updateStatut($id, $statut)) {
+            $row = $this->planning->findById($id);
+            $eid = $row ? ($row['event_id'] ? (int)$row['event_id'] : null) : null;
+            $pid = $row ? ($row['projet_id'] ? (int)$row['projet_id'] : null) : null;
+            HistoriqueModel::log('update_status', 'planning', $id, "Statut modifié à '{$statut}'", ['event_id' => $eid, 'projet_id' => $pid]);
+            return 'success:Statut mis à jour.';
+        }
+        return 'error:Statut invalide.';
     }
 
     private function materielCreate(int $eventId, int $projetId): string
     {
         $nom = Security::sanitizeString($_POST['nom'] ?? '');
         if ($nom === '') return 'error:Le nom est obligatoire.';
+        
         $ok = $this->materiel->create([
             'event_id'        => $eventId  ?: null,
             'projet_id'       => $projetId ?: null,
@@ -294,28 +333,35 @@ class OperationnelController
             'budget'          => $_POST['budget'] !== '' ? $_POST['budget'] : null,
         ]);
 
-        if ($ok && $_POST['budget'] !== '' && (float)($_POST['budget'] ?? 0) > 0) {
+        if ($ok) {
             $newId = $this->materiel->getLastInsertId();
-            $this->budget->syncMaterielToBudget(
-                $newId,
-                (float)$_POST['budget'],
-                $nom,
-                Security::sanitizeString($_POST['fournisseur']     ?? ''),
-                Security::sanitizeString($_POST['categorie_achat'] ?? ''),
-                $eventId  ?: null,
-                $projetId ?: null
-            );
+            HistoriqueModel::log('create', 'materiel', $newId, "Ajout du matériel : {$nom} (Qté: " . ($_POST['quantite'] ?? 1) . ")", ['event_id' => $eventId ?: null, 'projet_id' => $projetId ?: null]);
+            
+            if ($_POST['budget'] !== '' && (float)($_POST['budget'] ?? 0) > 0) {
+                $this->budget->syncMaterielToBudget(
+                    $newId,
+                    (float)$_POST['budget'],
+                    $nom,
+                    Security::sanitizeString($_POST['fournisseur']     ?? ''),
+                    Security::sanitizeString($_POST['categorie_achat'] ?? ''),
+                    $eventId  ?: null,
+                    $projetId ?: null
+                );
+            }
+            return 'success:Matériel ajouté.';
         }
-
-        return $ok ? 'success:Matériel ajouté.' : 'error:Erreur lors de l\'ajout.';
+        return 'error:Erreur lors de l\'ajout.';
     }
 
     private function materielUpdate(): string
     {
         $id = Security::sanitizeInt($_POST['ligne_id'] ?? 0);
         if (!$id) return 'error:ID invalide.';
+        
+        $nom = Security::sanitizeString($_POST['nom'] ?? '');
+
         $ok = $this->materiel->update($id, [
-            'nom'             => Security::sanitizeString($_POST['nom']             ?? ''),
+            'nom'             => $nom,
             'quantite'        => $_POST['quantite']         ?? 1,
             'fournisseur'     => Security::sanitizeString($_POST['fournisseur']     ?? ''),
             'date_in'         => $_POST['date_in']          ?: null,
@@ -327,18 +373,22 @@ class OperationnelController
 
         if ($ok) {
             $row = $this->materiel->findById($id);
+            $eid = $row ? ($row['event_id'] ? (int)$row['event_id'] : null) : null;
+            $pid = $row ? ($row['projet_id'] ? (int)$row['projet_id'] : null) : null;
+            HistoriqueModel::log('update', 'materiel', $id, "Mise à jour du matériel : {$nom}", ['event_id' => $eid, 'projet_id' => $pid]);
+
             $this->budget->syncMaterielToBudget(
                 $id,
                 (float)($_POST['budget'] ?? 0),
-                Security::sanitizeString($_POST['nom']             ?? ''),
+                $nom,
                 Security::sanitizeString($_POST['fournisseur']     ?? ''),
                 Security::sanitizeString($_POST['categorie_achat'] ?? ''),
-                $row ? (int)($row['event_id']  ?? 0) ?: null : null,
-                $row ? (int)($row['projet_id'] ?? 0) ?: null : null
+                $eid,
+                $pid
             );
+            return 'success:Matériel mis à jour.';
         }
-
-        return $ok ? 'success:Matériel mis à jour.' : 'error:Erreur mise à jour.';
+        return 'error:Erreur mise à jour.';
     }
 
     private function materielDelete(): string
@@ -346,10 +396,18 @@ class OperationnelController
         $id = Security::sanitizeInt($_POST['ligne_id'] ?? 0);
         if (!$id) return 'error:ID invalide.';
 
+        $row = $this->materiel->findById($id);
+        $nom = $row ? $row['nom'] : '';
+        $eid = $row ? ($row['event_id'] ? (int)$row['event_id'] : null) : null;
+        $pid = $row ? ($row['projet_id'] ? (int)$row['projet_id'] : null) : null;
+
         $this->budget->syncMaterielToBudget($id, 0, '', '', '', null, null, true);
 
-        return $this->materiel->delete($id)
-            ? 'success:Matériel supprimé.' : 'error:Erreur suppression.';
+        if ($this->materiel->delete($id)) {
+            HistoriqueModel::log('delete', 'materiel', $id, "Suppression du matériel : {$nom}", ['event_id' => $eid, 'projet_id' => $pid]);
+            return 'success:Matériel supprimé.';
+        }
+        return 'error:Erreur suppression.';
     }
 
     private function facturationCreate(int $eventId, int $projetId): string
@@ -358,6 +416,8 @@ class OperationnelController
         $contact   = Security::sanitizeString($_POST['contact']     ?? '');
         $tel       = Security::sanitizeString($_POST['telephone']   ?? '');
         $mail      = Security::sanitizeString($_POST['mail']        ?? '');
+        $prestataire = Security::sanitizeString($_POST['prestataire'] ?? '');
+        $poste       = Security::sanitizeString($_POST['poste']       ?? '');
 
         if ($contactId > 0) {
             try {
@@ -374,8 +434,8 @@ class OperationnelController
             'event_id'        => $eventId  ?: null,
             'projet_id'       => $projetId ?: null,
             'categorie'       => Security::sanitizeString($_POST['categorie']   ?? ''),
-            'poste'           => Security::sanitizeString($_POST['poste']       ?? ''),
-            'prestataire'     => Security::sanitizeString($_POST['prestataire'] ?? ''),
+            'poste'           => $poste,
+            'prestataire'     => $prestataire,
             'contact_id'      => $contactId ?: null,
             'contact'         => $contact,
             'telephone'       => $tel,
@@ -391,18 +451,20 @@ class OperationnelController
 
         if ($ok) {
             $newId   = $this->facturation->getLastInsertId();
+            HistoriqueModel::log('create', 'facturation', $newId, "Ajout de facturation : {$prestataire} ({$poste})", ['event_id' => $eventId ?: null, 'projet_id' => $projetId ?: null]);
+
             $montant = (float)($_POST['prix_unitaire'] ?? 0) * (float)($_POST['quantite'] ?? 1);
             $this->budget->syncFacturationToBudget(
                 $newId,
                 $montant,
                 Security::sanitizeString($_POST['categorie']   ?? ''),
-                Security::sanitizeString($_POST['prestataire'] ?? ''),
+                $prestataire,
                 $eventId  ?: null,
                 $projetId ?: null
             );
+            return 'success:Ligne de facturation ajoutée.';
         }
-
-        return $ok ? 'success:Ligne de facturation ajoutée.' : 'error:Erreur lors de l\'ajout.';
+        return 'error:Erreur lors de l\'ajout.';
     }
 
     private function facturationUpdate(): string
@@ -414,6 +476,7 @@ class OperationnelController
         $contact   = Security::sanitizeString($_POST['contact']     ?? '');
         $tel       = Security::sanitizeString($_POST['telephone']   ?? '');
         $mail      = Security::sanitizeString($_POST['mail']        ?? '');
+        $prestataire = Security::sanitizeString($_POST['prestataire'] ?? '');
 
         if ($contactId > 0) {
             try {
@@ -431,7 +494,7 @@ class OperationnelController
         $ok = $this->facturation->update($id, [
             'categorie'       => Security::sanitizeString($_POST['categorie']   ?? ''),
             'poste'           => Security::sanitizeString($_POST['poste']       ?? ''),
-            'prestataire'     => Security::sanitizeString($_POST['prestataire'] ?? ''),
+            'prestataire'     => $prestataire,
             'contact_id'      => $contactId ?: null,
             'contact'         => $contact,
             'telephone'       => $tel,
@@ -447,18 +510,22 @@ class OperationnelController
 
         if ($ok) {
             $row     = $this->facturation->findById($id);
+            $eid = $row ? (int)($row['event_id'] ?? 0) ?: null : null;
+            $pid = $row ? (int)($row['projet_id'] ?? 0) ?: null : null;
+            HistoriqueModel::log('update', 'facturation', $id, "Mise à jour de la facturation : {$prestataire}", ['event_id' => $eid, 'projet_id' => $pid]);
+
             $montant = (float)($_POST['prix_unitaire'] ?? 0) * (float)($_POST['quantite'] ?? 1);
             $this->budget->syncFacturationToBudget(
                 $id,
                 $montant,
                 Security::sanitizeString($_POST['categorie']   ?? ''),
-                Security::sanitizeString($_POST['prestataire'] ?? ''),
-                $row ? (int)($row['event_id']  ?? 0) ?: null : null,
-                $row ? (int)($row['projet_id'] ?? 0) ?: null : null
+                $prestataire,
+                $eid,
+                $pid
             );
+            return 'success:Facturation mise à jour.';
         }
-
-        return $ok ? 'success:Facturation mise à jour.' : 'error:Erreur mise à jour.';
+        return 'error:Erreur mise à jour.';
     }
 
     private function facturationDelete(): string
@@ -466,10 +533,18 @@ class OperationnelController
         $id = Security::sanitizeInt($_POST['ligne_id'] ?? 0);
         if (!$id) return 'error:ID invalide.';
 
+        $row = $this->facturation->findById($id);
+        $prestataire = $row ? $row['prestataire'] : '';
+        $eid = $row ? (int)($row['event_id'] ?? 0) ?: null : null;
+        $pid = $row ? (int)($row['projet_id'] ?? 0) ?: null : null;
+
         $this->budget->syncFacturationToBudget($id, 0, '', '', null, null, true);
 
-        return $this->facturation->delete($id)
-            ? 'success:Ligne supprimée.' : 'error:Erreur suppression.';
+        if ($this->facturation->delete($id)) {
+            HistoriqueModel::log('delete', 'facturation', $id, "Suppression de la facturation : {$prestataire}", ['event_id' => $eid, 'projet_id' => $pid]);
+            return 'success:Ligne supprimée.';
+        }
+        return 'error:Erreur suppression.';
     }
 
     private function facturationToggle(): string
@@ -487,7 +562,12 @@ class OperationnelController
 
         $newVal = $row[$field] ? 0 : 1;
         $ok = $this->facturation->update($id, array_merge($row, [$field => $newVal]));
-        return $ok ? 'success:Statut mis à jour.' : 'error:Erreur mise à jour.';
+        
+        if ($ok) {
+            HistoriqueModel::log('toggle', 'facturation', $id, "Inversion du champ {$field}", ['event_id' => (int)($row['event_id'] ?? 0) ?: null, 'projet_id' => (int)($row['projet_id'] ?? 0) ?: null]);
+            return 'success:Statut mis à jour.';
+        }
+        return 'error:Erreur mise à jour.';
     }
 
     private function preprodSync(int $eventId): string
@@ -531,6 +611,7 @@ class OperationnelController
         }
 
         $this->planning->syncPhasesToPlanning($eventId, $phases);
+        HistoriqueModel::log('sync', 'planning', $eventId, "Synchronisation de {$count} phase(s) vers le planning", ['event_id' => $eventId]);
 
         return "success:{$count} phase(s) synchronisée(s) dans le planning.";
     }
@@ -555,6 +636,8 @@ class OperationnelController
             );
         }
 
+        $entiteId = $eventId ?: ($projetId ?: 0);
+        HistoriqueModel::log('sync', 'budget', $entiteId, "Synchronisation de la facturation vers le budget", ['event_id' => $eventId ?: null, 'projet_id' => $projetId ?: null]);
         return 'success:' . count($lignes) . ' ligne(s) de facturation synchronisée(s) dans le budget.';
     }
 
@@ -580,6 +663,8 @@ class OperationnelController
             );
         }
 
+        $entiteId = $eventId ?: ($projetId ?: 0);
+        HistoriqueModel::log('sync', 'budget', $entiteId, "Synchronisation du matériel vers le budget", ['event_id' => $eventId ?: null, 'projet_id' => $projetId ?: null]);
         return 'success:' . count($avecBudget) . ' matériel(s) synchronisé(s) dans le budget.';
     }
 
@@ -587,6 +672,7 @@ class OperationnelController
     {
         $libelle = Security::sanitizeString($_POST['libelle'] ?? '');
         if ($libelle === '') return 'error:Le libellé est obligatoire.';
+        
         $ok = $this->budget->create([
             'event_id'       => $eventId  ?: null,
             'projet_id'      => $projetId ?: null,
@@ -600,32 +686,59 @@ class OperationnelController
             'fournisseur'    => Security::sanitizeString($_POST['fournisseur']    ?? ''),
             'sponsor'        => Security::sanitizeString($_POST['sponsor']        ?? ''),
         ]);
-        return $ok ? 'success:Ligne de budget ajoutée.' : 'error:Erreur lors de l\'ajout.';
+        
+        if ($ok) {
+            $newId = $this->budget->getLastInsertId();
+            HistoriqueModel::log('create', 'budget', $newId, "Ajout au budget : {$libelle}", ['event_id' => $eventId ?: null, 'projet_id' => $projetId ?: null]);
+            return 'success:Ligne de budget ajoutée.';
+        }
+        return 'error:Erreur lors de l\'ajout.';
     }
 
     private function budgetUpdate(): string
     {
         $id = Security::sanitizeInt($_POST['ligne_id'] ?? 0);
         if (!$id) return 'error:ID invalide.';
+        
+        $libelle = Security::sanitizeString($_POST['libelle'] ?? '');
+
         $ok = $this->budget->update($id, [
             'type'           => $_POST['type']            ?? 'charge',
             'categorie'      => Security::sanitizeString($_POST['categorie']      ?? ''),
             'sous_categorie' => Security::sanitizeString($_POST['sous_categorie'] ?? ''),
-            'libelle'        => Security::sanitizeString($_POST['libelle']        ?? ''),
+            'libelle'        => $libelle,
             'previsionnel'   => $_POST['previsionnel']   ?? 0,
             'comparatif'     => $_POST['comparatif']     ?? 0,
             'note'           => Security::sanitizeString($_POST['note']           ?? ''),
             'fournisseur'    => Security::sanitizeString($_POST['fournisseur']    ?? ''),
             'sponsor'        => Security::sanitizeString($_POST['sponsor']        ?? ''),
         ]);
-        return $ok ? 'success:Budget mis à jour.' : 'error:Erreur mise à jour.';
+
+        if ($ok) {
+            $row = $this->budget->findById($id);
+            $eid = $row ? (int)($row['event_id'] ?? 0) ?: null : null;
+            $pid = $row ? (int)($row['projet_id'] ?? 0) ?: null : null;
+            HistoriqueModel::log('update', 'budget', $id, "Mise à jour du budget : {$libelle}", ['event_id' => $eid, 'projet_id' => $pid]);
+            return 'success:Budget mis à jour.';
+        }
+        return 'error:Erreur mise à jour.';
     }
 
     private function budgetDelete(): string
     {
         $id = Security::sanitizeInt($_POST['ligne_id'] ?? 0);
-        return $id && $this->budget->delete($id)
-            ? 'success:Ligne supprimée.' : 'error:Erreur suppression.';
+        if (!$id) return 'error:ID invalide.';
+
+        $row = $this->budget->findById($id);
+        $libelle = $row ? $row['libelle'] : '';
+        $eid = $row ? (int)($row['event_id'] ?? 0) ?: null : null;
+        $pid = $row ? (int)($row['projet_id'] ?? 0) ?: null : null;
+
+        if ($this->budget->delete($id)) {
+            HistoriqueModel::log('delete', 'budget', $id, "Suppression du budget : {$libelle}", ['event_id' => $eid, 'projet_id' => $pid]);
+            return 'success:Ligne supprimée.';
+        }
+        return 'error:Erreur suppression.';
     }
 
     private function contactDetach(): string
@@ -638,6 +751,12 @@ class OperationnelController
         $ok = $lienType === 'event'
             ? $model->detachFromEvent($lienId)
             : $model->detachFromProjet($lienId);
+
+        if ($ok) {
+            $eid = $lienType === 'event' ? $lienId : null;
+            $pid = $lienType === 'projet' ? $lienId : null;
+            HistoriqueModel::log('detach', 'contact', $lienId, "Détachement d'un contact de {$lienType}", ['event_id' => $eid, 'projet_id' => $pid]);
+        }
 
         return $ok ? 'success:Contact détaché.' : 'error:Erreur lors du détachement.';
     }
