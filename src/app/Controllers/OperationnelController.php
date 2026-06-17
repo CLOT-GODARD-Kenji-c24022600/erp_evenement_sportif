@@ -5,7 +5,7 @@
  * @file OperationnelController.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 2.1
+ * @version 2.2
  * @since 2026
  */
 
@@ -227,7 +227,6 @@ class OperationnelController
         $tache = Security::sanitizeString($_POST['tache'] ?? '');
         if ($tache === '') return 'error:La tâche est obligatoire.';
         
-        // AJOUT : on récupère l'ID du contact
         $contactId = Security::sanitizeInt($_POST['contact_id'] ?? 0);
 
         $ok = $this->planning->create([
@@ -239,7 +238,7 @@ class OperationnelController
             'date_fin'   => $_POST['date_fin']   ?: null,
             'note'       => Security::sanitizeString($_POST['note'] ?? ''),
             'ordre'      => (int) ($_POST['ordre'] ?? 0),
-            'contact_id' => $contactId ?: null, // AJOUT : on l'envoie au Modèle
+            'contact_id' => $contactId ?: null,
         ]);
         return $ok ? 'success:Tâche de planning ajoutée.' : 'error:Erreur lors de l\'ajout.';
     }
@@ -249,7 +248,6 @@ class OperationnelController
         $id = Security::sanitizeInt($_POST['ligne_id'] ?? 0);
         if (!$id) return 'error:ID invalide.';
         
-        // AJOUT : on récupère l'ID du contact
         $contactId = Security::sanitizeInt($_POST['contact_id'] ?? 0);
 
         $ok = $this->planning->update($id, [
@@ -259,7 +257,7 @@ class OperationnelController
             'date_fin'   => $_POST['date_fin']   ?: null,
             'note'       => Security::sanitizeString($_POST['note'] ?? ''),
             'ordre'      => (int) ($_POST['ordre'] ?? 0),
-            'contact_id' => $contactId ?: null, // AJOUT : on l'envoie au Modèle
+            'contact_id' => $contactId ?: null,
         ]);
         return $ok ? 'success:Tâche mise à jour.' : 'error:Erreur lors de la mise à jour.';
     }

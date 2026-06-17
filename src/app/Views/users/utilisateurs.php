@@ -45,7 +45,6 @@ $roleBadgeHtml = function(string $role) use ($roleColor, $roleIcon): string {
     );
 };
 ?>
-?>
 <section class="container py-4">
 
     <header class="mb-4 d-flex justify-content-between align-items-center">
