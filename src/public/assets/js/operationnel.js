@@ -1,12 +1,10 @@
 /**
  * YES – Your Event Solution
  * @file operationnel.js
- * @version 2.2
- *
- * Correctifs SPA & Data : 
- * - IIFE + Protection des listeners
- * - Hack SPA : Évaluation forcée des données PHP (window.OPS_PLANNING_DATA)
- * - Délai de rendu Canvas pour éviter la largeur à 0
+ * @author CELESTINE Samuel
+ * @author CLOT-GODARD Kenji
+ * @version 2.3
+ * @since 2026
  */
 
 (() => {
@@ -102,10 +100,6 @@
     maj:      '#0dcaf0', devis:    '#6c757d', visuels: '#6c757d',
     bat:      '#adb5bd', prod:     '#fd7e14', annule:  '#dc3545',
   };
-  const STATUT_LABEL = {
-    wip:'WIP', en_cours:'En cours', valide:'Validé', maj:'Maj',
-    devis:'Devis', visuels:'Visuels', bat:'BAT', prod:'Prod', annule:'Annulé',
-  };
 
   const calState = {
     year:     new Date().getFullYear(),
@@ -132,6 +126,7 @@
     if (titleEl) titleEl.textContent = `${MOIS_FR[month]} ${year}`;
 
     const tasks = window.OPS_PLANNING_DATA || [];
+    const statutsMap = window.OPS_PLANNING_STATUTS || {};
     const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
 
     const firstDay = new Date(year, month, 1).getDay();
@@ -177,6 +172,7 @@
       dayTasks.slice(0, maxVisible).forEach(t => {
         const pill = document.createElement('div');
         const bg   = STATUT_BG[t.statut] || '#6c757d';
+        const lbl  = statutsMap[t.statut] ? statutsMap[t.statut].label : t.statut;
         pill.style.cssText = `
           background:${bg}22; border-left:3px solid ${bg};
           border-radius:4px; padding:2px 5px; margin-bottom:2px;
@@ -184,7 +180,7 @@
           text-overflow:ellipsis; color:${isDark?'#e9ecef':'#212529'}; font-weight:500;
         `;
         pill.textContent = t.tache || '—';
-        pill.title = `${t.tache} (${STATUT_LABEL[t.statut] || t.statut})`;
+        pill.title = `${t.tache} (${lbl})`;
         cell.appendChild(pill);
       });
 
@@ -196,7 +192,7 @@
       }
 
       if (dayTasks.length > 0) {
-        cell.addEventListener('click', () => showDayDetail(day, dateStr, dayTasks));
+        cell.addEventListener('click', () => showDayDetail(day, dateStr, dayTasks, statutsMap));
         cell.addEventListener('mouseenter', () => cell.style.background = isDark ? '#2a2a4a' : '#f0f7ff');
         cell.addEventListener('mouseleave', () => {
           if (calState.selected !== dateStr) {
@@ -212,7 +208,7 @@
     calState.selected = null;
   }
 
-  function showDayDetail(day, dateStr, tasks) {
+  function showDayDetail(day, dateStr, tasks, statutsMap) {
     calState.selected = dateStr;
     const detailBox   = document.getElementById('cal-day-detail');
     const titleEl     = document.getElementById('cal-day-detail-title');
@@ -226,7 +222,7 @@
     listEl.innerHTML = '';
     tasks.forEach(t => {
       const bg    = STATUT_BG[t.statut]    || '#6c757d';
-      const label = STATUT_LABEL[t.statut] || t.statut;
+      const label = statutsMap[t.statut] ? statutsMap[t.statut].label : t.statut;
       const li = document.createElement('li');
       li.className = 'list-group-item d-flex justify-content-between align-items-center py-2';
       li.innerHTML = `
@@ -426,6 +422,7 @@
     set('pe-debut', d.date_debut ? d.date_debut.substring(0,10) : '');
     set('pe-fin',   d.date_fin   ? d.date_fin.substring(0,10)   : '');
     set('pe-note',d.note);
+    set('pe-contact', d.contact_id); // <--- AJOUT DU CONTACT
     modal('modalPlanningEdit').show();
   };
 

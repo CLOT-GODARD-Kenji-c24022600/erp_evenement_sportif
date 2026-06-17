@@ -5,7 +5,7 @@
  * @file PlanningModel.php
  * @author CELESTINE Samuel
  * @author CLOT-GODARD Kenji
- * @version 2.1
+ * @version 2.2
  * @since 2026
  */
 
@@ -32,7 +32,7 @@ class PlanningModel
         $this->db = Database::getConnection();
     }
 
-    // AJOUT : Pour afficher tout le planning sur le Dashboard
+    // AJOUT : Pour afficher tout le planning sur le Dashboard (pour ton prochain ticket)
     public function getAll(): array
     {
         try {
